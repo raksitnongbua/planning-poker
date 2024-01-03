@@ -12,7 +12,6 @@ const Lobby = () => {
   const [isOpenCreateRoomDialog, setIsOpenCreateRoomDialog] = useState(false);
   const cookies = useCookies();
   const router = useRouter();
-  console.log(process);
 
   const uidKey = 'CPPUniID';
   useEffect(() => {
