@@ -1,11 +1,50 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useCookies } from 'next-client-cookies';
+import { RoomInfo } from '../CreateRoomDialog/types';
+import { useRouter } from 'next/navigation';
+
 import CreateRoomDialog from '../CreateRoomDialog';
+import { httpClient } from '@/utils/httpClient';
 
 const Lobby = () => {
   const [isOpenCreateRoomDialog, setIsOpenCreateRoomDialog] = useState(false);
+  const cookies = useCookies();
+  const router = useRouter();
+  console.log(process);
 
+  const uidKey = 'CPPUniID';
+  useEffect(() => {
+    const uuid = cookies.get(uidKey);
+
+    if (!uuid) {
+      const signIn = async () => {
+        try {
+          const res = await httpClient.get('/api/v1/guest/sign-in');
+          cookies.set(uidKey, res.data.uuid);
+        } catch (error) {
+          console.error('Lobby error:', error);
+        }
+      };
+      signIn();
+    }
+  }, [cookies]);
+
+  const handleCreateRoom = async (room: RoomInfo) => {
+    try {
+      const res = await httpClient.post('/api/v1/new-room', {
+        room_name: room.name,
+        hosting_id: cookies.get(uidKey),
+      });
+      if (res.status === 200) {
+        const roomId = res.data.room_id;
+        router.push(`/room/${roomId}`);
+      }
+    } catch (error) {
+      console.error('new room error:', error);
+    }
+  };
   return (
     <>
       <div className='p-10'>
@@ -27,7 +66,7 @@ const Lobby = () => {
         onClose={() => {
           setIsOpenCreateRoomDialog(false);
         }}
-        onCreate={() => {}}
+        onCreate={handleCreateRoom}
       />
     </>
   );

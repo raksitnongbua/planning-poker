@@ -1,8 +1,16 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Props } from './types';
 
 const CreateRoomDIalog = ({ open, onClose, onCreate }: Props) => {
+  const [roomName, setRoomName] = useState<string>('');
+
+  const handleCreateRoom = () => {
+    onCreate({ name: roomName });
+  };
+
+  const isCreateRoomButtonDisabled = roomName.trim() === '';
+
   return (
     <Transition.Root show={open} as={Fragment}>
       <Dialog as='div' className='relative z-10' onClose={() => {}}>
@@ -43,6 +51,7 @@ const CreateRoomDIalog = ({ open, onClose, onCreate }: Props) => {
                         <input
                           className='rounded-sm px-2 bg-neutral-100 text-black focus-visible:outline-none'
                           placeholder='Enter room name'
+                          onChange={(e) => setRoomName(e.target.value)}
                         />
                       </div>
                     </div>
@@ -51,8 +60,9 @@ const CreateRoomDIalog = ({ open, onClose, onCreate }: Props) => {
                 <div className='bg-neutral-800 px-4 py-4 sm:flex sm:flex-row-reverse sm:px-6'>
                   <button
                     type='button'
-                    className='inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto'
-                    onClick={onCreate}
+                    className='inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto disabled:opacity-50 disabled:hover:bg-blue-600'
+                    disabled={isCreateRoomButtonDisabled}
+                    onClick={handleCreateRoom}
                   >
                     Create Room
                   </button>
