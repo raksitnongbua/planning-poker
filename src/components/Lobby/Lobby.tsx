@@ -8,9 +8,11 @@ import { useRouter } from 'next/navigation';
 import { RoomInfo } from '../CreateRoomDialog/types';
 import CreateRoomDialog from '../CreateRoomDialog';
 import { httpClient } from '@/utils/httpClient';
+import Loading from '../Loading';
 
 const Lobby = () => {
   const [isOpenCreateRoomDialog, setIsOpenCreateRoomDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const cookies = useCookies();
   const router = useRouter();
 
@@ -21,18 +23,21 @@ const Lobby = () => {
 
     if (!uuid) {
       const signIn = async () => {
+        setIsLoading(true);
         try {
           const res = await httpClient.get('/api/v1/guest/sign-in');
           cookies.set(uidKey, res.data.uuid);
         } catch (error) {
           console.error('Lobby error:', error);
         }
+        setIsLoading(false);
       };
       signIn();
     }
   }, [cookies]);
 
   const handleCreateRoom = async (room: RoomInfo) => {
+    setIsLoading(true);
     try {
       const res = await httpClient.post('/api/v1/new-room', {
         room_name: room.name,
@@ -45,7 +50,9 @@ const Lobby = () => {
     } catch (error) {
       console.error('new room error:', error);
     }
+    setIsLoading(false);
   };
+
   return (
     <>
       <div className='p-10 w-full flex items-center flex-col'>
@@ -68,6 +75,7 @@ const Lobby = () => {
           </button>
         </div>
       </div>
+      <Loading open={isLoading} />
       <CreateRoomDialog
         open={isOpenCreateRoomDialog}
         onClose={() => {
