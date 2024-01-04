@@ -15,7 +15,7 @@ const Loading = ({ open }: { open: boolean }) => {
         leaveFrom='opacity-100'
         leaveTo='opacity-0'
       >
-        <div className='fixed inset-0 bg-black bg-opacity-75 transition-opacity flex items-center justify-center'>
+        <div className='fixed inset-0 bg-black bg-opacity-75 transition-opacity flex items-center justify-center z-20'>
           <Lottie animationData={corgiLoadingAnimation} loop className='w-40' />
         </div>
       </Transition.Child>
