@@ -17,6 +17,7 @@ const CreateRoomDIalog = ({ open, onClose, onCreate }: Props) => {
     <Dialog
       open={open}
       title='Create New Room'
+      onOpenChange={(open) => !open && onClose()}
       content={
         <Input
           placeholder='Room Name'

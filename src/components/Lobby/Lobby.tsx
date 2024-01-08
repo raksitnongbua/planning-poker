@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
-import { RoomInfo } from '../CreateRoomDialog/types';
-import CreateRoomDialog from '../CreateRoomDialog';
+import { RoomInfo } from '../NewRoomDialog/types';
+import NewRoomDialog from '../NewRoomDialog';
 import { httpClient } from '@/utils/httpClient';
 import Loading from '../Loading';
 import { useUserInfoStore } from '@/store/zustand';
@@ -61,7 +61,7 @@ const Lobby = () => {
         </div>
       </div>
       <Loading open={isLoading} />
-      <CreateRoomDialog
+      <NewRoomDialog
         open={isOpenCreateRoomDialog}
         onClose={() => {
           setIsOpenCreateRoomDialog(false);

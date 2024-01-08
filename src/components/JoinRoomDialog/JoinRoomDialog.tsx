@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import Dialog from '@/components/common/Dialog';
-import Button from '../common/Button/Button';
 import { Props } from './types';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
 
 const JoinRoomDialog = ({ open, onClickConfirm }: Props) => {
   const [name, setName] = useState('');
@@ -11,12 +12,9 @@ const JoinRoomDialog = ({ open, onClickConfirm }: Props) => {
       open={open}
       title='Input your name'
       content={
-        <input
-          className='text-black'
-          value={name}
+        <Input
+          placeholder='Your name'
           onChange={(e) => setName(e.target.value)}
-          placeholder='NAME'
-          id='name'
         />
       }
       action={<Button onClick={() => onClickConfirm(name)}>Confirm</Button>}
