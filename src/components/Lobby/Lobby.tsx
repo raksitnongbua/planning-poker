@@ -9,6 +9,7 @@ import CreateRoomDialog from '../CreateRoomDialog';
 import { httpClient } from '@/utils/httpClient';
 import Loading from '../Loading';
 import { useUserInfoStore } from '@/store/zustand';
+import { Button } from '../ui/button';
 
 const Lobby = () => {
   const [isOpenCreateRoomDialog, setIsOpenCreateRoomDialog] = useState(false);
@@ -54,12 +55,9 @@ const Lobby = () => {
           <p className='text-lg'>
             Make Estimating Agile Projects Accurate & Fun
           </p>
-          <button
-            className='bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded'
-            onClick={() => setIsOpenCreateRoomDialog(true)}
-          >
+          <Button onClick={() => setIsOpenCreateRoomDialog(true)}>
             Create Room
-          </button>
+          </Button>
         </div>
       </div>
       <Loading open={isLoading} />
