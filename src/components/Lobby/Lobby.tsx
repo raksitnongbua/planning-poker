@@ -2,55 +2,42 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { useCookies } from 'next-client-cookies';
 import { useRouter } from 'next/navigation';
 
 import { RoomInfo } from '../CreateRoomDialog/types';
 import CreateRoomDialog from '../CreateRoomDialog';
 import { httpClient } from '@/utils/httpClient';
 import Loading from '../Loading';
+import { useUserInfoStore } from '@/store/zustand';
 
 const Lobby = () => {
   const [isOpenCreateRoomDialog, setIsOpenCreateRoomDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const cookies = useCookies();
   const router = useRouter();
 
-  const uidKey = 'CPPUniID';
+  const { uid } = useUserInfoStore();
 
   useEffect(() => {
-    const uuid = cookies.get(uidKey);
-
-    if (!uuid) {
-      const signIn = async () => {
-        setIsLoading(true);
-        try {
-          const res = await httpClient.get('/api/v1/guest/sign-in');
-          cookies.set(uidKey, res.data.uuid);
-        } catch (error) {
-          console.error('Lobby error:', error);
-        }
-        setIsLoading(false);
-      };
-      signIn();
-    }
-  }, [cookies]);
+    setIsLoading(!Boolean(uid));
+  }, [uid]);
 
   const handleCreateRoom = async (room: RoomInfo) => {
     setIsLoading(true);
     try {
       const res = await httpClient.post('/api/v1/new-room', {
         room_name: room.name,
-        hosting_id: cookies.get(uidKey),
+        hosting_id: uid,
       });
       if (res.status === 200) {
         const roomId = res.data.room_id;
         router.push(`/room/${roomId}`);
+      } else {
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('new room error:', error);
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (
