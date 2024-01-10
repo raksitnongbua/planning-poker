@@ -1,24 +1,25 @@
-Corgi Planning Poker Online with [Next.js](https://nextjs.org/)
-Welcome to the Corgi Planning Poker Online project repository! This delightful web application, built with Next.js, features a charming corgi mascot and utilizes Vercel for effortless frontend deployment. Dive into the world of agile planning while learning about websockets, all powered by the Golang backend known as the "Planning Poker Service."
+# Corgi Planning Poker Online
+
+Welcome to the Corgi Planning Poker Online project repository! This delightful web application, built with [Next.js](https://nextjs.org/), features a charming corgi mascot and utilizes Vercel for effortless frontend deployment. Dive into the world of agile planning while learning about websockets, all powered by the Golang backend known as the "Planning Poker Service."
 
 [Demo](https://corgi-planning-poker.vercel.app/)
 
-# Features
+## Features
 
 - User-Friendly Interface: Enjoy a clean and intuitive interface designed to streamline the estimation process.
 - Real-time Collaboration: Collaborate with team members in real-time, making the planning process efficient and engaging.
 - Scalable Architecture: Built with Next.js, the application ensures scalability and responsiveness, catering to various screen sizes and devices.
 - Vercel Deployment: Take advantage of Vercel's powerful and reliable deployment platform for hosting your frontend with ease.
 
-# Getting Started with Next.js
+## Getting Started with Next.js
 
 To get started with this project, follow the steps below.
 
-## Prerequisites
+### Prerequisites
 
 - [Node.js](https://nodejs.org/en/) installed on your machine.
 
-## Installation
+### Installation
 
 Install the project dependencies:
 
@@ -26,7 +27,7 @@ Install the project dependencies:
 yarn install
 ```
 
-## Development
+### Development
 
 To run the development server, execute the following command:
 
@@ -34,7 +35,7 @@ To run the development server, execute the following command:
 yarn dev
 ```
 
-# Contributing
+## Contributing
 
 If you'd like to contribute to the project, follow the standard GitHub workflow:
 
