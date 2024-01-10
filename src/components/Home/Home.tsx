@@ -47,7 +47,7 @@ const Home = () => {
           setServiceStatus('unavailable');
         }
       } catch (error) {
-        console.error('new room error:', error);
+        setServiceStatus('unavailable');
       }
     };
     checkServiceStatus();
