@@ -30,12 +30,11 @@ const Home = () => {
         const roomId = res.data.room_id;
         router.push(`/room/${roomId}`);
       } else {
-        setLoadingOpen(false);
       }
     } catch (error) {
       console.error('new room error:', error);
-      setLoadingOpen(false);
     }
+    setLoadingOpen(false);
   };
 
   useEffect(() => {
