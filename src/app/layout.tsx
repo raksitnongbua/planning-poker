@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Coda } from 'next/font/google';
 import './globals.css';
 import Layout from '@/components/Layout';
 
-const inter = Inter({ subsets: ['latin'] });
+const coda = Coda({ weight: '400', display: 'swap', subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Planning Poker Online',
@@ -17,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang='en' className='dark'>
-      <body className={inter.className}>
+      <body className={coda.className}>
         <Layout>{children}</Layout>
       </body>
     </html>
