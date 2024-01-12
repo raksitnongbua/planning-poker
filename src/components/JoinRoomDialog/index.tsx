@@ -1,1 +1,1 @@
-export { default } from './JoinRoomDialog';
+export { default } from './JoinRoomDialog'
