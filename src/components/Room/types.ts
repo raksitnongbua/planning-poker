@@ -1,8 +1,8 @@
 export interface Props {
-  roomId?: string;
+  roomId?: string
 }
 
 export interface Member {
-  name: string;
-  id: string;
+  name: string
+  id: string
 }

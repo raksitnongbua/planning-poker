@@ -1,1 +1,1 @@
-export { default } from './NewRoomDialog';
+export { default } from './NewRoomDialog'

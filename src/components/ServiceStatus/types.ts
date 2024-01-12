@@ -1,5 +1,5 @@
 export interface Props {
-  status: Status;
+  status: Status
 }
 
-export type Status = 'unavailable' | 'connecting' | 'available';
+export type Status = 'unavailable' | 'connecting' | 'available'

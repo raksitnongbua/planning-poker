@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 import {
   Dialog as RootDialog,
   DialogContent,
@@ -7,22 +7,22 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
-} from '@/components/ui/dialog';
-import { Props } from './types';
+} from '@/components/ui/dialog'
+import { Props } from './types'
 
 const Dialog = ({ open, onOpenChange, title, content, action }: Props) => {
   return (
     <RootDialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className='pb-4'>{title}</DialogTitle>
+          <DialogTitle className="pb-4">{title}</DialogTitle>
           <DialogDescription>{content}</DialogDescription>
         </DialogHeader>
         {action && <DialogFooter>{action}</DialogFooter>}
-        <DialogClose className='invisible' />
+        <DialogClose className="invisible" />
       </DialogContent>
     </RootDialog>
-  );
-};
+  )
+}
 
-export default Dialog;
+export default Dialog

@@ -1,3 +1,3 @@
 export interface Props {
-  name: string;
+  name: string
 }
