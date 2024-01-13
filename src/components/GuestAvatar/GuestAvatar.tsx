@@ -29,7 +29,7 @@ const GuestAvatar = ({
     <div className="flex items-center flex-col w-[80px] gap-3">
       <div className="relative">
         <Avatar className="size-14">
-          <AvatarImage alt="guest-icon" src="/images/corgi-tood.png" />
+          <AvatarImage alt="guest-icon" src="/images/corgi-tood-cute.png" />
           <AvatarFallback>GUEST</AvatarFallback>
         </Avatar>
         <div
