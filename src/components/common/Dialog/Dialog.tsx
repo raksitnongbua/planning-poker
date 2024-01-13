@@ -18,7 +18,9 @@ const Dialog = ({ open, onOpenChange, title, content, action }: Props) => {
           <DialogTitle className="pb-4">{title}</DialogTitle>
           <DialogDescription>{content}</DialogDescription>
         </DialogHeader>
-        {action && <DialogFooter>{action}</DialogFooter>}
+        {action && (
+          <DialogFooter className="pt-4 flex-col gap-2 sm:flex-row">{action}</DialogFooter>
+        )}
         <DialogClose className="invisible" />
       </DialogContent>
     </RootDialog>
