@@ -173,7 +173,7 @@ const Room = ({ roomId }: Props) => {
                     <CorgiFeeling badlyPercentage={(averagePoints / maxPoint) * 100} />
                   </div>
                   <div className="flex flex-col justify-end min-w-[120px] gap-5">
-                    <p className="text-2xl min-w-[200px]">{`Average: ${averagePoints} point`}</p>
+                    <p className="text-2xl min-w-[200px]">{`Average: ${averagePoints.toFixed(2)} point`}</p>
                     <Button
                       variant="outline"
                       className="text-orange-400 border-orange-400 hover:text-orange-300 hover:text-orange-300"
