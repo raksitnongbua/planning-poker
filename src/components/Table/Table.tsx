@@ -6,7 +6,7 @@ export interface TableProps {
 
 const Table: React.FC<TableProps> = ({}) => {
   return (
-    <div className="w-56 h-24 border uppercase flex justify-center items-center rounded-md">
+    <div className="w-64 h-32 border uppercase flex justify-center items-center rounded-md">
       Table
     </div>
   )
