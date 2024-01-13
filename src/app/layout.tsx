@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Coda } from 'next/font/google'
 import './globals.css'
 import Layout from '@/components/Layout'
+import { Toaster } from '@/components/ui/toaster'
 
 const coda = Coda({ weight: '400', display: 'swap', subsets: ['latin'] })
 
@@ -15,6 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="dark">
       <body className={coda.className}>
         <Layout>{children}</Layout>
+        <Toaster />
       </body>
     </html>
   )

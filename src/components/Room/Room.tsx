@@ -8,6 +8,10 @@ import PokerCard from '../PokerCard'
 import { Table } from '../Table'
 import { Button } from '../ui/button'
 import CorgiFeeling from '../CorgiFeeling'
+import { ActiveStatus } from '../GuestAvatar/types'
+import { InviteButton } from '../InviteButton'
+import { usePathname, useRouter } from 'next/navigation'
+import { useToast } from '@/components/ui/use-toast'
 
 enum Status {
   None = 'NONE',
@@ -16,6 +20,8 @@ enum Status {
 }
 
 const CARD_OPTIONS = [0.5, 1, 1.5, 2, 3, 4, 5, 6]
+const TIME_SECOND = 1000
+const TIME_MINUTE = 60
 
 const Room = ({ roomId }: Props) => {
   const { uid } = useUserInfoStore()
@@ -26,6 +32,9 @@ const Room = ({ roomId }: Props) => {
   const [averagePoints, setAveragePoints] = useState<number>(0)
   const socketUrl = `${process.env.NEXT_PUBLIC_WS_ENDPOINT}/room/${uid}/${roomId}`
   const { sendJsonMessage, lastMessage, readyState } = useWebSocket(socketUrl)
+  const { toast } = useToast()
+  const pathname = usePathname()
+  const router = useRouter()
 
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
@@ -46,7 +55,7 @@ const Room = ({ roomId }: Props) => {
         id: member.id,
         name: member.name,
         estimatedPoint: member.estimated_point,
-        lastActiveAt: member.last_active_at,
+        lastActiveAt: new Date(member.last_active_at),
       }
     })
   }
@@ -76,7 +85,18 @@ const Room = ({ roomId }: Props) => {
       default:
         break
     }
-  }, [lastMessage, lastMessage?.data, roomState, uid])
+
+    const error = jsonMessage.error
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error,
+        duration: 4000,
+      })
+      router.push('/')
+    }
+  }, [lastMessage, lastMessage?.data, roomState, router, toast, uid])
 
   useEffect(() => {
     if (roomState === Status.None) return
@@ -89,19 +109,40 @@ const Room = ({ roomId }: Props) => {
     }
   }, [roomState, sendJsonMessage])
 
+  const getActiveStatus = (lastActiveAt: Date): ActiveStatus => {
+    const secDiff = (Date.now() - lastActiveAt.getTime()) / TIME_SECOND
+
+    if (secDiff <= 15) {
+      return ActiveStatus.Active
+    } else if (secDiff <= 5 * TIME_MINUTE) {
+      return ActiveStatus.Busy
+    } else {
+      return ActiveStatus.Inactive
+    }
+  }
+
   return (
     <>
-      <div className="p-8 grid grid-cols-3 gap-y-10 items-start">
+      <div className="p-8 grid grid-cols-3 gap-y-10 items-start min-w-[600px]">
         <div data-section="room-members" className="flex gap-2 col-span-3 min-h-[200px]">
-          {members.map(({ name, id, estimatedPoint }) => (
+          {members.map(({ name, id, estimatedPoint, lastActiveAt }) => (
             <GuestAvatar
               name={name}
               key={id}
               estimatedPoint={estimatedPoint}
               isCardReveled={roomState === Status.RevealedCards}
               isShowingCard={estimatedPoint >= 0}
+              activeStatus={getActiveStatus(lastActiveAt)}
             />
           ))}
+          <InviteButton
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.origin + pathname)
+              toast({
+                title: 'Invite link copied to clipboard',
+              })
+            }}
+          />
         </div>
         {roomState !== Status.None && (
           <>
@@ -131,8 +172,8 @@ const Room = ({ roomId }: Props) => {
                   <div className="h-[180px] w-[200px] flex justify-center">
                     <CorgiFeeling badlyPercentage={(averagePoints / maxPoint) * 100} />
                   </div>
-                  <div className="flex flex-col items-end justify-end min-w-[120px] gap-5">
-                    <p className="text-xl">{`Average: ${averagePoints} point`}</p>
+                  <div className="flex flex-col justify-end min-w-[120px] gap-5">
+                    <p className="text-2xl min-w-[200px]">{`Average: ${averagePoints} point`}</p>
                     <Button
                       variant="outline"
                       className="text-orange-400 border-orange-400 hover:text-orange-300 hover:text-orange-300"

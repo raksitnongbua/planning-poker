@@ -55,7 +55,7 @@ const Home = () => {
 
   return (
     <>
-      <header className="px-16 p-8 flex items-end gap-4">
+      <header className="px-6 p-8 flex items-end gap-4 sm:px-16">
         <Image src="/images/corgi-good.png" alt="corgi-logo" width={30} height={30} />
         <span className="text-xl">Planning Poker</span>
       </header>
