@@ -25,6 +25,7 @@
     "lottie-react": "^2.4.0",
     "next": "14.0.4",
     "react": "^18",
+    "react-card-flip": "^1.2.2",
     "react-dom": "^18",
     "react-use-websocket": "^4.5.0",
     "tailwind-merge": "^2.2.0",

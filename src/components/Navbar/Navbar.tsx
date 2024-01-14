@@ -7,7 +7,7 @@ const Navbar = () => {
   const router = useRouter()
 
   return (
-    <header className="px-2 py-1 sm:px-4 sm:pt-4 sm:-pb-2 flex justify-between items-start">
+    <header className="px-2 py-1 sm:px-8 sm:pt-4 sm:-pb-2 flex justify-between items-start">
       <Image
         className="cursor-pointer"
         onClick={() => router.push('/')}

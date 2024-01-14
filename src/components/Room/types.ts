@@ -8,3 +8,9 @@ export interface Member {
   estimatedPoint: number
   lastActiveAt: Date
 }
+
+export enum Status {
+  None = 'NONE',
+  Voting = 'VOTING',
+  RevealedCards = 'REVEALED_CARDS',
+}

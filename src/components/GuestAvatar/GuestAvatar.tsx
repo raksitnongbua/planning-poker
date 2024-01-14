@@ -5,6 +5,7 @@ import BackCard from '../BackCard'
 import FrontCard from '../FrontCard'
 import clsx from 'clsx'
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip'
+import ReactCardFlip from 'react-card-flip'
 
 const GuestAvatar = ({
   name,
@@ -68,11 +69,10 @@ const GuestAvatar = ({
 
       {isShowingCard && (
         <div className="w-[52px] h-[76px] hover:scale-110 hover:translate-y-1">
-          {isCardReveled ? (
-            <FrontCard label={String(estimatedPoint)} className="text-2xl" />
-          ) : (
+          <ReactCardFlip isFlipped={isCardReveled}>
             <BackCard />
-          )}
+            <FrontCard label={String(estimatedPoint)} className="text-2xl" />
+          </ReactCardFlip>
         </div>
       )}
     </div>

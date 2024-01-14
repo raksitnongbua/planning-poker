@@ -2,27 +2,17 @@ import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 import React, { useEffect, useMemo, useState } from 'react'
 import useWebSocket, { ReadyState } from 'react-use-websocket'
 import JoinRoomDialog from '../JoinRoomDialog'
-import GuestAvatar from '../GuestAvatar'
-import { Member, Props } from './types'
-import PokerCard from '../PokerCard'
-import { Table } from '../Table'
+import { Member, Props, Status } from './types'
 import { Button } from '../ui/button'
-import CorgiFeeling from '../CorgiFeeling'
-import { ActiveStatus } from '../GuestAvatar/types'
-import { InviteButton } from '../InviteButton'
+
 import { usePathname, useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/use-toast'
 import Dialog from '../common/Dialog'
-
-enum Status {
-  None = 'NONE',
-  Voting = 'VOTING',
-  RevealedCards = 'REVEALED_CARDS',
-}
+import RoomMembers from '../RoomMembers'
+import RoomTable from '../RoomTable'
+import RoomCards from '../RoomCards'
 
 const CARD_OPTIONS = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6]
-const TIME_SECOND = 1000
-const TIME_MINUTE = 60
 
 const Room = ({ roomId }: Props) => {
   const { uid } = useUserInfoStore()
@@ -35,9 +25,9 @@ const Room = ({ roomId }: Props) => {
 
   const [openJoinRoomDialog, setOpenJoinRoomDialog] = useState(false)
   const [members, setMembers] = useState<Member[]>([])
-  const [roomState, setRoomState] = useState<Status>(Status.None)
-  const [cardChoosing, setCardChoosing] = useState<string | null>(null)
-  const [averagePoints, setAveragePoints] = useState<number>(0)
+  const [roomStatus, setRoomStatus] = useState<Status>(Status.None)
+  const [cardChoosing, setCardChoosing] = useState<number | null>(null)
+  const [averagePoint, setAveragePoints] = useState<number>(0)
   const [roomName, setRoomName] = useState<string>('')
   const [openRefreshDialog, setOpenRefreshDialog] = useState(false)
   const [me, setMe] = useState<Member | null>(null)
@@ -88,6 +78,10 @@ const Room = ({ roomId }: Props) => {
   }, [pathname, readyState, router, setLoadingOpen, toast])
 
   useEffect(() => {
+    router.prefetch('/')
+  }, [router])
+
+  useEffect(() => {
     if (!lastMessage) {
       return
     }
@@ -104,10 +98,10 @@ const Room = ({ roomId }: Props) => {
         setMembers(transformedMembers)
         const meData = transformedMembers.find((member) => member.id === uid)
         setMe(meData ?? null)
-        const myEstimatedPoint = String(meData?.estimatedPoint) ?? null
+        const myEstimatedPoint = meData?.estimatedPoint ?? null
         setCardChoosing(myEstimatedPoint)
         const newRoomState = payload.status
-        setRoomState(newRoomState)
+        setRoomStatus(newRoomState)
         if (newRoomState === Status.Voting) {
           setIsEditPointMode(false)
         }
@@ -128,10 +122,10 @@ const Room = ({ roomId }: Props) => {
       })
       router.push('/')
     }
-  }, [lastMessage, lastMessage?.data, roomState, router, toast, uid])
+  }, [lastMessage, lastMessage?.data, roomStatus, router, toast, uid])
 
   useEffect(() => {
-    if (roomState === Status.None || !me) return
+    if (roomStatus === Status.None || !me) return
 
     sendJsonMessage({ action: 'UPDATE_ACTIVE_USER' })
     const interval = setInterval(() => {
@@ -141,122 +135,45 @@ const Room = ({ roomId }: Props) => {
     return () => {
       clearInterval(interval)
     }
-  }, [me, roomState, sendJsonMessage])
-
-  const getActiveStatus = (lastActiveAt: Date): ActiveStatus => {
-    const secDiff = (Date.now() - lastActiveAt.getTime()) / TIME_SECOND
-
-    if (secDiff <= 15) {
-      return ActiveStatus.Active
-    } else if (secDiff <= 5 * TIME_MINUTE) {
-      return ActiveStatus.Busy
-    } else {
-      return ActiveStatus.Inactive
-    }
-  }
+  }, [me, roomStatus, sendJsonMessage])
 
   return (
     <>
       <div className="px-2 sm:px-8 grid grid-cols-3 gap-y-2 items-start min-w-[600px]">
-        <div
-          data-section="room-members"
-          className="flex justify-center gap-2 col-span-3 min-h-[200px]"
-        >
-          {members.map(({ name, id, estimatedPoint, lastActiveAt }) => (
-            <GuestAvatar
-              name={name}
-              key={id}
-              estimatedPoint={estimatedPoint}
-              isCardReveled={roomState === Status.RevealedCards}
-              isShowingCard={estimatedPoint >= 0}
-              activeStatus={getActiveStatus(lastActiveAt)}
-            />
-          ))}
-          <InviteButton
-            onClick={() => {
-              navigator.clipboard.writeText(window.location.origin + pathname)
-              toast({
-                title: 'Invite link copied to clipboard',
-              })
-            }}
-          />
-        </div>
-        {roomState !== Status.None && (
+        <RoomMembers
+          members={members}
+          isCardReveled={roomStatus === Status.RevealedCards}
+          inviteLink={window.location.origin + pathname}
+        />
+        {roomStatus !== Status.None && (
           <>
-            <div
-              data-section="room-table"
-              className="col-span-3 flex items-center flex-col gap-4 mb-3 min-h-[200px]"
-            >
-              {roomState === Status.Voting ? (
-                <>
-                  <Table name={roomName} />
-                  <div>
-                    {members.some((member) => member.estimatedPoint >= 0) && (
-                      <Button
-                        variant="outline"
-                        className="text-orange-400 border-orange-400 hover:text-orange-300 hover:text-orange-300"
-                        onClick={() => {
-                          sendJsonMessage({ action: 'REVEAL_CARDS' })
-                        }}
-                      >
-                        REVEAL
-                      </Button>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <div className="h-[180px] w-[200px] flex justify-center">
-                    <CorgiFeeling badlyPercentage={(averagePoints / maxPoint) * 100} />
-                  </div>
-                  <div className="flex flex-col justify-end min-w-[120px] gap-5">
-                    <p className="text-2xl min-w-[200px]">{`Average: ${averagePoints.toFixed(2)} point`}</p>
-                    <Button
-                      variant="outline"
-                      className="text-orange-400 border-orange-400 hover:text-orange-300 hover:text-orange-300"
-                      onClick={() => {
-                        sendJsonMessage({ action: 'RESET_ROOM' })
-                      }}
-                    >
-                      CLEAR
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div data-section="room-cards" className="h-36 mx-auto col-span-3 gap-4 flex flex-col">
-              <div className="grid grid-flow-col auto-cols-fr content-end gap-4">
-                {CARD_OPTIONS.map((label) => {
-                  const isRevealed = roomState === Status.Voting || isEditPointMode
-                  return (
-                    <PokerCard
-                      key={`card-${label}`}
-                      label={String(label)}
-                      id={String(label)}
-                      isRevealed={isRevealed}
-                      onClick={(id) => {
-                        sendJsonMessage({
-                          action: 'UPDATE_ESTIMATED_POINT',
-                          payload: { point: Number(id) },
-                        })
-                        setIsEditPointMode(false)
-                      }}
-                      isChosen={cardChoosing === String(label) && isRevealed}
-                    />
-                  )
-                })}
-              </div>
-              {roomState === Status.RevealedCards && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-red-500 p-1 border-red-500 self-end hover:text-red-400 uppercase"
-                  onClick={() => setIsEditPointMode((preVal) => !preVal)}
-                >
-                  Flip Cards
-                </Button>
-              )}
-            </div>
+            <RoomTable
+              averagePoint={averagePoint}
+              isRevealable={members.some((member) => member.estimatedPoint >= 0)}
+              maxPoint={maxPoint}
+              onClickResetRoom={() => {
+                sendJsonMessage({ action: 'RESET_ROOM' })
+              }}
+              onClickRevealCards={() => {
+                sendJsonMessage({ action: 'REVEAL_CARDS' })
+              }}
+              roomName={roomName}
+              status={roomStatus}
+            />
+            <RoomCards
+              cardChoosing={cardChoosing ?? -1}
+              cardOptions={CARD_OPTIONS}
+              isEditPointMode={isEditPointMode}
+              onClickFlipCards={() => setIsEditPointMode((preVal) => !preVal)}
+              onClickVote={(value) => {
+                sendJsonMessage({
+                  action: 'UPDATE_ESTIMATED_POINT',
+                  payload: { point: value },
+                })
+                setIsEditPointMode(false)
+              }}
+              status={roomStatus}
+            />
           </>
         )}
         <p className="text-xs text-muted-foreground fixed bottom-2 right-2">
