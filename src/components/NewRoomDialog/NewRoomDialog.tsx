@@ -23,6 +23,7 @@ const CreateRoomDIalog = ({ open, onClose, onCreate }: Props) => {
           maxLength={25}
           placeholder="Room Name"
           onChange={(e) => setRoomName(e.target.value)}
+          onKeyDown={(e) => e.code === 'Enter' && !isCreateRoomButtonDisabled && handleCreateRoom()}
         />
       }
       action={

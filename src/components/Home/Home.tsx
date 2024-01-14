@@ -54,41 +54,40 @@ const Home = () => {
   }, [])
 
   return (
-    <>
-      <main className="px-4">
-        <div className="flex justify-center mt-2 sm:mt-6 h-full">
-          <div>
-            <div className="my-5 grid gap-4 max-w-[500px]">
-              <h1 className="text-6xl font-bold">Corgi Planning Poker</h1>
-              <p className="text-md font-light">
-                Agile teams playfully estimate tasks with cards, finding consensus one story point
-                at a time.
-              </p>
-            </div>
-            <Button className="w-52 h-11" onClick={() => setIsOpenCreateRoomDialog(true)}>
-              Create Room
-            </Button>
+    <main className="px-4 flex flex-col h-[75vh] justify-center">
+      <div className="flex justify-center items-center mt-2 sm:mt-6 h-full">
+        <div>
+          <div className="my-5 grid gap-4 max-w-[500px]">
+            <h1 className="text-7xl font-bold">Corgi Planning Poker</h1>
+            <p className="text-md font-light">
+              Agile project management technique where team members estimate task complexity through
+              collaborative discussions and iterative refinement, using specially designed cards for
+              consensus.
+            </p>
           </div>
-          <Image
-            src="/images/corgi-banner.png"
-            className="invisible w-0 lg:w-[600px] lg:visible"
-            alt="corgi-logo"
-            width={600}
-            height={477}
-          />
+          <Button className="w-52 h-11" onClick={() => setIsOpenCreateRoomDialog(true)}>
+            Create Room
+          </Button>
         </div>
-
-        <ServiceStatus status={serviceStatus} />
-
-        <NewRoomDialog
-          open={isOpenCreateRoomDialog}
-          onClose={() => {
-            setIsOpenCreateRoomDialog(false)
-          }}
-          onCreate={handleCreateRoom}
+        <Image
+          src="/images/corgi-banner.png"
+          className="invisible w-0 lg:w-[600px] lg:h-[477px] lg:visible"
+          alt="corgi-logo"
+          width={600}
+          height={477}
         />
-      </main>
-    </>
+      </div>
+
+      <ServiceStatus status={serviceStatus} />
+
+      <NewRoomDialog
+        open={isOpenCreateRoomDialog}
+        onClose={() => {
+          setIsOpenCreateRoomDialog(false)
+        }}
+        onCreate={handleCreateRoom}
+      />
+    </main>
   )
 }
 
