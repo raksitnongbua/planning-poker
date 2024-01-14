@@ -128,7 +128,6 @@ const Room = ({ roomId }: Props) => {
 
   useEffect(() => {
     if (roomState === Status.None || !me) return
-    console.log('🚀 ~ useEffect ~ me:', me)
 
     const interval = setInterval(() => {
       sendJsonMessage({ action: 'UPDATE_ACTIVE_USER' })
@@ -153,8 +152,11 @@ const Room = ({ roomId }: Props) => {
 
   return (
     <>
-      <div className="p-8 grid grid-cols-3 gap-y-10 items-start min-w-[600px]">
-        <div data-section="room-members" className="flex gap-2 col-span-3 min-h-[200px]">
+      <div className="px-2 sm:px-8 grid grid-cols-3 gap-y-2 items-start min-w-[600px]">
+        <div
+          data-section="room-members"
+          className="flex justify-center gap-2 col-span-3 min-h-[200px]"
+        >
           {members.map(({ name, id, estimatedPoint, lastActiveAt }) => (
             <GuestAvatar
               name={name}
