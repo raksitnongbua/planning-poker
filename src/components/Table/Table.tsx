@@ -1,13 +1,13 @@
 import React from 'react'
 
 export interface TableProps {
-  // types...
+  name: string
 }
 
-const Table: React.FC<TableProps> = ({}) => {
+const Table = ({ name }: TableProps) => {
   return (
-    <div className="w-64 h-32 border uppercase flex justify-center items-center rounded-md">
-      Table
+    <div className="min-w-64 h-32 border uppercase flex justify-center items-center rounded-md">
+      {name}
     </div>
   )
 }

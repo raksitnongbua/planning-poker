@@ -18,7 +18,13 @@ const CreateRoomDIalog = ({ open, onClose, onCreate }: Props) => {
       open={open}
       title="Create New Room"
       onOpenChange={(open) => !open && onClose()}
-      content={<Input placeholder="Room Name" onChange={(e) => setRoomName(e.target.value)} />}
+      content={
+        <Input
+          maxLength={25}
+          placeholder="Room Name"
+          onChange={(e) => setRoomName(e.target.value)}
+        />
+      }
       action={
         <>
           <Button disabled={isCreateRoomButtonDisabled} onClick={handleCreateRoom}>

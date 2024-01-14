@@ -1,4 +1,4 @@
-import { useUserInfoStore } from '@/store/zustand'
+import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 import React, { useEffect, useMemo, useState } from 'react'
 import useWebSocket, { ReadyState } from 'react-use-websocket'
 import JoinRoomDialog from '../JoinRoomDialog'
@@ -12,6 +12,7 @@ import { ActiveStatus } from '../GuestAvatar/types'
 import { InviteButton } from '../InviteButton'
 import { usePathname, useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/use-toast'
+import Dialog from '../common/Dialog'
 
 enum Status {
   None = 'NONE',
@@ -19,22 +20,27 @@ enum Status {
   RevealedCards = 'REVEALED_CARDS',
 }
 
-const CARD_OPTIONS = [0.5, 1, 1.5, 2, 3, 4, 5, 6]
+const CARD_OPTIONS = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6]
 const TIME_SECOND = 1000
 const TIME_MINUTE = 60
 
 const Room = ({ roomId }: Props) => {
   const { uid } = useUserInfoStore()
-  const [openJoinRoomDialog, setOpenJoinRoomDialog] = useState(false)
-  const [members, setMembers] = useState<Member[]>([])
-  const [roomState, setRoomState] = useState<Status>(Status.None)
-  const [cardChoosing, setCardChoosing] = useState<string | null>(null)
-  const [averagePoints, setAveragePoints] = useState<number>(0)
   const socketUrl = `${process.env.NEXT_PUBLIC_WS_ENDPOINT}/room/${uid}/${roomId}`
   const { sendJsonMessage, lastMessage, readyState } = useWebSocket(socketUrl)
   const { toast } = useToast()
   const pathname = usePathname()
   const router = useRouter()
+  const { setLoadingOpen } = useLoadingStore()
+
+  const [openJoinRoomDialog, setOpenJoinRoomDialog] = useState(false)
+  const [members, setMembers] = useState<Member[]>([])
+  const [roomState, setRoomState] = useState<Status>(Status.None)
+  const [cardChoosing, setCardChoosing] = useState<string | null>(null)
+  const [averagePoints, setAveragePoints] = useState<number>(0)
+  const [roomName, setRoomName] = useState<string>('')
+  const [openRefreshDialog, setOpenRefreshDialog] = useState(false)
+  const [me, setMe] = useState<Member | null>(null)
 
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
@@ -62,6 +68,26 @@ const Room = ({ roomId }: Props) => {
   const maxPoint = useMemo(() => Math.max(...CARD_OPTIONS), [])
 
   useEffect(() => {
+    switch (readyState) {
+      case ReadyState.CONNECTING:
+        setLoadingOpen(true)
+        break
+      case ReadyState.OPEN:
+        setLoadingOpen(false)
+        break
+      case ReadyState.CLOSED:
+        setOpenRefreshDialog(true)
+        setLoadingOpen(false)
+        break
+      case ReadyState.UNINSTANTIATED:
+        router.push('/')
+        break
+      default:
+        break
+    }
+  }, [pathname, readyState, router, setLoadingOpen, toast])
+
+  useEffect(() => {
     if (!lastMessage) {
       return
     }
@@ -76,11 +102,13 @@ const Room = ({ roomId }: Props) => {
         const payload = jsonMessage.payload
         const transformedMembers = transformMembers(payload.members ?? [])
         setMembers(transformedMembers)
-        const myEstimatedPoint =
-          String(transformedMembers.find((member) => member.id === uid)?.estimatedPoint) ?? null
+        const meData = transformedMembers.find((member) => member.id === uid)
+        setMe(meData ?? null)
+        const myEstimatedPoint = String(meData?.estimatedPoint) ?? null
         setCardChoosing(myEstimatedPoint)
         setRoomState(payload.status)
         setAveragePoints(payload.avg_point)
+        setRoomName(payload.name)
         break
       default:
         break
@@ -99,7 +127,9 @@ const Room = ({ roomId }: Props) => {
   }, [lastMessage, lastMessage?.data, roomState, router, toast, uid])
 
   useEffect(() => {
-    if (roomState === Status.None) return
+    if (roomState === Status.None || !me) return
+    console.log('🚀 ~ useEffect ~ me:', me)
+
     const interval = setInterval(() => {
       sendJsonMessage({ action: 'UPDATE_ACTIVE_USER' })
     }, 10_000)
@@ -107,7 +137,7 @@ const Room = ({ roomId }: Props) => {
     return () => {
       clearInterval(interval)
     }
-  }, [roomState, sendJsonMessage])
+  }, [me, roomState, sendJsonMessage])
 
   const getActiveStatus = (lastActiveAt: Date): ActiveStatus => {
     const secDiff = (Date.now() - lastActiveAt.getTime()) / TIME_SECOND
@@ -152,7 +182,7 @@ const Room = ({ roomId }: Props) => {
             >
               {roomState === Status.Voting ? (
                 <>
-                  <Table />
+                  <Table name={roomName} />
                   <div>
                     {members.some((member) => member.estimatedPoint >= 0) && (
                       <Button
@@ -217,6 +247,19 @@ const Room = ({ roomId }: Props) => {
       </div>
 
       <JoinRoomDialog open={openJoinRoomDialog} onClickConfirm={handleClickJoinRoom} />
+      <Dialog
+        open={openRefreshDialog}
+        title="Connection lost"
+        content="Oops! it seems like the connection was lost. Please refresh the page."
+        action={
+          <>
+            <Button variant="outline" onClick={() => router.push('/')}>
+              Home
+            </Button>
+            <Button onClick={() => window.location.reload()}>Refresh</Button>
+          </>
+        }
+      />
     </>
   )
 }
