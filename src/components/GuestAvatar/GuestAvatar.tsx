@@ -4,6 +4,7 @@ import { ActiveStatus, Props } from './types'
 import BackCard from '../BackCard'
 import FrontCard from '../FrontCard'
 import clsx from 'clsx'
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip'
 
 const GuestAvatar = ({
   name,
@@ -25,6 +26,19 @@ const GuestAvatar = ({
     }
   }
 
+  const getDetailActiveStatus = (status: ActiveStatus): string => {
+    switch (status) {
+      case ActiveStatus.Active:
+        return 'Online'
+      case ActiveStatus.Busy:
+        return 'Busy'
+      case ActiveStatus.Inactive:
+        return 'Offline'
+      default:
+        return 'N/A'
+    }
+  }
+
   return (
     <div className="flex items-center flex-col w-[80px] gap-3">
       <div className="relative">
@@ -39,7 +53,19 @@ const GuestAvatar = ({
           )}
         />
       </div>
-      <code className="relative rounded bg-muted p-1 font-mono text-sm font-semibold">{name}</code>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger>
+            <code className="relative rounded bg-muted p-1 font-mono text-sm font-semibold text-nowrap overflow-hidden overflow-ellipsis max-w-20 block">
+              {name}
+            </code>
+          </TooltipTrigger>
+          <TooltipContent side="top">
+            <p className="text-xs p-1 rounded m-1 bg-neutral-600">{`${name} (${getDetailActiveStatus(activeStatus)})`}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
       {isShowingCard && (
         <div className="w-[52px] h-[76px] hover:scale-110 hover:translate-y-1">
           {isCardReveled ? (

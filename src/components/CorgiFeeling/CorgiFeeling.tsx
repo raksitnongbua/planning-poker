@@ -6,7 +6,6 @@ export interface CorgiFeelingProps {
 }
 
 const CorgiFeeling = ({ badlyPercentage }: CorgiFeelingProps) => {
-  console.log(badlyPercentage)
   const getImagePathByPercentage = (percentage: number) => {
     if (percentage <= 20) {
       return '/images/corgi-love.png'

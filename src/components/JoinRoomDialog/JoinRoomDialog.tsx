@@ -11,8 +11,19 @@ const JoinRoomDialog = ({ open, onClickConfirm }: Props) => {
     <Dialog
       open={open}
       title="Input your name"
-      content={<Input placeholder="Your name" onChange={(e) => setName(e.target.value)} />}
-      action={<Button onClick={() => onClickConfirm(name)}>Confirm</Button>}
+      content={
+        <Input
+          type="string"
+          maxLength={20}
+          placeholder="Your name"
+          onChange={(e) => setName(e.target.value)}
+        />
+      }
+      action={
+        <Button disabled={name.trim() === ''} onClick={() => onClickConfirm(name.trim())}>
+          Confirm
+        </Button>
+      }
     />
   )
 }
