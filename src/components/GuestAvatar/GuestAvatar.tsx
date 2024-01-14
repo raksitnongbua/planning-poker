@@ -60,8 +60,8 @@ const GuestAvatar = ({
               {name}
             </code>
           </TooltipTrigger>
-          <TooltipContent side="top">
-            <p className="text-xs p-1 rounded m-1 bg-neutral-600">{`${name} (${getDetailActiveStatus(activeStatus)})`}</p>
+          <TooltipContent className="p-1 text-xs" side="top">
+            {`${name} (${getDetailActiveStatus(activeStatus)})`}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
