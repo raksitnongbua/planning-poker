@@ -1,5 +1,5 @@
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import useWebSocket, { ReadyState } from 'react-use-websocket'
 import JoinRoomDialog from '../JoinRoomDialog'
 import { Member, Props, Status } from './types'
@@ -32,6 +32,7 @@ const Room = ({ roomId }: Props) => {
   const [openRefreshDialog, setOpenRefreshDialog] = useState(false)
   const [me, setMe] = useState<Member | null>(null)
   const [isEditPointMode, setIsEditPointMode] = useState<boolean>(false)
+  const updateUserActiveRef = useRef<NodeJS.Timeout>()
 
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
@@ -125,17 +126,18 @@ const Room = ({ roomId }: Props) => {
   }, [lastMessage, lastMessage?.data, roomStatus, router, toast, uid])
 
   useEffect(() => {
-    if (roomStatus === Status.None || !me) return
+    if (roomStatus === Status.None || !me?.id || updateUserActiveRef.current) return
 
     sendJsonMessage({ action: 'UPDATE_ACTIVE_USER' })
-    const interval = setInterval(() => {
+
+    updateUserActiveRef.current = setInterval(() => {
       sendJsonMessage({ action: 'UPDATE_ACTIVE_USER' })
     }, 10_000)
 
     return () => {
-      clearInterval(interval)
+      clearInterval(updateUserActiveRef.current)
     }
-  }, [me, roomStatus, sendJsonMessage])
+  }, [roomStatus, sendJsonMessage, me?.id])
 
   return (
     <>
