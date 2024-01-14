@@ -5,15 +5,16 @@ import { useRouter } from 'next/navigation'
 
 const Navbar = () => {
   const router = useRouter()
+
   return (
-    <header className="px-2 py-1 sm:p-4 flex justify-between items-start">
+    <header className="px-2 py-1 sm:px-4 sm:pt-4 sm:-pb-2 flex justify-between items-start">
       <Image
         className="cursor-pointer"
         onClick={() => router.push('/')}
         src="/images/corgi-logo.png"
         alt="corgi-logo"
-        width={80}
-        height={80}
+        width={60}
+        height={60}
       />
       <a
         className="p-2"

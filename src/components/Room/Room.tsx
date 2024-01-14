@@ -41,6 +41,7 @@ const Room = ({ roomId }: Props) => {
   const [roomName, setRoomName] = useState<string>('')
   const [openRefreshDialog, setOpenRefreshDialog] = useState(false)
   const [me, setMe] = useState<Member | null>(null)
+  const [isEditPointMode, setIsEditPointMode] = useState<boolean>(false)
 
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
@@ -66,7 +67,6 @@ const Room = ({ roomId }: Props) => {
     })
   }
   const maxPoint = useMemo(() => Math.max(...CARD_OPTIONS), [])
-
   useEffect(() => {
     switch (readyState) {
       case ReadyState.CONNECTING:
@@ -106,7 +106,11 @@ const Room = ({ roomId }: Props) => {
         setMe(meData ?? null)
         const myEstimatedPoint = String(meData?.estimatedPoint) ?? null
         setCardChoosing(myEstimatedPoint)
-        setRoomState(payload.status)
+        const newRoomState = payload.status
+        setRoomState(newRoomState)
+        if (newRoomState === Status.Voting) {
+          setIsEditPointMode(false)
+        }
         setAveragePoints(payload.avg_point)
         setRoomName(payload.name)
         break
@@ -129,6 +133,7 @@ const Room = ({ roomId }: Props) => {
   useEffect(() => {
     if (roomState === Status.None || !me) return
 
+    sendJsonMessage({ action: 'UPDATE_ACTIVE_USER' })
     const interval = setInterval(() => {
       sendJsonMessage({ action: 'UPDATE_ACTIVE_USER' })
     }, 10_000)
@@ -219,27 +224,38 @@ const Room = ({ roomId }: Props) => {
                 </div>
               )}
             </div>
-            <div
-              data-section="room-cards"
-              className="h-36 mx-auto col-span-3 justify-center gap-2 flex flex-col"
-            >
+            <div data-section="room-cards" className="h-36 mx-auto col-span-3 gap-4 flex flex-col">
               <div className="grid grid-flow-col auto-cols-fr content-end gap-4">
-                {CARD_OPTIONS.map((label) => (
-                  <PokerCard
-                    key={`card-${label}`}
-                    label={String(label)}
-                    id={String(label)}
-                    isRevealed={[Status.RevealedCards, Status.Voting].includes(roomState)}
-                    onClick={(id) => {
-                      sendJsonMessage({
-                        action: 'UPDATE_ESTIMATED_POINT',
-                        payload: { point: Number(id) },
-                      })
-                    }}
-                    isChosen={cardChoosing === String(label)}
-                  />
-                ))}
+                {CARD_OPTIONS.map((label) => {
+                  const isRevealed = roomState === Status.Voting || isEditPointMode
+                  return (
+                    <PokerCard
+                      key={`card-${label}`}
+                      label={String(label)}
+                      id={String(label)}
+                      isRevealed={isRevealed}
+                      onClick={(id) => {
+                        sendJsonMessage({
+                          action: 'UPDATE_ESTIMATED_POINT',
+                          payload: { point: Number(id) },
+                        })
+                        setIsEditPointMode(false)
+                      }}
+                      isChosen={cardChoosing === String(label) && isRevealed}
+                    />
+                  )
+                })}
               </div>
+              {roomState === Status.RevealedCards && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-red-500 p-1 border-red-500 self-end hover:text-red-400 uppercase"
+                  onClick={() => setIsEditPointMode((preVal) => !preVal)}
+                >
+                  Flip Cards
+                </Button>
+              )}
             </div>
           </>
         )}

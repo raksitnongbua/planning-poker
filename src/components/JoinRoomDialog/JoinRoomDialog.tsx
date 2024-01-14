@@ -7,6 +7,7 @@ import { Button } from '../ui/button'
 const JoinRoomDialog = ({ open, onClickConfirm }: Props) => {
   const [name, setName] = useState('')
 
+  const isDisabled = name === ''
   return (
     <Dialog
       open={open}
@@ -16,11 +17,12 @@ const JoinRoomDialog = ({ open, onClickConfirm }: Props) => {
           type="string"
           maxLength={20}
           placeholder="Your name"
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => setName(e.target.value.trim())}
+          onKeyDown={(e) => e.code === 'Enter' && !isDisabled && onClickConfirm(name)}
         />
       }
       action={
-        <Button disabled={name.trim() === ''} onClick={() => onClickConfirm(name.trim())}>
+        <Button disabled={isDisabled} onClick={() => onClickConfirm(name)}>
           Confirm
         </Button>
       }
