@@ -1,3 +1,4 @@
+'use client'
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import useWebSocket, { ReadyState } from 'react-use-websocket'
