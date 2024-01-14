@@ -139,14 +139,13 @@ const Room = ({ roomId }: Props) => {
       clearInterval(updateUserActiveRef.current)
     }
   }, [roomStatus, sendJsonMessage, me?.id])
-
   return (
     <>
       <div className="px-2 sm:px-8 grid grid-cols-3 gap-y-2 items-start min-w-[600px]">
         <RoomMembers
           members={members}
           isCardReveled={roomStatus === Status.RevealedCards}
-          inviteLink={window.location.origin + pathname}
+          inviteLink={process.env.NEXT_PUBLIC_ORIGIN_URL + pathname}
         />
         {roomStatus !== Status.None && (
           <>
