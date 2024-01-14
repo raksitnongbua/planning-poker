@@ -14,7 +14,7 @@ const CorgiFeeling = ({ badlyPercentage }: CorgiFeelingProps) => {
     } else if (percentage <= 60) {
       return '/images/corgi-anger.png'
     } else if (percentage <= 80) {
-      return '/images/corgi-sadness.png'
+      return '/images/corgi-sad.png'
     } else {
       return '/images/corgi-dead.png'
     }
