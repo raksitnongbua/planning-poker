@@ -55,12 +55,8 @@ const Home = () => {
 
   return (
     <>
-      <header className="px-6 p-8 flex items-end gap-4 sm:px-16">
-        <Image src="/images/corgi-good.png" alt="corgi-logo" width={30} height={30} />
-        <span className="text-xl">Planning Poker</span>
-      </header>
-      <main className="p-6">
-        <div className="flex justify-center mt-6 h-full">
+      <main className="px-4">
+        <div className="flex justify-center mt-2 sm:mt-6 h-full">
           <div>
             <div className="my-5 grid gap-4 max-w-[500px]">
               <h1 className="text-6xl font-bold">Corgi Planning Poker</h1>
@@ -73,6 +69,13 @@ const Home = () => {
               Create Room
             </Button>
           </div>
+          <Image
+            src="/images/corgi-banner.png"
+            className="invisible w-0 lg:w-[600px] lg:visible"
+            alt="corgi-logo"
+            width={600}
+            height={477}
+          />
         </div>
 
         <ServiceStatus status={serviceStatus} />
