@@ -80,10 +80,6 @@ const Room = ({ roomId }: Props) => {
   }, [pathname, readyState, router, setLoadingOpen, toast])
 
   useEffect(() => {
-    router.prefetch('/')
-  }, [router])
-
-  useEffect(() => {
     if (!lastMessage) {
       return
     }
