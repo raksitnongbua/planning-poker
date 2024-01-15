@@ -29,7 +29,7 @@ const Home = () => {
       if (res.status === 200) {
         const roomId = res.data.room_id
         router.push(`/room/${roomId}`)
-      } else {
+        setIsOpenCreateRoomDialog(false)
       }
     } catch (error) {
       console.error('new room error:', error)
@@ -53,6 +53,10 @@ const Home = () => {
     checkServiceStatus()
   }, [])
 
+  const handleClickCreateRoom = () => {
+    router.prefetch('/room/ID')
+    setIsOpenCreateRoomDialog(true)
+  }
   return (
     <main className="px-4 flex flex-col h-[75vh] justify-center">
       <div className="flex justify-center items-center mt-2 sm:mt-6 h-full">
@@ -65,7 +69,7 @@ const Home = () => {
               consensus.
             </p>
           </div>
-          <Button className="w-52 h-11" onClick={() => setIsOpenCreateRoomDialog(true)}>
+          <Button className="w-52 h-11" onClick={handleClickCreateRoom}>
             Create Room
           </Button>
         </div>
