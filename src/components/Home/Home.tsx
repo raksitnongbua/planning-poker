@@ -54,7 +54,6 @@ const Home = () => {
   }, [])
 
   const handleClickCreateRoom = () => {
-    router.prefetch('/room/ID')
     setIsOpenCreateRoomDialog(true)
   }
   return (
