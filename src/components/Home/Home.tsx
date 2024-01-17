@@ -11,6 +11,8 @@ import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 import { Button } from '../ui/button'
 import { Status } from '../ServiceStatus/types'
 import ServiceStatus from '../ServiceStatus'
+import { useToast } from '../ui/use-toast'
+import { AxiosError } from 'axios'
 
 const Home = () => {
   const [isOpenCreateRoomDialog, setIsOpenCreateRoomDialog] = useState(false)
@@ -18,6 +20,7 @@ const Home = () => {
   const { setLoadingOpen } = useLoadingStore()
   const { uid } = useUserInfoStore()
   const router = useRouter()
+  const { toast } = useToast()
 
   const handleCreateRoom = async (room: RoomInfo) => {
     setLoadingOpen(true)
@@ -32,7 +35,15 @@ const Home = () => {
         setIsOpenCreateRoomDialog(false)
       }
     } catch (error) {
-      console.error('new room error:', error)
+      const axiosError = error as AxiosError
+      if (axiosError.code === 'ERR_NETWORK') {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Sorry, the service is currently unavailable. Please try again later.',
+          duration: 4000,
+        })
+      }
     }
     setLoadingOpen(false)
   }
