@@ -74,9 +74,8 @@ const Home = () => {
           <div className="my-5 grid gap-4 max-w-[500px]">
             <h1 className="text-7xl font-bold">Corgi Planning Poker</h1>
             <p className="text-md font-light">
-              Agile project management technique where team members estimate task complexity through
-              collaborative discussions and iterative refinement, using specially designed cards for
-              consensus.
+              Agile teams use this gamified technique to estimate task effort collaboratively,
+              fostering consensus and efficient planning.
             </p>
           </div>
           <Button className="w-52 h-11" onClick={handleClickCreateRoom}>
