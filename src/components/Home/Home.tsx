@@ -73,10 +73,10 @@ const Home = () => {
         <div>
           <div className="my-5 grid gap-4 max-w-[500px]">
             <h1 className="text-7xl font-bold">Corgi Planning Poker</h1>
-            <p className="text-md font-light">
+            <h2 className="text-lg font-light">
               Agile teams use this gamified technique to estimate task effort collaboratively,
               fostering consensus and efficient planning.
-            </p>
+            </h2>
           </div>
           <Button className="w-52 h-11" onClick={handleClickCreateRoom}>
             Create Room
