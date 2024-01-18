@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     locale: 'en_US',
     siteName: 'corgi-planning-poker.vercel.app',
     type: 'website',
-    images: ['/images/corgi-logo.png'],
+    images: ['https://corgi-planning-poker.vercel.app/images/corgi-logo.png'],
   },
   keywords:
     'planning poker, corgi planning poker,estimating poker, estimate points, agile, planning, Scrum poker, estimate task effort, estimating, service, room, create, efficient, consensus, fostering, agile, gamified, corgi game',
