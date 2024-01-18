@@ -11,8 +11,11 @@ import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 import { Button } from '../ui/button'
 import { Status } from '../ServiceStatus/types'
 import ServiceStatus from '../ServiceStatus'
+
 import { useToast } from '../ui/use-toast'
 import { AxiosError } from 'axios'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faClockRotateLeft } from '@fortawesome/free-solid-svg-icons'
 
 const Home = () => {
   const [isOpenCreateRoomDialog, setIsOpenCreateRoomDialog] = useState(false)
@@ -78,9 +81,20 @@ const Home = () => {
               fostering consensus and efficient planning.
             </h2>
           </div>
-          <Button className="w-52 h-11" onClick={handleClickCreateRoom}>
-            Create Room
-          </Button>
+
+          <div className="flex gap-2">
+            <Button className="w-52 h-11" onClick={handleClickCreateRoom}>
+              Create Room
+            </Button>
+            <Button
+              variant="secondary"
+              size="icon"
+              className="size-11"
+              onClick={() => router.push('/recent-rooms')}
+            >
+              <FontAwesomeIcon icon={faClockRotateLeft} className="size-5" />
+            </Button>
+          </div>
         </div>
         <Image
           src="/images/corgi-banner.png"
