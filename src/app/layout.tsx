@@ -9,6 +9,14 @@ import { Analytics } from '@vercel/analytics/react'
 const coda = Coda({ weight: '400', display: 'swap', subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  verification: {
+    google: 'gPypTdWFwPXznnMm9vXjsR0CVA_-qx-JjzBSky6CgLY',
+  },
+  authors: {
+    name: 'Raksit Nongbua',
+  },
+  applicationName: 'Corgi Planning Poker',
+
   title: 'Corgi Planning Poker | Make Estimating Agile Projects',
   description: `Agile teams use this gamified technique to estimate task effort collaboratively,
   fostering consensus and efficient planning.`,
@@ -19,21 +27,15 @@ export const metadata: Metadata = {
     locale: 'en_US',
     siteName: 'corgi-planning-poker.vercel.app',
     type: 'website',
+    images: ['https://corgi-planning-poker.vercel.app/images/corgi-logo.png'],
   },
   keywords:
-    'planning poker, corgi planning poker,estimating poker, estimate points, agile, planning, Scrum poker, estimate task effort, estimating, service, room, create, efficient, consensus, fostering, agile, gamified',
+    'planning poker, corgi planning poker,estimating poker, estimate points, agile, planning, Scrum poker, estimate task effort, estimating, service, room, create, efficient, consensus, fostering, agile, gamified, corgi game',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
-      <head>
-        <meta
-          name="google-site-verification"
-          content="DXrV5U7unID-E-I0UuoEMG_HupQaJbUrwhwTPMOTE54"
-        />
-        <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
-      </head>
       <body className={coda.className}>
         <Navbar />
         <Layout>{children}</Layout>
