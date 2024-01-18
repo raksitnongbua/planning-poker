@@ -10,6 +10,9 @@ import Head from 'next/head'
 const coda = Coda({ weight: '400', display: 'swap', subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  verification: {
+    google: 'gPypTdWFwPXznnMm9vXjsR0CVA_-qx-JjzBSky6CgLY',
+  },
   title: 'Corgi Planning Poker | Make Estimating Agile Projects',
   description: `Agile teams use this gamified technique to estimate task effort collaboratively,
   fostering consensus and efficient planning.`,
@@ -28,13 +31,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
-      <Head>
-        <meta
-          name="google-site-verification"
-          content="gPypTdWFwPXznnMm9vXjsR0CVA_-qx-JjzBSky6CgLY"
-        />
-        <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
-      </Head>
       <body className={coda.className}>
         <Navbar />
         <Layout>{children}</Layout>
