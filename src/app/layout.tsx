@@ -16,11 +16,7 @@ export const metadata: Metadata = {
     name: 'Raksit Nongbua',
   },
   applicationName: 'Corgi Planning Poker',
-  icons: {
-    icon: 'https://corgi-planning-poker.vercel.app/_next/image?url=%2Fimages%2Fcorgi-logo.png&w=128&q=75',
-    apple:
-      'https://corgi-planning-poker.vercel.app/_next/image?url=%2Fimages%2Fcorgi-logo.png&w=128&q=75',
-  },
+
   title: 'Corgi Planning Poker | Make Estimating Agile Projects',
   description: `Agile teams use this gamified technique to estimate task effort collaboratively,
   fostering consensus and efficient planning.`,
@@ -31,6 +27,7 @@ export const metadata: Metadata = {
     locale: 'en_US',
     siteName: 'corgi-planning-poker.vercel.app',
     type: 'website',
+    images: ['/images/corgi-logo.png'],
   },
   keywords:
     'planning poker, corgi planning poker,estimating poker, estimate points, agile, planning, Scrum poker, estimate task effort, estimating, service, room, create, efficient, consensus, fostering, agile, gamified, corgi game',
