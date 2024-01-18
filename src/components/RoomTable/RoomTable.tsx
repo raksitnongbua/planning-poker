@@ -30,7 +30,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
     >
       {status === Status.Voting ? (
         <>
-          <Table name={roomName}></Table>
+          <Table name={roomName} />
           <div>
             {isRevealable && (
               <Button

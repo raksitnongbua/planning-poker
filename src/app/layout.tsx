@@ -6,6 +6,9 @@ import { Toaster } from '@/components/ui/toaster'
 import Navbar from '@/components/Navbar'
 import { Analytics } from '@vercel/analytics/react'
 
+import { config } from '@fortawesome/fontawesome-svg-core'
+config.autoAddCss = false
+
 const coda = Coda({ weight: '400', display: 'swap', subsets: ['latin'] })
 
 export const metadata: Metadata = {
