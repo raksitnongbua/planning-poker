@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       '/images/corgi-planning-poker-preview.png',
-      '/images/corgi-planning-poker-room-preview',
+      '/images/corgi-planning-poker-room-preview.png',
     ],
   },
   keywords:
