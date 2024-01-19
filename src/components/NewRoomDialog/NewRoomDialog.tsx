@@ -4,7 +4,7 @@ import Dialog from '../common/Dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '../ui/button'
 
-const CreateRoomDIalog = ({ open, onClose, onCreate }: Props) => {
+const NewRoomDialog = ({ open, onClose, onCreate }: Props) => {
   const [roomName, setRoomName] = useState<string>('')
 
   const handleCreateRoom = () => {
@@ -40,4 +40,4 @@ const CreateRoomDIalog = ({ open, onClose, onCreate }: Props) => {
   )
 }
 
-export default CreateRoomDIalog
+export default NewRoomDialog
