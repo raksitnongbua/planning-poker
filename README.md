@@ -2,7 +2,7 @@
 
 Welcome to the Corgi Planning Poker Online project repository! This delightful web application, built with [Next.js](https://nextjs.org/), features a charming corgi mascot and utilizes Vercel for effortless frontend deployment. Dive into the world of agile planning while learning about websockets, all powered by the Golang backend known as the "Planning Poker Service."
 
-[Website](https://corgi-planning-poker.vercel.app/)
+[Website](https://www.corgiplanningpoker.com/)
 
 ## Features
 
