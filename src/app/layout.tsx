@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     description: `Agile teams use this gamified technique to estimate task effort collaboratively,
     fostering consensus and efficient planning.`,
     locale: 'en_US',
-    siteName: 'corgi-planning-poker.vercel.app',
+    siteName: 'www.corgiplanningpoker.com/',
     type: 'website',
     images: [
       '/images/corgi-planning-poker-preview.png',
