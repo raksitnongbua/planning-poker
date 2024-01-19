@@ -52,7 +52,12 @@ const RoomHistory: React.FC<RoomHistoryProps> = ({ onClickJoinRoom, rooms }) => 
               <TableCell className="text-right">{room.updatedAt.toLocaleString()}</TableCell>
               <TableCell className="text-right">{room.createdAt.toLocaleString()}</TableCell>
               <TableCell className="text-right">
-                <Button size="icon" onClick={handleClickJoinRoom(room.id)}>
+                <Button
+                  size="icon"
+                  id="join-recent-room"
+                  aria-label="Join recent room"
+                  onClick={handleClickJoinRoom(room.id)}
+                >
                   <FontAwesomeIcon icon={faRightFromBracket} />
                 </Button>
               </TableCell>
