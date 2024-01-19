@@ -31,15 +31,26 @@ export const metadata: Metadata = {
   authors: {
     name: 'Raksit Nongbua',
   },
+  icons: {
+    icon: [
+      '/favicon-16x16.ico',
+      '/favicon-32x32.ico',
+      '/favicon-60x60.ico',
+      '/favicon-128x128.ico',
+      '/favicon-160x160.ico',
+      '/favicon-180x180.ico',
+      '/favicon.ico',
+    ],
+  },
   applicationName: 'Corgi Planning Poker',
   title: {
-    default: 'Corgi Planning Poker | Make Estimating Agile Projects',
+    default: 'Corgi Planning Poker',
     template: 'Corgi Planning Poker | %s',
   },
   description: `Agile teams use this gamified technique to estimate task effort collaboratively,
   fostering consensus and efficient planning.`,
   openGraph: {
-    title: 'Corgi Planning Poker | Make Estimating Agile Projects',
+    title: 'Corgi Planning Poker',
     description: `Agile teams use this gamified technique to estimate task effort collaboratively,
     fostering consensus and efficient planning.`,
     locale: 'en_US',
