@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://corgi-planning-poker.vercel.app/sitemap.xml',
+    sitemap: 'https://www.corgiplanningpoker.com/sitemap.xml',
   }
 }

@@ -12,7 +12,7 @@ config.autoAddCss = false
 const coda = Coda({ weight: '400', display: 'swap', subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://corgi-planning-poker.vercel.app'),
+  metadataBase: new URL('https://www.corgiplanningpoker.com'),
   alternates: {
     canonical: '/',
   },
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
     ],
   },
   keywords:
-    'planning poker, corgi planning poker,estimating poker, estimate points, agile, planning, Scrum poker, estimate task effort, estimating, service, room, create, efficient, consensus, fostering, agile, gamified, corgi game, planningpoker, nextjs',
+    'planning poker, corgi planning poker,estimating poker, estimate points, agile, planning, Scrum poker, estimate task effort, estimating, service, room, create, efficient, consensus, fostering, agile, gamified, corgi game, planningpoker, nextjs, corgiplanningpoker',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
