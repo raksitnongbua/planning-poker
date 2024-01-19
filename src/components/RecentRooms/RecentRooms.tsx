@@ -20,6 +20,7 @@ const RecentRooms = () => {
   const { toast } = useToast()
 
   const transformRoom = (data: any): Room[] => {
+    if (!data) return []
     const rooms: Room[] = data.map((room: any) => ({
       id: room.id,
       createdAt: new Date(room.created_at),
