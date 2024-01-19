@@ -48,7 +48,7 @@ const RecentRooms = () => {
 
   return (
     <main className="px-2 sm:px-8 gap-y-2 items-start max-w-screen-lg mx-auto flex flex-col justify-center">
-      <h2 className="text-2xl">RecentRooms</h2>
+      <h2 className="text-2xl">Recent Rooms</h2>
       <RoomHistory rooms={rooms} onClickJoinRoom={handleClickJoinRoom} />
     </main>
   )
