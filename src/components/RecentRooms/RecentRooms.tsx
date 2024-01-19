@@ -87,6 +87,7 @@ const RecentRooms = () => {
   }
   return (
     <main className="px-2 sm:px-8 gap-y-2 items-start max-w-screen-lg mx-auto flex flex-col justify-center">
+
       <div className="flex justify-between w-full">
         <h2 className="text-2xl">Recent Rooms</h2>
         <Button onClick={() => setOpenNewRoomDialog(true)} variant="outline">
