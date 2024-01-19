@@ -45,7 +45,10 @@ export const metadata: Metadata = {
     locale: 'en_US',
     siteName: 'corgi-planning-poker.vercel.app',
     type: 'website',
-    images: ['/images/Bitkub-Thailand-Cryptocurrency-Bitcoin-Exchange.jpg'],
+    images: [
+      '/images/corgi-planning-poker-preview.png',
+      '/images/corgi-planning-poker-room-preview',
+    ],
   },
   keywords:
     'planning poker, corgi planning poker,estimating poker, estimate points, agile, planning, Scrum poker, estimate task effort, estimating, service, room, create, efficient, consensus, fostering, agile, gamified, corgi game, planningpoker, nextjs',
