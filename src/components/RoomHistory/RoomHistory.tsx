@@ -12,7 +12,7 @@ import {
 import { Button } from '../ui/button'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
-
+import { format } from "date-fns";
 export interface Room {
   id: string
   createdAt: Date
@@ -33,7 +33,7 @@ const RoomHistory: React.FC<RoomHistoryProps> = ({ onClickJoinRoom, rooms }) => 
 
   return (
     <Table>
-      {isNotFoundData && <TableCaption>Not found your recent rooms.</TableCaption>}
+      {isNotFoundData && <TableCaption>Your recent rooms could not be found.</TableCaption>}
       <TableHeader>
         <TableRow>
           <TableHead className="">Name</TableHead>
@@ -49,8 +49,8 @@ const RoomHistory: React.FC<RoomHistoryProps> = ({ onClickJoinRoom, rooms }) => 
             <TableRow key={room.id}>
               <TableCell className="font-medium">{room.name}</TableCell>
               <TableCell className="text-center">{room.totalMembers}</TableCell>
-              <TableCell className="text-right">{room.updatedAt.toLocaleString()}</TableCell>
-              <TableCell className="text-right">{room.createdAt.toLocaleString()}</TableCell>
+              <TableCell className="text-right">{format(room.updatedAt,"eee dd-MMM-yyyy HH:mm")}</TableCell>
+              <TableCell className="text-right">{format(room.createdAt,"eee dd-MMM-yyyy HH:mm")}</TableCell>
               <TableCell className="text-right">
                 <Button
                   size="icon"
