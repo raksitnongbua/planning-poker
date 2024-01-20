@@ -8,6 +8,9 @@ interface Props {
 
 export const metadata: Metadata = {
   title: 'Room',
+  alternates: {
+    canonical: '/room',
+  },
   openGraph: {
     title: 'Corgi Planning Poker | Room',
     description: `Agile teams use this gamified technique to estimate task effort collaboratively,
