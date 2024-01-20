@@ -24,7 +24,7 @@ To get started with this project, follow the steps below.
 Install the project dependencies:
 
 ```bash
-yarn install
+pnpm install
 ```
 
 ### Development
@@ -32,7 +32,7 @@ yarn install
 To run the development server, execute the following command:
 
 ```bash
-yarn dev
+pnpm dev
 ```
 
 ## Contributing
