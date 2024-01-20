@@ -1,4 +1,5 @@
 'use client'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { getCookie, hasCookie, setCookie } from 'cookies-next'
 import React, { ReactNode, useEffect } from 'react'
 
@@ -33,10 +34,10 @@ const Layout = ({ children }: { children: ReactNode }) => {
   }, [isLoading, setLoadingOpen])
 
   return (
-    <>
+    <QueryClientProvider client={new QueryClient()}>
       {children}
       <Loading open={isLoadingOpen} />
-    </>
+    </QueryClientProvider>
   )
 }
 

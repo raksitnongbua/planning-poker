@@ -1,12 +1,13 @@
 'use client'
 import { faRotateRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useMutation } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 
 import { useUserInfoStore } from '@/store/zustand'
-import { httpClient } from '@/utils/httpClient'
+import { mutationFn } from '@/utils/httpClient'
 
 import { Button } from '../ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card'
@@ -18,20 +19,14 @@ const NewRoom = ({}) => {
   const { uid } = useUserInfoStore()
   const { toast } = useToast()
   const router = useRouter()
-  const [isCreatingNewRoom, setIsCreatingNewRoom] = useState<boolean>(false)
 
-  const handleClickCreateRoom = async () => {
-    setIsCreatingNewRoom(true)
-    try {
-      const res = await httpClient.post('/api/v1/new-room', {
-        room_name: roomName,
-        hosting_id: uid,
-      })
-      if (res.status === 200) {
-        const roomId = res.data.room_id
-        router.push(`/room/${roomId}`)
-      }
-    } catch (error) {
+  const { mutate, isPending } = useMutation<{ room_id: string }, unknown, Record<string, unknown>>({
+    mutationFn: mutationFn('/api/v1/new-room'),
+    onSuccess(data) {
+      const roomId = data.room_id
+      router.push(`/room/${roomId}`)
+    },
+    onError(error) {
       const axiosError = error as AxiosError
       if (axiosError.code === 'ERR_NETWORK') {
         toast({
@@ -41,8 +36,14 @@ const NewRoom = ({}) => {
           duration: 4000,
         })
       }
-      setIsCreatingNewRoom(false)
-    }
+    },
+  })
+
+  const createRoom = () => {
+    mutate({
+      room_name: roomName,
+      hosting_id: uid,
+    })
   }
 
   return (
@@ -56,20 +57,13 @@ const NewRoom = ({}) => {
             maxLength={25}
             placeholder="Room Name"
             onChange={(e) => setRoomName(e.target.value)}
-            disabled={isCreatingNewRoom}
-            onKeyDown={(e) => e.code === 'Enter' && !isCreatingNewRoom && handleClickCreateRoom()}
+            disabled={isPending}
+            onKeyDown={(e) => e.code === 'Enter' && !isPending && createRoom()}
           />
         </CardContent>
         <CardFooter>
-          <Button
-            size="lg"
-            className="w-full gap-2"
-            onClick={handleClickCreateRoom}
-            disabled={isCreatingNewRoom}
-          >
-            {isCreatingNewRoom && (
-              <FontAwesomeIcon icon={faRotateRight} className="size-5 animate-spin" />
-            )}
+          <Button size="lg" className="w-full gap-2" onClick={createRoom} disabled={isPending}>
+            {isPending && <FontAwesomeIcon icon={faRotateRight} className="size-5 animate-spin" />}
             Create Room
           </Button>
         </CardFooter>
