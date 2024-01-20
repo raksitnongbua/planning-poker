@@ -46,6 +46,8 @@ const Home = () => {
               variant="secondary"
               size="icon"
               className="size-11"
+              id="button-recent-rooms"
+              aria-label="Recent Rooms"
               onClick={() => router.push('/recent-rooms')}
             >
               <FontAwesomeIcon icon={faClockRotateLeft} className="size-5" />
