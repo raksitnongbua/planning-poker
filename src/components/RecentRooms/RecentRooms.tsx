@@ -1,25 +1,49 @@
 'use client'
 import { AxiosError } from 'axios'
 import { useRouter } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 
+import { useCustomSWR } from '@/lib/swr'
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
-import { httpClient } from '@/utils/httpClient'
 
-import NewRoomDialog from '../NewRoomDialog'
-import { RoomInfo } from '../NewRoomDialog/types'
 import { RoomHistory } from '../RoomHistory'
 import { Room } from '../RoomHistory/RoomHistory'
 import { Button } from '../ui/button'
+import { ToastAction } from '../ui/toast'
 import { useToast } from '../ui/use-toast'
 
 const RecentRooms = () => {
-  const [rooms, setRooms] = useState<Room[]>([])
-  const [openNewRoomDialog, setOpenNewRoomDialog] = useState<boolean>(false)
   const { uid } = useUserInfoStore()
   const { setLoadingOpen } = useLoadingStore()
   const router = useRouter()
   const { toast } = useToast()
+
+  const handleError = (err: AxiosError<unknown, any>) => {
+    if (!err) {
+      return
+    }
+    const errorMessage = err.message
+    toast({
+      variant: 'destructive',
+      title: 'Error',
+      description: errorMessage,
+      duration: 4000,
+      action: (
+        <ToastAction altText={'Retry fetch recent rooms'} onClick={() => mutate()}>
+          Retry
+        </ToastAction>
+      ),
+    })
+  }
+
+  const { data, isLoading, mutate } = useCustomSWR(
+    { url: `/api/v1/room/recent-rooms/${uid}` },
+    {
+      revalidateOnMount: Boolean(uid),
+      shouldRetryOnError: false,
+      onError: handleError,
+    }
+  )
 
   const transformRoom = (data: any): Room[] => {
     if (!data) return []
@@ -35,73 +59,24 @@ const RecentRooms = () => {
   }
 
   useEffect(() => {
-    if (!uid) return
-    const fetchRooms = async () => {
-      try {
-        setLoadingOpen(true)
-        const res = await httpClient.get(`/api/v1/room/recent-rooms/${uid}`)
-        if (res.status === 200) {
-          const newRooms = transformRoom(res.data.data)
-          setRooms(newRooms)
-        }
-      } catch (error) {
-        const errorMessage = (error as AxiosError).message
+    setLoadingOpen(isLoading)
+  }, [isLoading, setLoadingOpen])
 
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: errorMessage,
-          duration: 4000,
-        })
-      }
-      setLoadingOpen(false)
-    }
-    fetchRooms()
-  }, [setLoadingOpen, toast, uid])
+  const transformedRooms = transformRoom(data?.data)
 
   const handleClickJoinRoom = (roomId: string) => {
     router.push(`/room/${roomId}`)
   }
 
-  const handleClickNewRoom = async (room: RoomInfo) => {
-    setLoadingOpen(true)
-    try {
-      const res = await httpClient.post('/api/v1/new-room', {
-        room_name: room.name,
-        hosting_id: uid,
-      })
-      if (res.status === 200) {
-        const roomId = res.data.room_id
-        router.push(`/room/${roomId}`)
-        setOpenNewRoomDialog(false)
-      }
-    } catch (error) {
-      const axiosError = error as AxiosError
-      if (axiosError.code === 'ERR_NETWORK') {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Sorry, the service is currently unavailable. Please try again later.',
-          duration: 4000,
-        })
-      }
-    }
-    setLoadingOpen(false)
-  }
   return (
     <main className="mx-auto flex max-w-screen-lg flex-col items-start justify-center gap-y-2 px-2 sm:px-8">
       <div className="flex w-full justify-between">
         <h2 className="text-2xl">Recent Rooms</h2>
-        <Button onClick={() => setOpenNewRoomDialog(true)} variant="outline">
+        <Button onClick={() => router.push('new-room')} variant="outline">
           New Room
         </Button>
       </div>
-      <RoomHistory rooms={rooms} onClickJoinRoom={handleClickJoinRoom} />
-      <NewRoomDialog
-        open={openNewRoomDialog}
-        onClose={() => setOpenNewRoomDialog(false)}
-        onCreate={handleClickNewRoom}
-      />
+      <RoomHistory rooms={transformedRooms} onClickJoinRoom={handleClickJoinRoom} />
     </main>
   )
 }

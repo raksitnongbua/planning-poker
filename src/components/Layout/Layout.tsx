@@ -1,7 +1,6 @@
 'use client'
 import { getCookie, hasCookie, setCookie } from 'cookies-next'
 import React, { ReactNode, useEffect } from 'react'
-import { SWRConfig } from 'swr'
 
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 import { httpClient } from '@/utils/httpClient'
@@ -34,10 +33,10 @@ const Layout = ({ children }: { children: ReactNode }) => {
   }, [setLoadingOpen, setUid])
 
   return (
-    <SWRConfig value={{ provider: () => new Map() }}>
+    <>
       {children}
       <Loading open={isLoadingOpen} />
-    </SWRConfig>
+    </>
   )
 }
 

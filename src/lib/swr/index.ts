@@ -6,4 +6,4 @@ import { httpClient } from '@/utils/httpClient'
 const fetcher = ({ ...args }) => httpClient({ ...args }).then((res) => res.data)
 
 export const useCustomSWR = (key: Key | AxiosRequestConfig, options?: SWRConfiguration) =>
-  SWR(key, fetcher, options)
+  SWR(key, fetcher, { revalidateOnFocus: false, ...options })
