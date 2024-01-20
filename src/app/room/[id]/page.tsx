@@ -1,6 +1,7 @@
-import RoomComponent from '@/components/Room'
 import { Metadata } from 'next'
 import React from 'react'
+
+import RoomComponent from '@/components/Room'
 
 interface Props {
   params: { id: string }

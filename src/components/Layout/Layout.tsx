@@ -1,10 +1,9 @@
 'use client'
 import { getCookie, hasCookie, setCookie } from 'cookies-next'
 import React, { ReactNode, useEffect } from 'react'
-import { SWRConfig } from 'swr'
 
+import { useCustomSWR } from '@/lib/swr'
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
-import { httpClient } from '@/utils/httpClient'
 
 import Loading from '../Loading'
 
@@ -14,30 +13,30 @@ const Layout = ({ children }: { children: ReactNode }) => {
   const { setUid } = useUserInfoStore()
   const { open: isLoadingOpen, setLoadingOpen } = useLoadingStore()
 
-  useEffect(() => {
-    if (hasCookie(UID_COOKIE_KEY)) {
-      setUid(getCookie(UID_COOKIE_KEY) ?? '')
-    } else {
-      const signIn = async () => {
-        setLoadingOpen(true)
-        try {
-          const res = await httpClient.get('/api/v1/guest/sign-in')
-          setCookie(UID_COOKIE_KEY, res.data.uuid)
-          setUid(res.data.uuid)
-        } catch (error) {
-          console.error('Guest sign in error:', error)
-        }
-        setLoadingOpen(false)
-      }
-      signIn()
+  const { data, isLoading } = useCustomSWR(
+    { url: '/api/v1/guest/sign-in' },
+    {
+      revalidateOnMount: !hasCookie(UID_COOKIE_KEY),
+      fallbackData: { uuid: getCookie(UID_COOKIE_KEY) },
     }
-  }, [setLoadingOpen, setUid])
+  )
+
+  useEffect(() => {
+    if (!hasCookie(UID_COOKIE_KEY)) {
+      setCookie(UID_COOKIE_KEY, data.uuid)
+    }
+    setUid(data.uuid)
+  }, [data.uuid, setUid])
+
+  useEffect(() => {
+    setLoadingOpen(isLoading)
+  }, [isLoading, setLoadingOpen])
 
   return (
-    <SWRConfig value={{ provider: () => new Map() }}>
+    <>
       {children}
       <Loading open={isLoadingOpen} />
-    </SWRConfig>
+    </>
   )
 }
 

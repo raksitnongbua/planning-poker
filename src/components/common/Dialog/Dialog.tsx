@@ -1,13 +1,15 @@
 import React from 'react'
+
 import {
   Dialog as RootDialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from '@/components/ui/dialog'
+
 import { Props } from './types'
 
 const Dialog = ({ open, onOpenChange, title, content, action }: Props) => {

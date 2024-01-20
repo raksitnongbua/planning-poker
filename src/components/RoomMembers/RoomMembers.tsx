@@ -1,10 +1,11 @@
 'use client'
 import React from 'react'
+
 import GuestAvatar from '../GuestAvatar'
-import { Member } from '../Room/types'
-import { InviteButton } from '../InviteButton'
-import { toast } from '../ui/use-toast'
 import { ActiveStatus } from '../GuestAvatar/types'
+import { InviteButton } from '../InviteButton'
+import { Member } from '../Room/types'
+import { toast } from '../ui/use-toast'
 
 export interface RoomMembersProps {
   members: Member[]

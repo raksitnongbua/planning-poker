@@ -1,11 +1,13 @@
+import clsx from 'clsx'
 import React from 'react'
+import ReactCardFlip from 'react-card-flip'
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ActiveStatus, Props } from './types'
+
 import BackCard from '../BackCard'
 import FrontCard from '../FrontCard'
-import clsx from 'clsx'
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip'
-import ReactCardFlip from 'react-card-flip'
+import { Tooltip, TooltipContent,TooltipProvider, TooltipTrigger } from '../ui/tooltip'
+import { ActiveStatus, Props } from './types'
 
 const GuestAvatar = ({
   name,

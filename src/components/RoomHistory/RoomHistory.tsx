@@ -1,5 +1,9 @@
 'use client'
+import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { format } from "date-fns";
 import React from 'react'
+
 import {
   Table,
   TableBody,
@@ -9,10 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+
 import { Button } from '../ui/button'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
-import { format } from "date-fns";
 export interface Room {
   id: string
   createdAt: Date

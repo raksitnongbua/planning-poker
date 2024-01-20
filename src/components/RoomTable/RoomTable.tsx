@@ -1,8 +1,9 @@
 import React from 'react'
+
 import CorgiFeeling from '../CorgiFeeling'
+import { Status } from '../Room/types'
 import { Table } from '../Table'
 import { Button } from '../ui/button'
-import { Status } from '../Room/types'
 
 export interface RoomTableProps {
   averagePoint: number

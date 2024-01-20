@@ -38,7 +38,6 @@ const Home = () => {
               fostering consensus and efficient planning.
             </h2>
           </div>
-
           <div className="flex gap-2">
             <Button className="h-11 w-52" onClick={() => router.push('/new-room')}>
               Create Room
@@ -57,6 +56,7 @@ const Home = () => {
           src="/images/corgi-banner.png"
           className="invisible w-0 lg:visible lg:h-[477px] lg:w-[600px]"
           alt="corgi-logo"
+          priority
           width={600}
           height={477}
         />

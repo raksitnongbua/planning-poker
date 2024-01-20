@@ -6,5 +6,6 @@
     "tailwindcss",
     "UNINSTANTIATED",
     "zustand"
-  ]
+  ],
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

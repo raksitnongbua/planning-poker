@@ -1,6 +1,7 @@
 import { Transition } from '@headlessui/react'
-import React, { Fragment } from 'react'
 import Lottie from 'lottie-react'
+import React, { Fragment } from 'react'
+
 import loadingAnim from './loading.json'
 
 const Loading = ({ open }: { open: boolean }) => {
