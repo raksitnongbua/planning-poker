@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
-import { Props } from './types'
-import Dialog from '../common/Dialog'
+
 import { Input } from '@/components/ui/input'
+
+import Dialog from '../common/Dialog'
 import { Button } from '../ui/button'
+import { Props } from './types'
 
 const NewRoomDialog = ({ open, onClose, onCreate }: Props) => {
   const [roomName, setRoomName] = useState<string>('')

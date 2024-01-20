@@ -1,10 +1,10 @@
 import React from 'react'
-import { PokerCardProps } from './types'
-
+import ReactCardFlip from 'react-card-flip'
 import { twMerge } from 'tailwind-merge'
+
 import BackCard from '../BackCard'
 import FrontCard from '../FrontCard'
-import ReactCardFlip from 'react-card-flip'
+import { PokerCardProps } from './types'
 
 const PokerCard = (props: PokerCardProps) => {
   const { label, onClick, value, isRevealed, isChosen } = props

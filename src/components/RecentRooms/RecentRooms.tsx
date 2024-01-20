@@ -1,15 +1,17 @@
 'use client'
-import React, { useEffect, useState } from 'react'
-import { RoomHistory } from '../RoomHistory'
-import { httpClient } from '@/utils/httpClient'
-import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
-import { Room } from '../RoomHistory/RoomHistory'
-import { useRouter } from 'next/navigation'
-import { Button } from '../ui/button'
-import { useToast } from '../ui/use-toast'
 import { AxiosError } from 'axios'
+import { useRouter } from 'next/navigation'
+import React, { useEffect, useState } from 'react'
+
+import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
+import { httpClient } from '@/utils/httpClient'
+
 import NewRoomDialog from '../NewRoomDialog'
 import { RoomInfo } from '../NewRoomDialog/types'
+import { RoomHistory } from '../RoomHistory'
+import { Room } from '../RoomHistory/RoomHistory'
+import { Button } from '../ui/button'
+import { useToast } from '../ui/use-toast'
 
 const RecentRooms = () => {
   const [rooms, setRooms] = useState<Room[]>([])
@@ -87,8 +89,8 @@ const RecentRooms = () => {
     setLoadingOpen(false)
   }
   return (
-    <main className="px-2 sm:px-8 gap-y-2 items-start max-w-screen-lg mx-auto flex flex-col justify-center">
-      <div className="flex justify-between w-full">
+    <main className="mx-auto flex max-w-screen-lg flex-col items-start justify-center gap-y-2 px-2 sm:px-8">
+      <div className="flex w-full justify-between">
         <h2 className="text-2xl">Recent Rooms</h2>
         <Button onClick={() => setOpenNewRoomDialog(true)} variant="outline">
           New Room

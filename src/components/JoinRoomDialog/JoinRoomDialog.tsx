@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
+
 import Dialog from '@/components/common/Dialog'
-import { Props } from './types'
-import { Input } from '../ui/input'
+
 import { Button } from '../ui/button'
+import { Input } from '../ui/input'
+import { Props } from './types'
 
 const JoinRoomDialog = ({ open, onClickConfirm }: Props) => {
   const [name, setName] = useState('')
