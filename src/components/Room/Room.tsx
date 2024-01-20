@@ -1,17 +1,18 @@
 'use client'
-import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
+import { usePathname, useRouter } from 'next/navigation'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import useWebSocket, { ReadyState } from 'react-use-websocket'
-import JoinRoomDialog from '../JoinRoomDialog'
-import { Member, Props, Status } from './types'
-import { Button } from '../ui/button'
 
-import { usePathname, useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/use-toast'
+import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
+
 import Dialog from '../common/Dialog'
+import JoinRoomDialog from '../JoinRoomDialog'
+import RoomCards from '../RoomCards'
 import RoomMembers from '../RoomMembers'
 import RoomTable from '../RoomTable'
-import RoomCards from '../RoomCards'
+import { Button } from '../ui/button'
+import { Member, Props, Status } from './types'
 
 const CARD_OPTIONS = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6]
 
@@ -137,7 +138,7 @@ const Room = ({ roomId }: Props) => {
   }, [roomStatus, sendJsonMessage, me?.id])
   return (
     <>
-      <div className="px-2 sm:px-8 grid grid-cols-3 gap-y-2 items-start min-w-[600px]">
+      <div className="grid min-w-[600px] grid-cols-3 items-start gap-y-2 px-2 sm:px-8">
         <RoomMembers
           members={members}
           isCardReveled={roomStatus === Status.RevealedCards}
@@ -174,7 +175,7 @@ const Room = ({ roomId }: Props) => {
             />
           </>
         )}
-        <p className="text-xs text-muted-foreground fixed bottom-2 right-2">
+        <p className="fixed bottom-2 right-2 text-xs text-muted-foreground">
           The WebSocket is currently {connectionStatus}
         </p>
       </div>

@@ -1,18 +1,20 @@
-import type { Metadata } from 'next'
-import { Coda } from 'next/font/google'
 import './globals.css'
-import Layout from '@/components/Layout'
-import { Toaster } from '@/components/ui/toaster'
-import Navbar from '@/components/Navbar'
-import { Analytics } from '@vercel/analytics/react'
 
 import { config } from '@fortawesome/fontawesome-svg-core'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+import type { Metadata } from 'next'
+import { Coda } from 'next/font/google'
+
+import Layout from '@/components/Layout'
+import Navbar from '@/components/Navbar'
+import { Toaster } from '@/components/ui/toaster'
 config.autoAddCss = false
 
 const coda = Coda({ weight: '400', display: 'swap', subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://corgi-planning-poker.vercel.app'),
+  metadataBase: new URL('https://www.corgiplanningpoker.com'),
   alternates: {
     canonical: '/',
   },
@@ -54,15 +56,15 @@ export const metadata: Metadata = {
     description: `Agile teams use this gamified technique to estimate task effort collaboratively,
     fostering consensus and efficient planning.`,
     locale: 'en_US',
-    siteName: 'corgi-planning-poker.vercel.app',
+    siteName: 'www.corgiplanningpoker.com',
     type: 'website',
     images: [
       '/images/corgi-planning-poker-preview.png',
-      '/images/corgi-planning-poker-room-preview',
+      '/images/corgi-planning-poker-room-preview.png',
     ],
   },
   keywords:
-    'planning poker, corgi planning poker,estimating poker, estimate points, agile, planning, Scrum poker, estimate task effort, estimating, service, room, create, efficient, consensus, fostering, agile, gamified, corgi game, planningpoker, nextjs',
+    'planning poker, corgi planning poker,estimating poker, estimate points, agile, planning, scrum poker, estimate task effort, estimating, service, room, create, efficient, consensus, fostering, agile, gamified, corgi game, planningpoker, nextjs, corgiplanningpoker, story points estimates',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -71,6 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={coda.className}>
         <Navbar />
         <Layout>{children}</Layout>
+        <SpeedInsights />
         <Analytics />
         <Toaster />
       </body>

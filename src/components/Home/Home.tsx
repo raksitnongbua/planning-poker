@@ -1,80 +1,37 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import { faClockRotateLeft } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import React, { useEffect } from 'react'
 
-import { RoomInfo } from '../NewRoomDialog/types'
-import NewRoomDialog from '../NewRoomDialog'
-import { httpClient } from '@/utils/httpClient'
-import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
-import { Button } from '../ui/button'
-import { Status } from '../ServiceStatus/types'
+import { useCustomSWR } from '@/lib/swr'
+import { TO_SECONDS } from '@/utils/time'
+
 import ServiceStatus from '../ServiceStatus'
-
-import { useToast } from '../ui/use-toast'
-import { AxiosError } from 'axios'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faClockRotateLeft } from '@fortawesome/free-solid-svg-icons'
+import { Button } from '../ui/button'
 
 const Home = () => {
-  const [isOpenCreateRoomDialog, setIsOpenCreateRoomDialog] = useState(false)
-  const [serviceStatus, setServiceStatus] = useState<Status>('connecting')
-  const { setLoadingOpen } = useLoadingStore()
-  const { uid } = useUserInfoStore()
   const router = useRouter()
-  const { toast } = useToast()
 
-  const handleCreateRoom = async (room: RoomInfo) => {
-    setLoadingOpen(true)
-    try {
-      const res = await httpClient.post('/api/v1/new-room', {
-        room_name: room.name,
-        hosting_id: uid,
-      })
-      if (res.status === 200) {
-        const roomId = res.data.room_id
-        router.push(`/room/${roomId}`)
-        setIsOpenCreateRoomDialog(false)
-      }
-    } catch (error) {
-      const axiosError = error as AxiosError
-      if (axiosError.code === 'ERR_NETWORK') {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Sorry, the service is currently unavailable. Please try again later.',
-          duration: 4000,
-        })
-      }
-    }
-    setLoadingOpen(false)
-  }
+  const { error, isLoading, data } = useCustomSWR(
+    { url: '/health' },
+    { refreshInterval: 20 * TO_SECONDS, revalidateOnFocus: false }
+  )
+  const status = isLoading
+    ? 'connecting'
+    : Boolean(error) || !Boolean(data)
+      ? 'unavailable'
+      : 'available'
 
-  useEffect(() => {
-    const checkServiceStatus = async () => {
-      try {
-        const res = await httpClient.get('/health')
-        if (res.status === 200) {
-          setServiceStatus('available')
-        } else {
-          setServiceStatus('unavailable')
-        }
-      } catch (error) {
-        setServiceStatus('unavailable')
-      }
-    }
-    checkServiceStatus()
-  }, [])
+  useEffect(() => router.prefetch('/new-room'), [router])
 
-  const handleClickCreateRoom = () => {
-    setIsOpenCreateRoomDialog(true)
-  }
   return (
-    <main className="px-4 flex flex-col h-[75vh] justify-center">
-      <div className="flex justify-center items-center mt-2 sm:mt-6 h-full">
+    <main className="flex h-[75vh] flex-col justify-center px-4">
+      <div className="mt-2 flex h-full items-center justify-center sm:mt-6">
         <div>
-          <div className="my-5 grid gap-4 max-w-[500px]">
+          <div className="my-5 grid max-w-[500px] gap-4">
             <h1 className="text-7xl font-bold">Corgi Planning Poker</h1>
             <h2 className="text-lg font-light">
               Agile teams use this gamified technique to estimate task effort collaboratively,
@@ -83,7 +40,7 @@ const Home = () => {
           </div>
 
           <div className="flex gap-2">
-            <Button className="w-52 h-11" onClick={handleClickCreateRoom}>
+            <Button className="h-11 w-52" onClick={() => router.push('/new-room')}>
               Create Room
             </Button>
             <Button
@@ -98,22 +55,14 @@ const Home = () => {
         </div>
         <Image
           src="/images/corgi-banner.png"
-          className="invisible w-0 lg:w-[600px] lg:h-[477px] lg:visible"
+          className="invisible w-0 lg:visible lg:h-[477px] lg:w-[600px]"
           alt="corgi-logo"
           width={600}
           height={477}
         />
       </div>
 
-      <ServiceStatus status={serviceStatus} />
-
-      <NewRoomDialog
-        open={isOpenCreateRoomDialog}
-        onClose={() => {
-          setIsOpenCreateRoomDialog(false)
-        }}
-        onCreate={handleCreateRoom}
-      />
+      <ServiceStatus status={status} />
     </main>
   )
 }
