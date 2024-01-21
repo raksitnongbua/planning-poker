@@ -22,6 +22,7 @@ const NewRoom = ({}) => {
   const { toast } = useToast()
   const router = useRouter()
   const [deskSelectedId, setDeskSelectedId] = useState<string>('default')
+  const [isRouting, setIsRouting] = useState<boolean>(false)
 
   const { mutate, isPending } = useMutation<{ room_id: string }, unknown, Record<string, unknown>>({
     mutationFn: (variables) =>
@@ -29,6 +30,7 @@ const NewRoom = ({}) => {
     onSuccess(data) {
       const roomId = data.room_id
       router.push(`/room/${roomId}`)
+      setIsRouting(true)
     },
     onError(error) {
       const axiosError = error as AxiosError
@@ -57,12 +59,9 @@ const NewRoom = ({}) => {
       displayName: '🃏 Default',
       value: '0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6',
     },
-    {
-      id: 'default1',
-      displayName: '🃏 Simple',
-      value: '0.5, 1, 1.5, 2',
-    },
   ]
+
+  const disabledInputs = isPending || isRouting
 
   return (
     <div className="flex min-h-[80vh] flex-col items-center justify-center">
@@ -75,19 +74,25 @@ const NewRoom = ({}) => {
             maxLength={25}
             placeholder="Room Name"
             onChange={(e) => setRoomName(e.target.value)}
-            disabled={isPending}
+            disabled={disabledInputs}
             onKeyDown={(e) => e.code === 'Enter' && !isPending && createRoom()}
           />
-          <CardConfigSelect options={options} onValueChange={setDeskSelectedId} />
+          <CardConfigSelect
+            options={options}
+            onValueChange={setDeskSelectedId}
+            disabled={disabledInputs}
+          />
         </CardContent>
         <CardFooter>
           <Button
             size="lg"
             className="w-full gap-2"
             onClick={createRoom}
-            disabled={isPending || roomName === ''}
+            disabled={disabledInputs || roomName === ''}
           >
-            {isPending && <FontAwesomeIcon icon={faRotateRight} className="size-5 animate-spin" />}
+            {disabledInputs && (
+              <FontAwesomeIcon icon={faRotateRight} className="size-5 animate-spin" />
+            )}
             Create Room
           </Button>
         </CardFooter>

@@ -16,6 +16,7 @@ import { Button } from '../ui/button'
 export interface CardConfigSelectProps {
   options: DeskConfig[]
   onValueChange?: (value: string) => void
+  disabled: boolean
 }
 export interface DeskConfig {
   id: string
@@ -23,10 +24,12 @@ export interface DeskConfig {
   value: string
 }
 
-const CardConfigSelect: React.FC<CardConfigSelectProps> = ({ options, onValueChange }) => {
+const CardConfigSelect: React.FC<CardConfigSelectProps> = (props) => {
+  const { options, disabled, onValueChange } = props
+
   return (
     <Select defaultValue="default" onValueChange={onValueChange}>
-      <SelectTrigger className="w-full">
+      <SelectTrigger className="w-full" disabled={disabled}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -39,7 +42,7 @@ const CardConfigSelect: React.FC<CardConfigSelectProps> = ({ options, onValueCha
           ))}
 
           <Button variant="ghost" className="w-full" disabled>
-            Create custom desk..
+            Create custom desk.. (coming soon)
           </Button>
         </SelectGroup>
       </SelectContent>
