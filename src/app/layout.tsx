@@ -7,8 +7,8 @@ import type { Metadata } from 'next'
 import { Coda } from 'next/font/google'
 
 import Layout from '@/components/Layout'
-import Navbar from '@/components/Navbar'
 import { Toaster } from '@/components/ui/toaster'
+
 config.autoAddCss = false
 
 const coda = Coda({ weight: '400', display: 'swap', subsets: ['latin'] })
@@ -67,11 +67,10 @@ export const metadata: Metadata = {
     'planning poker, corgi planning poker,estimating poker, estimate points, agile, planning, scrum poker, estimate task effort, estimating, service, room, create, efficient, consensus, fostering, agile, gamified, corgi game, planningpoker, nextjs, corgiplanningpoker, story points estimates',
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
       <body className={coda.className}>
-        <Navbar />
         <Layout>{children}</Layout>
         <SpeedInsights />
         <Analytics />

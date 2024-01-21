@@ -1,10 +1,12 @@
 'use client'
+import { useQuery } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 import { useRouter } from 'next/navigation'
 import React, { useEffect } from 'react'
 
-import { useCustomSWR } from '@/lib/swr'
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
+import { httpClient } from '@/utils/httpClient'
+import { SECONDS } from '@/utils/time'
 
 import { RoomHistory } from '../RoomHistory'
 import { Room } from '../RoomHistory/RoomHistory'
@@ -18,6 +20,19 @@ const RecentRooms = () => {
   const router = useRouter()
   const { toast } = useToast()
 
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['recent-rooms'],
+    queryFn: async () => {
+      try {
+        const res = await httpClient(`/api/v1/room/recent-rooms/${uid}`)
+        return transformRoom(res.data?.data)
+      } catch (error) {
+        handleError(error as AxiosError<unknown, any>)
+      }
+    },
+    gcTime: 5 * SECONDS,
+  })
+
   const handleError = (err: AxiosError<unknown, any>) => {
     if (!err) {
       return
@@ -29,21 +44,12 @@ const RecentRooms = () => {
       description: errorMessage,
       duration: 4000,
       action: (
-        <ToastAction altText={'Retry fetch recent rooms'} onClick={() => mutate()}>
+        <ToastAction altText={'Retry fetch recent rooms'} onClick={() => refetch()}>
           Retry
         </ToastAction>
       ),
     })
   }
-
-  const { data, isLoading, mutate } = useCustomSWR(
-    { url: `/api/v1/room/recent-rooms/${uid}` },
-    {
-      revalidateOnMount: Boolean(uid),
-      shouldRetryOnError: false,
-      onError: handleError,
-    }
-  )
 
   const transformRoom = (data: any): Room[] => {
     if (!data) return []
@@ -62,8 +68,6 @@ const RecentRooms = () => {
     setLoadingOpen(isLoading)
   }, [isLoading, setLoadingOpen])
 
-  const transformedRooms = transformRoom(data?.data)
-
   const handleClickJoinRoom = (roomId: string) => {
     router.push(`/room/${roomId}`)
   }
@@ -76,7 +80,7 @@ const RecentRooms = () => {
           New Room
         </Button>
       </div>
-      <RoomHistory rooms={transformedRooms} onClickJoinRoom={handleClickJoinRoom} />
+      <RoomHistory rooms={data ?? []} onClickJoinRoom={handleClickJoinRoom} />
     </main>
   )
 }

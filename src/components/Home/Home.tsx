@@ -2,12 +2,13 @@
 
 import { faClockRotateLeft } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useQuery } from '@tanstack/react-query'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import React, { useEffect } from 'react'
 
-import { useCustomSWR } from '@/lib/swr'
-import { TO_SECONDS } from '@/utils/time'
+import { httpClient } from '@/utils/httpClient'
+import { SECONDS } from '@/utils/time'
 
 import ServiceStatus from '../ServiceStatus'
 import { Button } from '../ui/button'
@@ -15,16 +16,13 @@ import { Button } from '../ui/button'
 const Home = () => {
   const router = useRouter()
 
-  const { error, isLoading, data } = useCustomSWR(
-    { url: '/health' },
-    { refreshInterval: 20 * TO_SECONDS, revalidateOnFocus: false }
-  )
-  const status = isLoading
-    ? 'connecting'
-    : Boolean(error) || !Boolean(data)
-      ? 'unavailable'
-      : 'available'
-
+  const { isSuccess, isFetched } = useQuery({
+    queryKey: ['health-check'],
+    queryFn: async () => httpClient('/health'),
+    refetchInterval: 20 * SECONDS,
+    retry: false,
+  })
+  const status = !isFetched ? 'connecting' : isSuccess ? 'available' : 'unavailable'
   useEffect(() => router.prefetch('/new-room'), [router])
 
   return (
@@ -46,6 +44,8 @@ const Home = () => {
               variant="secondary"
               size="icon"
               className="size-11"
+              id="button-recent-rooms"
+              aria-label="Recent Rooms"
               onClick={() => router.push('/recent-rooms')}
             >
               <FontAwesomeIcon icon={faClockRotateLeft} className="size-5" />

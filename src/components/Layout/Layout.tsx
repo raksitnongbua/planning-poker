@@ -1,42 +1,33 @@
 'use client'
-import { getCookie, hasCookie, setCookie } from 'cookies-next'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { getCookie, hasCookie } from 'cookies-next'
 import React, { ReactNode, useEffect } from 'react'
 
-import { useCustomSWR } from '@/lib/swr'
+import { UID_COOKIE_KEY } from '@/constant/cookies'
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 
 import Loading from '../Loading'
-
-const UID_COOKIE_KEY = 'CPPUniID'
+import Navbar from '../Navbar'
 
 const Layout = ({ children }: { children: ReactNode }) => {
+  const { open: isLoadingOpen } = useLoadingStore()
   const { setUid } = useUserInfoStore()
-  const { open: isLoadingOpen, setLoadingOpen } = useLoadingStore()
-
-  const { data, isLoading } = useCustomSWR(
-    { url: '/api/v1/guest/sign-in' },
-    {
-      revalidateOnMount: !hasCookie(UID_COOKIE_KEY),
-      fallbackData: { uuid: getCookie(UID_COOKIE_KEY) },
-    }
-  )
+  const uid = String(getCookie(UID_COOKIE_KEY))
 
   useEffect(() => {
     if (!hasCookie(UID_COOKIE_KEY)) {
-      setCookie(UID_COOKIE_KEY, data.uuid)
+      setUid(uid)
     }
-    setUid(data.uuid)
-  }, [data.uuid, setUid])
-
-  useEffect(() => {
-    setLoadingOpen(isLoading)
-  }, [isLoading, setLoadingOpen])
+  }, [setUid, uid])
 
   return (
-    <>
+    <QueryClientProvider client={new QueryClient()}>
+      <Navbar />
       {children}
       <Loading open={isLoadingOpen} />
-    </>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   )
 }
 
