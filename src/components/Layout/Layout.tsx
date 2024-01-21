@@ -4,7 +4,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { getCookie, hasCookie } from 'cookies-next'
 import React, { ReactNode, useEffect } from 'react'
 
-import { UID_COOKIE_KEY } from '@/constant/cookies'
+import { UID_KEY } from '@/constant/cookies'
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 
 import Loading from '../Loading'
@@ -13,10 +13,10 @@ import Navbar from '../Navbar'
 const Layout = ({ children }: { children: ReactNode }) => {
   const { open: isLoadingOpen } = useLoadingStore()
   const { setUid } = useUserInfoStore()
-  const uid = String(getCookie(UID_COOKIE_KEY))
+  const uid = String(getCookie(UID_KEY))
 
   useEffect(() => {
-    if (!hasCookie(UID_COOKIE_KEY)) {
+    if (!hasCookie(UID_KEY)) {
       setUid(uid)
     }
   }, [setUid, uid])
