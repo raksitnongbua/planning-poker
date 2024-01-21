@@ -6,7 +6,7 @@ import React, { useEffect } from 'react'
 
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 import { httpClient } from '@/utils/httpClient'
-import { TO_SECONDS } from '@/utils/time'
+import { SECONDS } from '@/utils/time'
 
 import { RoomHistory } from '../RoomHistory'
 import { Room } from '../RoomHistory/RoomHistory'
@@ -30,7 +30,7 @@ const RecentRooms = () => {
         handleError(error as AxiosError<unknown, any>)
       }
     },
-    gcTime: 5 * TO_SECONDS,
+    gcTime: 5 * SECONDS,
   })
 
   const handleError = (err: AxiosError<unknown, any>) => {

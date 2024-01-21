@@ -1,1 +1,2 @@
-export const TO_SECONDS = 1000
+export const SECONDS = 1000
+export const MINUTES = SECONDS * 60

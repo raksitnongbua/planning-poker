@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import React, { useEffect } from 'react'
 
 import { httpClient } from '@/utils/httpClient'
-import { TO_SECONDS } from '@/utils/time'
+import { SECONDS } from '@/utils/time'
 
 import ServiceStatus from '../ServiceStatus'
 import { Button } from '../ui/button'
@@ -19,7 +19,7 @@ const Home = () => {
   const { isSuccess, isFetched } = useQuery({
     queryKey: ['health-check'],
     queryFn: async () => httpClient('/health'),
-    refetchInterval: 20 * TO_SECONDS,
+    refetchInterval: 20 * SECONDS,
     retry: false,
   })
   const status = !isFetched ? 'connecting' : isSuccess ? 'available' : 'unavailable'
