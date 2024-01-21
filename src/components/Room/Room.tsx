@@ -110,11 +110,13 @@ const Room = ({ roomId }: Props) => {
         const options = payload.desk_config
         setCardOptions(options.split(',').map((option: string) => option.trim()))
 
-        const newResult = new Map<string, number>()
-        Object.keys(payload.result).forEach((key: string) => {
-          newResult.set(key, payload.result[key])
-        })
-        setResult(newResult)
+        if (payload.result) {
+          const newResult = new Map<string, number>()
+          Object.keys(payload.result).forEach((key: string) => {
+            newResult.set(key, payload.result[key])
+          })
+          setResult(newResult)
+        }
 
         break
       default:
