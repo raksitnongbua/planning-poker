@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 
 import { useUserInfoStore } from '@/store/zustand'
-import { mutationFn } from '@/utils/httpClient'
+import { httpClient } from '@/utils/httpClient'
 
 import { Button } from '../ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card'
@@ -21,7 +21,8 @@ const NewRoom = ({}) => {
   const router = useRouter()
 
   const { mutate, isPending } = useMutation<{ room_id: string }, unknown, Record<string, unknown>>({
-    mutationFn: mutationFn('/api/v1/new-room'),
+    mutationFn: (variables) =>
+      httpClient.post('/api/v1/new-room', variables).then((res) => res.data),
     onSuccess(data) {
       const roomId = data.room_id
       router.push(`/room/${roomId}`)

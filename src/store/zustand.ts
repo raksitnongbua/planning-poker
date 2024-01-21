@@ -1,3 +1,4 @@
+import { getCookie } from 'cookies-next'
 import { create } from 'zustand'
 
 type Loading = {
@@ -16,6 +17,6 @@ type UserInfo = {
 }
 
 export const useUserInfoStore = create<UserInfo>((set) => ({
-  uid: null,
+  uid: `${getCookie('CPPUniID')}`,
   setUid: (id) => set({ uid: id }),
 }))
