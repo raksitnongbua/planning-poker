@@ -73,7 +73,7 @@ const GuestAvatar = ({
         <div className="w-[52px] h-[76px] hover:scale-110 hover:translate-y-1">
           <ReactCardFlip isFlipped={isCardReveled}>
             <BackCard />
-            <FrontCard label={String(estimatedPoint)} className="text-2xl" />
+            <FrontCard label={estimatedPoint} className="text-2xl" />
           </ReactCardFlip>
         </div>
       )}

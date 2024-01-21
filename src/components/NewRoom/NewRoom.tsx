@@ -9,6 +9,8 @@ import React, { useState } from 'react'
 import { useUserInfoStore } from '@/store/zustand'
 import { httpClient } from '@/utils/httpClient'
 
+import { CardConfigSelect } from '../CardConfigSelect'
+import { DeskConfig } from '../CardConfigSelect/CardConfigSelect'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card'
 import { Input } from '../ui/input'
@@ -19,6 +21,7 @@ const NewRoom = ({}) => {
   const { uid } = useUserInfoStore()
   const { toast } = useToast()
   const router = useRouter()
+  const [deskSelectedId, setDeskSelectedId] = useState<string>('default')
 
   const { mutate, isPending } = useMutation<{ room_id: string }, unknown, Record<string, unknown>>({
     mutationFn: (variables) =>
@@ -44,8 +47,22 @@ const NewRoom = ({}) => {
     mutate({
       room_name: roomName,
       hosting_id: uid,
+      deskConfig: options.find((option) => option.id === deskSelectedId)?.value.trim(),
     })
   }
+
+  const options: DeskConfig[] = [
+    {
+      id: 'default',
+      displayName: '🃏 Default',
+      value: '0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6',
+    },
+    {
+      id: 'default1',
+      displayName: '🃏 Simple',
+      value: '0.5, 1, 1.5, 2',
+    },
+  ]
 
   return (
     <div className="flex min-h-[80vh] flex-col items-center justify-center">
@@ -53,7 +70,7 @@ const NewRoom = ({}) => {
         <CardHeader>
           <h2 className="text-xl">Create Room</h2>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-2">
           <Input
             maxLength={25}
             placeholder="Room Name"
@@ -61,9 +78,15 @@ const NewRoom = ({}) => {
             disabled={isPending}
             onKeyDown={(e) => e.code === 'Enter' && !isPending && createRoom()}
           />
+          <CardConfigSelect options={options} onValueChange={setDeskSelectedId} />
         </CardContent>
         <CardFooter>
-          <Button size="lg" className="w-full gap-2" onClick={createRoom} disabled={isPending}>
+          <Button
+            size="lg"
+            className="w-full gap-2"
+            onClick={createRoom}
+            disabled={isPending || roomName === ''}
+          >
             {isPending && <FontAwesomeIcon icon={faRotateRight} className="size-5 animate-spin" />}
             Create Room
           </Button>

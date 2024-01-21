@@ -5,11 +5,11 @@ import { Status } from '../Room/types'
 import { Button } from '../ui/button'
 
 export interface RoomCardsProps {
-  cardChoosing: number
-  cardOptions: number[]
+  cardChoosing: string
+  cardOptions: string[]
   isEditPointMode: boolean
   onClickFlipCards: () => void
-  onClickVote: (point: number) => void
+  onClickVote: (point: string) => void
   status: Status
 }
 
@@ -22,8 +22,8 @@ const RoomCards: React.FC<RoomCardsProps> = ({
   status,
 }) => {
   return (
-    <div data-section="room-cards" className="h-36 mx-auto col-span-3 gap-4 flex flex-col">
-      <div className="grid grid-flow-col auto-cols-fr content-end gap-4">
+    <div data-section="room-cards" className="col-span-3 mx-auto flex h-36 flex-col gap-4">
+      <div className="grid auto-cols-fr grid-flow-col content-end gap-4">
         {cardOptions.map((value) => {
           const isRevealed = status === Status.Voting || isEditPointMode
           return (
@@ -42,7 +42,7 @@ const RoomCards: React.FC<RoomCardsProps> = ({
         <Button
           size="sm"
           variant="outline"
-          className="text-red-500 p-1 border-red-500 self-end hover:text-red-400 uppercase"
+          className="self-end border-red-500 p-1 uppercase text-red-500 hover:text-red-400"
           onClick={onClickFlipCards}
         >
           Flip Cards
