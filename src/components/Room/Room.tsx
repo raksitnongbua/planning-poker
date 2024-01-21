@@ -1,6 +1,6 @@
 'use client'
 import { usePathname, useRouter } from 'next/navigation'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import useWebSocket, { ReadyState } from 'react-use-websocket'
 
 import { useToast } from '@/components/ui/use-toast'
@@ -14,8 +14,6 @@ import RoomTable from '../RoomTable'
 import { Button } from '../ui/button'
 import { Member, Props, Status } from './types'
 
-const CARD_OPTIONS = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6]
-
 const Room = ({ roomId }: Props) => {
   const { uid } = useUserInfoStore()
   const socketUrl = `${process.env.NEXT_PUBLIC_WS_ENDPOINT}/room/${uid}/${roomId}`
@@ -28,13 +26,12 @@ const Room = ({ roomId }: Props) => {
   const [openJoinRoomDialog, setOpenJoinRoomDialog] = useState(false)
   const [members, setMembers] = useState<Member[]>([])
   const [roomStatus, setRoomStatus] = useState<Status>(Status.None)
-  const [cardChoosing, setCardChoosing] = useState<number | null>(null)
-  const [averagePoint, setAveragePoints] = useState<number>(0)
+  const [cardChoosing, setCardChoosing] = useState<string | null>(null)
   const [roomName, setRoomName] = useState<string>('')
   const [openRefreshDialog, setOpenRefreshDialog] = useState(false)
-  const [me, setMe] = useState<Member | null>(null)
-  const [isEditPointMode, setIsEditPointMode] = useState<boolean>(false)
-  const updateUserActiveRef = useRef<NodeJS.Timeout>()
+  const [isEditPointMode, setIsEditEstimateValue] = useState<boolean>(false)
+  const [cardOptions, setCardOptions] = useState<string[]>([])
+  const [result, setResult] = useState<Map<string, number>>(new Map<string, number>())
 
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
@@ -54,12 +51,18 @@ const Room = ({ roomId }: Props) => {
       return {
         id: member.id,
         name: member.name,
-        estimatedPoint: member.estimated_point,
+        estimatedValue: member.estimated_value,
         lastActiveAt: new Date(member.last_active_at),
       }
     })
   }
-  const maxPoint = useMemo(() => Math.max(...CARD_OPTIONS), [])
+  const maxPoint = useMemo(() => {
+    const mappedNumberOptions = cardOptions
+      .map((option) => Number(option))
+      .filter((option) => !!option)
+    return Math.max(...mappedNumberOptions)
+  }, [cardOptions])
+
   useEffect(() => {
     switch (readyState) {
       case ReadyState.CONNECTING:
@@ -96,16 +99,23 @@ const Room = ({ roomId }: Props) => {
         const transformedMembers = transformMembers(payload.members ?? [])
         setMembers(transformedMembers)
         const meData = transformedMembers.find((member) => member.id === uid)
-        setMe(meData ?? null)
-        const myEstimatedPoint = meData?.estimatedPoint ?? null
-        setCardChoosing(myEstimatedPoint)
+        const myEstimatedPoint = meData?.estimatedValue ?? null
+        setCardChoosing(String(myEstimatedPoint))
         const newRoomState = payload.status
         setRoomStatus(newRoomState)
         if (newRoomState === Status.Voting) {
-          setIsEditPointMode(false)
+          setIsEditEstimateValue(false)
         }
-        setAveragePoints(payload.avg_point)
         setRoomName(payload.name)
+        const options = payload.desk_config
+        setCardOptions(options.split(',').map((option: string) => option.trim()))
+
+        const newResult = new Map<string, number>()
+        Object.keys(payload.result).forEach((key: string) => {
+          newResult.set(key, payload.result[key])
+        })
+        setResult(newResult)
+
         break
       default:
         break
@@ -123,19 +133,6 @@ const Room = ({ roomId }: Props) => {
     }
   }, [lastMessage, lastMessage?.data, roomStatus, router, toast, uid])
 
-  useEffect(() => {
-    if (roomStatus === Status.None || !me?.id || updateUserActiveRef.current) return
-
-    sendJsonMessage({ action: 'UPDATE_ACTIVE_USER' })
-
-    updateUserActiveRef.current = setInterval(() => {
-      sendJsonMessage({ action: 'UPDATE_ACTIVE_USER' })
-    }, 10_000)
-
-    return () => {
-      clearInterval(updateUserActiveRef.current)
-    }
-  }, [roomStatus, sendJsonMessage, me?.id])
   return (
     <>
       <div className="grid min-w-[600px] grid-cols-3 items-start gap-y-2 px-2 sm:px-8">
@@ -147,8 +144,8 @@ const Room = ({ roomId }: Props) => {
         {roomStatus !== Status.None && (
           <>
             <RoomTable
-              averagePoint={averagePoint}
-              isRevealable={members.some((member) => member.estimatedPoint >= 0)}
+              result={result}
+              isRevealable={members.some((member) => member.estimatedValue !== '')}
               maxPoint={maxPoint}
               onClickResetRoom={() => {
                 sendJsonMessage({ action: 'RESET_ROOM' })
@@ -160,16 +157,16 @@ const Room = ({ roomId }: Props) => {
               status={roomStatus}
             />
             <RoomCards
-              cardChoosing={cardChoosing ?? -1}
-              cardOptions={CARD_OPTIONS}
+              cardChoosing={String(cardChoosing) ?? '-1'}
+              cardOptions={cardOptions}
               isEditPointMode={isEditPointMode}
-              onClickFlipCards={() => setIsEditPointMode((preVal) => !preVal)}
+              onClickFlipCards={() => setIsEditEstimateValue((preVal) => !preVal)}
               onClickVote={(value) => {
                 sendJsonMessage({
-                  action: 'UPDATE_ESTIMATED_POINT',
-                  payload: { point: value },
+                  action: 'UPDATE_ESTIMATED_VALUE',
+                  payload: { value },
                 })
-                setIsEditPointMode(false)
+                setIsEditEstimateValue(false)
               }}
               status={roomStatus}
             />

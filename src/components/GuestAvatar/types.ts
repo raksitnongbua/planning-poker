@@ -1,6 +1,6 @@
 export interface Props {
   name: string
-  estimatedPoint: number
+  estimatedPoint: string
   isCardReveled: boolean
   isShowingCard: boolean
   activeStatus: ActiveStatus

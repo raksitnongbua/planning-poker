@@ -1,6 +1,8 @@
 'use client'
 import React from 'react'
 
+import { MINUTES, SECONDS } from '@/utils/time'
+
 import GuestAvatar from '../GuestAvatar'
 import { ActiveStatus } from '../GuestAvatar/types'
 import { InviteButton } from '../InviteButton'
@@ -13,30 +15,27 @@ export interface RoomMembersProps {
   inviteLink: string
 }
 
-const TIME_SECOND = 1000
-const TIME_MINUTE = 60
-
 const RoomMembers: React.FC<RoomMembersProps> = ({ members, inviteLink, isCardReveled }) => {
   const getActiveStatus = (lastActiveAt: Date): ActiveStatus => {
-    const secDiff = (Date.now() - lastActiveAt.getTime()) / TIME_SECOND
+    const secDiff = (Date.now() - lastActiveAt.getTime()) / SECONDS
 
-    if (secDiff <= 15) {
+    if (secDiff <= 1 * MINUTES) {
       return ActiveStatus.Active
-    } else if (secDiff <= 5 * TIME_MINUTE) {
+    } else if (secDiff <= 10 * MINUTES) {
       return ActiveStatus.Busy
     } else {
       return ActiveStatus.Inactive
     }
   }
   return (
-    <div data-section="room-members" className="flex justify-center gap-2 col-span-3 min-h-[200px]">
-      {members.map(({ name, id, estimatedPoint, lastActiveAt }) => (
+    <div data-section="room-members" className="col-span-3 flex min-h-[200px] justify-center gap-2">
+      {members.map(({ name, id, estimatedValue: estimatedPoint, lastActiveAt }) => (
         <GuestAvatar
           name={name}
           key={id}
           estimatedPoint={estimatedPoint}
           isCardReveled={isCardReveled}
-          isShowingCard={estimatedPoint >= 0}
+          isShowingCard={estimatedPoint !== ''}
           activeStatus={getActiveStatus(lastActiveAt)}
         />
       ))}

@@ -5,7 +5,7 @@ export interface Props {
 export interface Member {
   name: string
   id: string
-  estimatedPoint: number
+  estimatedValue: string
   lastActiveAt: Date
 }
 

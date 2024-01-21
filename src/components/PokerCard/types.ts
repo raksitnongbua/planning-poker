@@ -1,7 +1,7 @@
 export interface PokerCardProps {
-  value: number
+  value: string
   label: string
-  onClick?: (value: number) => void
+  onClick?: (value: string) => void
   isRevealed: boolean
   isChosen: boolean
 }
