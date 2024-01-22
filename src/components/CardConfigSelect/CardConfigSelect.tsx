@@ -19,6 +19,7 @@ export interface CardConfigSelectProps {
   onValueChange?: (value: string) => void
   disabled: boolean
   onCreateCustomDesk: (deskName: string, deskValue: string) => void
+  value: string
 }
 export interface DeskConfig {
   id: string
@@ -27,7 +28,7 @@ export interface DeskConfig {
 }
 
 const CardConfigSelect: React.FC<CardConfigSelectProps> = (props) => {
-  const { options, disabled, onValueChange, onCreateCustomDesk } = props
+  const { options, disabled, onValueChange, onCreateCustomDesk, value } = props
   const [isOpenCustomDesk, setOpenCustomDesk] = useState<boolean>(false)
 
   const handleCustomDeskSave = (deskName: string, deskValue: string) => {
@@ -36,7 +37,7 @@ const CardConfigSelect: React.FC<CardConfigSelectProps> = (props) => {
   }
   return (
     <>
-      <Select defaultValue="default" onValueChange={onValueChange}>
+      <Select defaultValue="default" onValueChange={onValueChange} value={value}>
         <SelectTrigger className="w-full" disabled={disabled}>
           <SelectValue />
         </SelectTrigger>
@@ -48,7 +49,11 @@ const CardConfigSelect: React.FC<CardConfigSelectProps> = (props) => {
                 {`${displayName} (${value})`}
               </SelectItem>
             ))}
-            <Button variant="ghost" className="w-full" onClick={() => setOpenCustomDesk(true)}>
+            <Button
+              variant="ghost"
+              className="w-full text-primary hover:text-primary"
+              onClick={() => setOpenCustomDesk(true)}
+            >
               Create custom desk..
             </Button>
           </SelectGroup>

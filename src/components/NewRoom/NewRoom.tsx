@@ -62,7 +62,6 @@ const NewRoom = ({}) => {
     }
     try {
       const deskConfigCookie = getCookie(DESK_CONFIG_KEY)
-      console.log('🚀 ~ useEffect ~ deskConfigCookie:', deskConfigCookie)
       const cookieOptions = deskConfigCookie
         ?.split('&')
         .map((config) => JSON.parse(config) as DeskConfig)
@@ -92,7 +91,7 @@ const NewRoom = ({}) => {
       displayName: deskName,
     }
     setOptions([...options, newDeskConfig])
-
+    setDeskSelectedId(newDeskConfig.id)
     const deskConfig = getCookie(DESK_CONFIG_KEY)
     const mergedDeskConfig =
       (Boolean(deskConfig) ? `${deskConfig}&` : '') + JSON.stringify(newDeskConfig)
@@ -121,6 +120,7 @@ const NewRoom = ({}) => {
           <div>
             <Label>Desk</Label>
             <CardConfigSelect
+              value={deskSelectedId}
               options={options}
               onValueChange={setDeskSelectedId}
               disabled={disabledInputs}

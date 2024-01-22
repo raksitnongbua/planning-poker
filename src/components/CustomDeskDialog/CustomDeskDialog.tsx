@@ -48,6 +48,7 @@ const CustomDeskDialog: React.FC<CustomDeskDialogProps> = ({ open, onSave, onClo
 
   const handleOpenChange = () => {
     setDeskValues(DEFAULT_DESK_VALUES)
+    setDeskName('My custom deck')
     onClose?.()
   }
   const onClickSave = () => {
