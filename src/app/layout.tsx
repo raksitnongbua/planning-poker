@@ -34,15 +34,7 @@ export const metadata: Metadata = {
     name: 'Raksit Nongbua',
   },
   icons: {
-    icon: [
-      '/favicon-16x16.ico',
-      '/favicon-32x32.ico',
-      '/favicon-60x60.ico',
-      '/favicon-128x128.ico',
-      '/favicon-160x160.ico',
-      '/favicon-180x180.ico',
-      '/favicon.ico',
-    ],
+    icon: ['/favicon-48.ico', '/favicon-96.ico', '/favicon-144.ico'],
   },
   applicationName: 'Corgi Planning Poker',
   title: {
@@ -52,11 +44,11 @@ export const metadata: Metadata = {
   description: `Agile teams use this gamified technique to estimate task effort collaboratively,
   fostering consensus and efficient planning.`,
   openGraph: {
-    title: 'Corgi Planning Poker',
+    title: 'Corgi Planning Poker | The Easiest Way To Explain Story Points',
     description: `Agile teams use this gamified technique to estimate task effort collaboratively,
     fostering consensus and efficient planning.`,
     locale: 'en_US',
-    siteName: 'www.corgiplanningpoker.com',
+    siteName: 'Corgi Planning Poker',
     type: 'website',
     images: [
       '/images/corgi-planning-poker-preview.png',
