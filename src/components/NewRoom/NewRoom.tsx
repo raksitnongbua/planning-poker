@@ -78,7 +78,7 @@ const NewRoom = ({}) => {
     mutate({
       room_name: roomName,
       hosting_id: uid,
-      deskConfig: options.find((option) => option.id === deskSelectedId)?.value.trim(),
+      desk_config: options.find((option) => option.id === deskSelectedId)?.value.trim(),
     })
   }
 
