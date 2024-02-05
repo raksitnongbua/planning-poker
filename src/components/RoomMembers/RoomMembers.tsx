@@ -29,14 +29,15 @@ const RoomMembers: React.FC<RoomMembersProps> = ({ members, inviteLink, isCardRe
   }
   return (
     <div data-section="room-members" className="col-span-3 flex min-h-[200px] justify-center gap-2">
-      {members.map(({ name, id, estimatedValue: estimatedPoint, lastActiveAt }) => (
+      {members.map(({ name, id, estimatedValue, lastActiveAt, avatar }) => (
         <GuestAvatar
           name={name}
           key={id}
-          estimatedPoint={estimatedPoint}
+          estimatedValue={estimatedValue}
           isCardReveled={isCardReveled}
-          isShowingCard={estimatedPoint !== ''}
+          isShowingCard={estimatedValue !== ''}
           activeStatus={getActiveStatus(lastActiveAt)}
+          avatar={avatar}
         />
       ))}
       <InviteButton
