@@ -1,11 +1,10 @@
 'use client'
 import { useQuery } from '@tanstack/react-query'
-import { AxiosError } from 'axios'
+import axios, { AxiosError } from 'axios'
 import { useRouter } from 'next/navigation'
 import React, { useEffect } from 'react'
 
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
-import { httpClient } from '@/utils/httpClient'
 import { SECONDS } from '@/utils/time'
 
 import { RoomHistory } from '../RoomHistory'
@@ -24,7 +23,7 @@ const RecentRooms = () => {
     queryKey: ['recent-rooms'],
     queryFn: async () => {
       try {
-        const res = await httpClient(`/api/v1/room/recent-rooms/${uid}`)
+        const res = await axios(`/api/v1/room/recent-rooms/${uid}`)
         return transformRoom(res.data?.data)
       } catch (error) {
         handleError(error as AxiosError<unknown, any>)

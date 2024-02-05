@@ -6,6 +6,7 @@ export interface Member {
   name: string
   id: string
   estimatedValue: string
+  avatar?: string
   lastActiveAt: Date
 }
 

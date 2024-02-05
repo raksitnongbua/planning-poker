@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: 'Recent Rooms',
 }
 
-const RecentRooms = () => {
+const RecentRooms = async () => {
   return <Component />
 }
 

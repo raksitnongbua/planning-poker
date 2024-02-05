@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { getCookie, hasCookie } from 'cookies-next'
+import { SessionProvider } from 'next-auth/react'
 import React, { ReactNode, useEffect } from 'react'
 
 import { UID_KEY } from '@/constant/cookies'
@@ -23,10 +24,12 @@ const Layout = ({ children }: { children: ReactNode }) => {
 
   return (
     <QueryClientProvider client={new QueryClient()}>
-      <Navbar />
-      {children}
-      <Loading open={isLoadingOpen} />
-      <ReactQueryDevtools initialIsOpen={false} />
+      <SessionProvider>
+        <Navbar />
+        {children}
+        <Loading open={isLoadingOpen} />
+        <ReactQueryDevtools initialIsOpen={false} />
+      </SessionProvider>
     </QueryClientProvider>
   )
 }
