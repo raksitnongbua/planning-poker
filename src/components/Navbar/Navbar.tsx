@@ -10,7 +10,6 @@ import { Skeleton } from '../ui/skeleton'
 
 const Navbar = () => {
   const { data: session, status } = useSession()
-  const handleClickSetting = async () => {}
   return (
     <header className="sm:-pb-2 flex items-start justify-between px-2 py-1 sm:px-8 sm:pt-4">
       <Link href="/">
@@ -43,7 +42,6 @@ const Navbar = () => {
           <Profile
             imageSrc={session?.user?.image ?? ''}
             fallback={session?.user?.name?.[0] ?? 'P'}
-            onClickSetting={handleClickSetting}
             onClickLogout={() => signOut()}
           />
         ) : (

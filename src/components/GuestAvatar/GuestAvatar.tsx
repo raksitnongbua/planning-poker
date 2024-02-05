@@ -6,13 +6,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 import BackCard from '../BackCard'
 import FrontCard from '../FrontCard'
-import { Tooltip, TooltipContent,TooltipProvider, TooltipTrigger } from '../ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
 import { ActiveStatus, Props } from './types'
 
 const GuestAvatar = ({
+  avatar,
   name,
   isCardReveled,
-  estimatedPoint,
+  estimatedValue,
   isShowingCard,
   activeStatus,
 }: Props) => {
@@ -43,15 +44,15 @@ const GuestAvatar = ({
   }
 
   return (
-    <div className="flex items-center flex-col w-[80px] gap-3">
+    <div className="flex w-[80px] flex-col items-center gap-3">
       <div className="relative">
         <Avatar className="size-14">
-          <AvatarImage alt="guest-icon" src="/images/corgi-tood-cute.png" />
+          <AvatarImage alt="guest-icon" src={avatar ?? '/images/corgi-tood-cute.png'} />
           <AvatarFallback>GUEST</AvatarFallback>
         </Avatar>
         <div
           className={clsx(
-            'absolute right-0 bottom-0 rounded-full size-[6px]',
+            'absolute bottom-0 right-0 size-[6px] rounded-full',
             getClassWithActiveStatus(activeStatus)
           )}
         />
@@ -59,7 +60,7 @@ const GuestAvatar = ({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger>
-            <code className="relative rounded bg-muted p-1 font-mono text-sm font-semibold text-nowrap overflow-hidden overflow-ellipsis max-w-20 block">
+            <code className="relative block max-w-20 overflow-hidden overflow-ellipsis text-nowrap rounded bg-muted p-1 font-mono text-sm font-semibold">
               {name}
             </code>
           </TooltipTrigger>
@@ -70,10 +71,10 @@ const GuestAvatar = ({
       </TooltipProvider>
 
       {isShowingCard && (
-        <div className="w-[52px] h-[76px] hover:scale-110 hover:translate-y-1">
+        <div className="h-[76px] w-[52px] hover:translate-y-1 hover:scale-110">
           <ReactCardFlip isFlipped={isCardReveled}>
             <BackCard />
-            <FrontCard label={estimatedPoint} className="text-2xl" />
+            <FrontCard label={estimatedValue} className="text-2xl" />
           </ReactCardFlip>
         </div>
       )}

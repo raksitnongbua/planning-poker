@@ -54,11 +54,13 @@ const Room = ({ roomId }: Props) => {
 
   const transformMembers = (members: []): Member[] => {
     return members.map((member: any) => {
+      const avatar = Boolean(member.picture) ? member.picture : undefined
       return {
         id: member.id,
         name: member.name,
         estimatedValue: member.estimated_value,
         lastActiveAt: new Date(member.last_active_at),
+        avatar,
       }
     })
   }

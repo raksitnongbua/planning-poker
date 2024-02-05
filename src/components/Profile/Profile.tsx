@@ -28,7 +28,6 @@ const Profile: React.FC<ProfileProps> = (props) => {
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="min-w-fit">
-        <DropdownMenuItem onClick={onClickSetting}>Setting</DropdownMenuItem>
         <DropdownMenuItem onClick={onClickLogout}>Logout</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
