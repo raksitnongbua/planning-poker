@@ -1,5 +1,6 @@
 'use client'
 import { usePathname, useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import React, { useEffect, useMemo, useState } from 'react'
 import useWebSocket, { ReadyState } from 'react-use-websocket'
 
@@ -16,7 +17,11 @@ import { Member, Props, Status } from './types'
 
 const Room = ({ roomId }: Props) => {
   const { uid } = useUserInfoStore()
-  const socketUrl = `${process.env.NEXT_PUBLIC_WS_ENDPOINT}/room/${uid}/${roomId}`
+  const { data: session } = useSession()
+
+  const id = session?.user?.id ?? uid
+
+  const socketUrl = `${process.env.NEXT_PUBLIC_WS_ENDPOINT}/room/${id}/${roomId}`
   const { sendJsonMessage, lastMessage, readyState } = useWebSocket(socketUrl)
   const { toast } = useToast()
   const pathname = usePathname()
@@ -42,7 +47,8 @@ const Room = ({ roomId }: Props) => {
   }[readyState]
 
   const handleClickJoinRoom = (name: string) => {
-    sendJsonMessage({ action: 'JOIN_ROOM', payload: { name } })
+    const profile = session?.user?.image ?? ''
+    sendJsonMessage({ action: 'JOIN_ROOM', payload: { name, profile } })
     setOpenJoinRoomDialog(false)
   }
 
