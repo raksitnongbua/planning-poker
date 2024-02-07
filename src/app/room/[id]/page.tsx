@@ -1,6 +1,8 @@
 import { Metadata } from 'next'
+import { getServerSession } from 'next-auth'
 import React from 'react'
 
+import { authOptions } from '@/app/api/auth/[...nextauth]/option'
 import RoomComponent from '@/components/Room'
 
 interface Props {
@@ -23,8 +25,18 @@ export const metadata: Metadata = {
   },
 }
 
-const Room = ({ params }: Props) => {
-  return <RoomComponent roomId={params.id.toString()} />
+const Room = async ({ params }: Props) => {
+  const session = await getServerSession(authOptions)
+  const user = session?.user
+
+  return (
+    <RoomComponent
+      roomId={params.id.toString()}
+      sessionId={user?.id}
+      avatar={user?.image}
+      userName={user?.name}
+    />
+  )
 }
 
 export default Room

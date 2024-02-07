@@ -1,5 +1,8 @@
 export interface Props {
   roomId?: string
+  sessionId?: string
+  avatar?: string | null
+  userName?: string | null
 }
 
 export interface Member {

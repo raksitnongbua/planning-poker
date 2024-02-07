@@ -3,9 +3,9 @@ import React from 'react'
 
 import { MINUTES, SECONDS } from '@/utils/time'
 
-import GuestAvatar from '../GuestAvatar'
-import { ActiveStatus } from '../GuestAvatar/types'
 import { InviteButton } from '../InviteButton'
+import MemberAvatar from '../MemberAvatar'
+import { ActiveStatus } from '../MemberAvatar/types'
 import { Member } from '../Room/types'
 import { toast } from '../ui/use-toast'
 
@@ -30,7 +30,7 @@ const RoomMembers: React.FC<RoomMembersProps> = ({ members, inviteLink, isCardRe
   return (
     <div data-section="room-members" className="col-span-3 flex min-h-[200px] justify-center gap-2">
       {members.map(({ name, id, estimatedValue, lastActiveAt, avatar }) => (
-        <GuestAvatar
+        <MemberAvatar
           name={name}
           key={id}
           estimatedValue={estimatedValue}

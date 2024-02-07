@@ -27,10 +27,11 @@ const DEFAULT_DESK_CONFIG: DeskConfig = {
 }
 
 const NewRoom = ({}) => {
-  const [roomName, setRoomName] = useState<string>('')
   const { uid } = useUserInfoStore()
   const { toast } = useToast()
   const router = useRouter()
+
+  const [roomName, setRoomName] = useState<string>('Planning Room')
   const [deskSelectedId, setDeskSelectedId] = useState<string>('default')
   const [isRouting, setIsRouting] = useState<boolean>(false)
   const [options, setOptions] = useState<DeskConfig[]>([DEFAULT_DESK_CONFIG])
