@@ -24,7 +24,7 @@ To get started with this project, follow the steps below.
 Install the project dependencies:
 
 ```bash
-pnpm install
+bun install
 ```
 
 ### Development
@@ -32,7 +32,7 @@ pnpm install
 To run the development server, execute the following command:
 
 ```bash
-pnpm dev
+bun dev
 ```
 
 ## Contributing

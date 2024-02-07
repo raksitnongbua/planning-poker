@@ -1,6 +1,5 @@
 'use client'
 import { usePathname, useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
 import React, { useEffect, useMemo, useState } from 'react'
 import useWebSocket, { ReadyState } from 'react-use-websocket'
 
@@ -15,11 +14,9 @@ import RoomTable from '../RoomTable'
 import { Button } from '../ui/button'
 import { Member, Props, Status } from './types'
 
-const Room = ({ roomId }: Props) => {
+const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const { uid } = useUserInfoStore()
-  const { data: session } = useSession()
-
-  const id = session?.user?.id ?? uid
+  const id = sessionId ?? uid
 
   const socketUrl = `${process.env.NEXT_PUBLIC_WS_ENDPOINT}/room/${id}/${roomId}`
   const { sendJsonMessage, lastMessage, readyState } = useWebSocket(socketUrl)
@@ -46,8 +43,9 @@ const Room = ({ roomId }: Props) => {
     [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
   }[readyState]
 
-  const handleClickJoinRoom = (name: string) => {
-    const profile = session?.user?.image ?? ''
+  const handleClickJoinRoom = (name: string, isCheckedUseAvatar: boolean) => {
+    const canUseAvatar = isCheckedUseAvatar && Boolean(avatar)
+    const profile = canUseAvatar ? avatar : ''
     sendJsonMessage({ action: 'JOIN_ROOM', payload: { name, profile } })
     setOpenJoinRoomDialog(false)
   }
@@ -187,7 +185,12 @@ const Room = ({ roomId }: Props) => {
         </p>
       </div>
 
-      <JoinRoomDialog open={openJoinRoomDialog} onClickConfirm={handleClickJoinRoom} />
+      <JoinRoomDialog
+        open={openJoinRoomDialog}
+        onClickConfirm={handleClickJoinRoom}
+        hasAvatar={Boolean(avatar)}
+        defaultName={userName ?? undefined}
+      />
       <Dialog
         open={openRefreshDialog}
         title="Connection lost"

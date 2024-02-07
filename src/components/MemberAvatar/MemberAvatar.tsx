@@ -9,7 +9,7 @@ import FrontCard from '../FrontCard'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
 import { ActiveStatus, Props } from './types'
 
-const GuestAvatar = ({
+const MemberAvatar = ({
   avatar,
   name,
   isCardReveled,
@@ -47,8 +47,8 @@ const GuestAvatar = ({
     <div className="flex w-[80px] flex-col items-center gap-3">
       <div className="relative">
         <Avatar className="size-14">
-          <AvatarImage alt="guest-icon" src={avatar ?? '/images/corgi-tood-cute.png'} />
-          <AvatarFallback>GUEST</AvatarFallback>
+          <AvatarImage alt="profile-icon" src={avatar ?? '/images/corgi-tood-cute.png'} />
+          <AvatarFallback>{name[0].toUpperCase()}</AvatarFallback>
         </Avatar>
         <div
           className={clsx(
@@ -82,4 +82,4 @@ const GuestAvatar = ({
   )
 }
 
-export default GuestAvatar
+export default MemberAvatar
