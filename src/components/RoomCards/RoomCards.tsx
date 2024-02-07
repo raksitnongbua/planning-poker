@@ -42,10 +42,10 @@ const RoomCards: React.FC<RoomCardsProps> = ({
         <Button
           size="sm"
           variant="outline"
-          className="self-end border-red-500 p-1 uppercase text-red-500 hover:text-red-400"
+          className="self-end border-red-500 p-3 uppercase text-red-500 hover:text-red-400"
           onClick={onClickFlipCards}
         >
-          Flip Cards
+          {isEditPointMode ? 'Cancel' : 'Edit Point'}
         </Button>
       )}
     </div>
