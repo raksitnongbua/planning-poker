@@ -10,7 +10,7 @@ import { Label } from '../ui/label'
 import { Switch } from '../ui/switch'
 import { Props } from './types'
 
-const JoinRoomDialog = ({ open, onClickConfirm, hasAvatar, defaultName }: Props) => {
+const JoinRoomDialog = ({ open, onClickConfirm, hasAvatar, defaultName, signedIn }: Props) => {
   const [name, setName] = useState(defaultName ?? '')
   const [isCheckedUseProfileAvatar, setIsCheckedUseProfileAvatar] = useState(hasAvatar)
   const isDisabled = name === ''
@@ -51,9 +51,11 @@ const JoinRoomDialog = ({ open, onClickConfirm, hasAvatar, defaultName }: Props)
       }
       action={
         <div className="flex gap-3">
-          <Button variant="outline" onClick={() => signIn('google')}>
-            Sign In
-          </Button>
+          {!signedIn && (
+            <Button variant="outline" onClick={() => signIn('google')}>
+              Sign In
+            </Button>
+          )}
           <Button
             disabled={isDisabled}
             onClick={() => onClickConfirm(name, isCheckedUseProfileAvatar)}
