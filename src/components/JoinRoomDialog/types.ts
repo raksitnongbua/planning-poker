@@ -3,4 +3,5 @@ export interface Props {
   onClickConfirm: (name: string, isAllowedUseProfile: boolean) => void
   hasAvatar: boolean
   defaultName?: string
+  signedIn?: boolean
 }

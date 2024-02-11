@@ -190,6 +190,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         onClickConfirm={handleClickJoinRoom}
         hasAvatar={Boolean(avatar)}
         defaultName={userName ?? undefined}
+        signedIn={Boolean(sessionId)}
       />
       <Dialog
         open={openRefreshDialog}
