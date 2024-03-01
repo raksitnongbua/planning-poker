@@ -14,7 +14,6 @@ export async function middleware(req: NextRequest) {
       setCookie(UID_KEY, jsonRes.uuid, { res, req })
     } catch (error) {
       console.error(error)
-      return NextResponse.redirect(new URL('/error', req.url))
     }
   }
   return res

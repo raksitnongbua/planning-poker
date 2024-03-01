@@ -99,7 +99,7 @@ const NewRoom = ({}) => {
     setCookie(DESK_CONFIG_KEY, mergedDeskConfig)
   }
   return (
-    <div className="flex min-h-[80vh] flex-col items-center justify-center p-4">
+    <div className="flex min-h-[calc(100dvh-92px*2)] items-center justify-center">
       <Card className="w-full max-w-screen-sm">
         <CardHeader>
           <h2 className="text-xl">Create Room</h2>

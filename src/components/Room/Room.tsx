@@ -143,7 +143,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
 
   return (
     <>
-      <div className="grid min-w-[600px] grid-cols-3 items-start gap-y-2 px-2 sm:px-8">
+      <div className="grid min-h-[calc(100dvh-92px*2)] min-w-[600px] grid-cols-3 items-start gap-y-2">
         <RoomMembers
           members={members}
           isCardReveled={roomStatus === Status.RevealedCards}
