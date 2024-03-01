@@ -8,6 +8,7 @@ import React, { ReactNode, useEffect } from 'react'
 import { UID_KEY } from '@/constant/cookies'
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 
+import { Footer } from '../Footer'
 import Loading from '../Loading'
 import Navbar from '../Navbar'
 
@@ -17,7 +18,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
   const uid = String(getCookie(UID_KEY))
 
   useEffect(() => {
-    if (!hasCookie(UID_KEY)) {
+    if (!!uid && !hasCookie(UID_KEY)) {
       setUid(uid)
     }
   }, [setUid, uid])
@@ -26,7 +27,8 @@ const Layout = ({ children }: { children: ReactNode }) => {
     <QueryClientProvider client={new QueryClient()}>
       <SessionProvider>
         <Navbar />
-        {children}
+        <main className="container mx-auto px-4 sm:px-6 md:px-8">{children}</main>
+        <Footer />
         <Loading open={isLoadingOpen} />
         <ReactQueryDevtools initialIsOpen={false} />
       </SessionProvider>

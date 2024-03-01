@@ -26,8 +26,8 @@ const Home = () => {
   useEffect(() => router.prefetch('/new-room'), [router])
 
   return (
-    <main className="flex h-[75vh] flex-col justify-center px-4">
-      <div className="mt-2 flex h-full items-center justify-center sm:mt-6">
+    <>
+      <div className="flex min-h-[calc(100dvh-92px*2)] items-center justify-center">
         <div>
           <div className="my-5 grid max-w-[500px] gap-4">
             <h1 className="text-7xl font-bold">Corgi Planning Poker</h1>
@@ -61,9 +61,8 @@ const Home = () => {
           height={477}
         />
       </div>
-
       <ServiceStatus status={status} />
-    </main>
+    </>
   )
 }
 
