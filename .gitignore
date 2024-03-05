@@ -37,3 +37,6 @@ next-env.d.ts
 # local env files
 .env
 .env.local
+
+# Sentry Config File
+.sentryclirc
