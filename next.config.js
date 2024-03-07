@@ -22,7 +22,7 @@ module.exports = withSentryConfig(
     // Suppresses source map uploading logs during build
     silent: true,
     org: 'tanraksit',
-    project: 'javascript-nextjs',
+    project: 'corgi-planning-poker-nextjs',
   },
   {
     // For all available options, see:
