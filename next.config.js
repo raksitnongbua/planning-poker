@@ -1,32 +1,28 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: '/api/v1/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/v1/:path*`,
-      },
-    ]
-  },
-}
-
-module.exports = nextConfig
-
 
 // Injected content via Sentry wizard below
 
-const { withSentryConfig } = require("@sentry/nextjs");
+const { withSentryConfig } = require('@sentry/nextjs')
 
 module.exports = withSentryConfig(
-  module.exports,
+  {
+    async rewrites() {
+      return [
+        {
+          source: '/api/v1/:path*',
+          destination: `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/v1/:path*`,
+        },
+      ]
+    },
+  },
   {
     // For all available options, see:
     // https://github.com/getsentry/sentry-webpack-plugin#options
 
     // Suppresses source map uploading logs during build
     silent: true,
-    org: "tanraksit",
-    project: "corgi-planning-poker-nextjs",
+    org: 'tanraksit',
+    project: 'corgi-planning-poker-nextjs',
   },
   {
     // For all available options, see:
@@ -39,7 +35,7 @@ module.exports = withSentryConfig(
     transpileClientSDK: true,
 
     // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers (increases server load)
-    tunnelRoute: "/monitoring",
+    tunnelRoute: '/monitoring',
 
     // Hides source maps from generated client bundles
     hideSourceMaps: true,
@@ -53,4 +49,4 @@ module.exports = withSentryConfig(
     // https://vercel.com/docs/cron-jobs
     automaticVercelMonitors: true,
   }
-);
+)
