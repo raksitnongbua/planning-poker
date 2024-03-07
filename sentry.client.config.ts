@@ -5,10 +5,12 @@
 import * as Sentry from '@sentry/nextjs'
 
 Sentry.init({
-  dsn: process.env.SENTRY_DSN,
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  environment: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || 'production',
 
   // Adjust this value in production, or use tracesSampler for greater control
-  tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE) || 1,
+  tracesSampleRate: Number(process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE) || 1.0,
+
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
@@ -19,6 +21,16 @@ Sentry.init({
   // in development and sample at a lower rate in production
   replaysSessionSampleRate: 0.1,
 
+  denyUrls: [/^chrome-extension:\/\//i],
+  ignoreErrors: [
+    /Network request failed.*/,
+    /pageName is require.*/,
+    /Loading chunk \d+ failed.*/,
+    /Loading CSS chunk \d+ failed.*/,
+    /Your operation is too frequent, please try again later.*/,
+    /Non-Error promise rejection captured with keys: code, message, standard/,
+    /Cannot read properties of undefined \(reading 'firefoxSample'\)/,
+  ],
   // You can remove this option if you're not planning to use the Sentry Session Replay feature:
   integrations: [
     Sentry.replayIntegration({
