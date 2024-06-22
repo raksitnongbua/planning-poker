@@ -19,7 +19,14 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const id = sessionId ?? uid
 
   const socketUrl = `${process.env.NEXT_PUBLIC_WS_ENDPOINT}/room/${id}/${roomId}`
-  const { sendJsonMessage, lastMessage, readyState } = useWebSocket(socketUrl)
+  const { sendJsonMessage, lastMessage, readyState } = useWebSocket(socketUrl, {
+    shouldReconnect: (_closeEvent) => true,
+    reconnectAttempts: 5,
+    onReconnectStop: (_attempt) => {
+      setLoadingOpen(false)
+      setOpenRefreshDialog(true)
+    },
+  })
   const { toast } = useToast()
   const pathname = usePathname()
   const router = useRouter()
@@ -34,7 +41,6 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const [isEditPointMode, setIsEditEstimateValue] = useState<boolean>(false)
   const [cardOptions, setCardOptions] = useState<string[]>([])
   const [result, setResult] = useState<Map<string, number>>(new Map<string, number>())
-
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
     [ReadyState.OPEN]: 'Open',
@@ -52,6 +58,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
 
   const transformMembers = (members: []): Member[] => {
     return members.map((member: any) => {
+
       const avatar = Boolean(member.picture) ? member.picture : undefined
       return {
         id: member.id,
@@ -75,10 +82,6 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         setLoadingOpen(true)
         break
       case ReadyState.OPEN:
-        setLoadingOpen(false)
-        break
-      case ReadyState.CLOSED:
-        setOpenRefreshDialog(true)
         setLoadingOpen(false)
         break
       case ReadyState.UNINSTANTIATED:

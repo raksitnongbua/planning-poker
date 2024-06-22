@@ -14,14 +14,15 @@ import Navbar from '../Navbar'
 
 const Layout = ({ children }: { children: ReactNode }) => {
   const { open: isLoadingOpen } = useLoadingStore()
-  const { setUid } = useUserInfoStore()
-  const uid = String(getCookie(UID_KEY))
+  const { setUid, uid } = useUserInfoStore()
+
+  const cookieUID = getCookie(UID_KEY)
 
   useEffect(() => {
-    if (!!uid && !hasCookie(UID_KEY)) {
-      setUid(uid)
+    if (!uid && cookieUID) {
+      setUid(cookieUID)
     }
-  }, [setUid, uid])
+  }, [cookieUID, setUid, uid])
 
   return (
     <QueryClientProvider client={new QueryClient()}>
