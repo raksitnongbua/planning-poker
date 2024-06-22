@@ -16,12 +16,13 @@ const Layout = ({ children }: { children: ReactNode }) => {
   const { open: isLoadingOpen } = useLoadingStore()
   const { setUid, uid } = useUserInfoStore()
 
-  const cookieUID = getCookie(UID_KEY)
+  const cookieUID = String(getCookie(UID_KEY))
 
   useEffect(() => {
-    if (!uid && cookieUID) {
+    if (!uid && cookieUID || uid !== cookieUID) {
       setUid(cookieUID)
     }
+
   }, [cookieUID, setUid, uid])
 
   return (
