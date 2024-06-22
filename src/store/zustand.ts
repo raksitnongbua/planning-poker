@@ -3,7 +3,7 @@ import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 
 import { UID_KEY } from '@/constant/cookies'
-type Loading = {
+interface Loading  {
   open: boolean
   setLoadingOpen: (isOpen: boolean) => void
 }
@@ -25,7 +25,7 @@ export const useLoadingStore = create<Loading>()(
   )
 )
 
-type UserInfo = {
+interface UserInfo  {
   uid: string | null
   setUid: (uid: string) => void
 }
@@ -46,3 +46,4 @@ export const useUserInfoStore = create<UserInfo>()(
     }
   )
 )
+
