@@ -3,7 +3,7 @@ import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 
 import { UID_KEY } from '@/constant/cookies'
-interface Loading  {
+interface Loading {
   open: boolean
   setLoadingOpen: (isOpen: boolean) => void
 }
@@ -20,12 +20,13 @@ export const useLoadingStore = create<Loading>()(
       }
     ),
     {
+      version: 1,
       anonymousActionType: 'Loading Store',
     }
   )
 )
 
-interface UserInfo  {
+interface UserInfo {
   uid: string | null
   setUid: (uid: string) => void
 }
@@ -38,6 +39,7 @@ export const useUserInfoStore = create<UserInfo>()(
         setUid: (id) => set({ uid: id }),
       }),
       {
+        version: 1,
         name: 'user-info-store',
       }
     ),
@@ -46,4 +48,3 @@ export const useUserInfoStore = create<UserInfo>()(
     }
   )
 )
-
