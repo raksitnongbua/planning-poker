@@ -117,17 +117,6 @@ const NewRoom = ({ }) => {
               disabled={disabledInputs}
               onKeyDown={(e) => e.code === 'Enter' && !isPending && createRoom()}
             />
-            <Input
-              id="room-name-forced-scale"
-              className="scale-100"
-              maxLength={25}
-              placeholder="Enter room name"
-              value={roomName}
-              onChange={(e) => setRoomName(e.target.value)}
-              autoFocus
-              disabled={disabledInputs}
-              onKeyDown={(e) => e.code === 'Enter' && !isPending && createRoom()}
-            />
           </div>
           <div>
             <Label>Desk</Label>
