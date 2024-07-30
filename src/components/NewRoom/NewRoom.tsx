@@ -26,7 +26,7 @@ const DEFAULT_DESK_CONFIG: DeskConfig = {
   value: '0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6',
 }
 
-const NewRoom = ({}) => {
+const NewRoom = ({ }) => {
   const { uid } = useUserInfoStore()
   const { toast } = useToast()
   const router = useRouter()
@@ -107,6 +107,7 @@ const NewRoom = ({}) => {
         <CardContent className="flex flex-col gap-4">
           <div>
             <Label htmlFor="room-name">Room name</Label>
+            <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
             <Input
               id="room-name"
               maxLength={25}
@@ -117,6 +118,17 @@ const NewRoom = ({}) => {
               disabled={disabledInputs}
               onKeyDown={(e) => e.code === 'Enter' && !isPending && createRoom()}
             />
+            {/* <Input
+              id="room-name-forced-scale"
+              className="scale-100"
+              maxLength={25}
+              placeholder="Enter room name"
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
+              autoFocus
+              disabled={disabledInputs}
+              onKeyDown={(e) => e.code === 'Enter' && !isPending && createRoom()}
+            /> */}
           </div>
           <div>
             <Label>Desk</Label>
