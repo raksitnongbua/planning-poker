@@ -107,7 +107,6 @@ const NewRoom = ({ }) => {
         <CardContent className="flex flex-col gap-4">
           <div>
             <Label htmlFor="room-name">Room name</Label>
-            <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
             <Input
               id="room-name"
               maxLength={25}
@@ -118,7 +117,7 @@ const NewRoom = ({ }) => {
               disabled={disabledInputs}
               onKeyDown={(e) => e.code === 'Enter' && !isPending && createRoom()}
             />
-            {/* <Input
+            <Input
               id="room-name-forced-scale"
               className="scale-100"
               maxLength={25}
@@ -128,7 +127,7 @@ const NewRoom = ({ }) => {
               autoFocus
               disabled={disabledInputs}
               onKeyDown={(e) => e.code === 'Enter' && !isPending && createRoom()}
-            /> */}
+            />
           </div>
           <div>
             <Label>Desk</Label>
