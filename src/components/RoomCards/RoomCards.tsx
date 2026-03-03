@@ -1,3 +1,5 @@
+import { faPenToSquare, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React from 'react'
 
 import PokerCard from '../PokerCard'
@@ -41,10 +43,11 @@ const RoomCards: React.FC<RoomCardsProps> = ({
       {status === Status.RevealedCards && (
         <Button
           size="sm"
-          variant="outline"
-          className="self-end border-red-500 p-3 uppercase text-red-500 hover:text-red-400"
+          variant="ghost"
+          className="self-end gap-1.5 text-muted-foreground transition-colors duration-200 hover:text-foreground"
           onClick={onClickFlipCards}
         >
+          <FontAwesomeIcon icon={isEditPointMode ? faXmark : faPenToSquare} className="size-3.5" />
           {isEditPointMode ? 'Cancel' : 'Edit Point'}
         </Button>
       )}

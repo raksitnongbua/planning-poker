@@ -1,4 +1,8 @@
+import { faUserPlus } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React from 'react'
+
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 export interface InviteButtonProps {
   onClick: () => void
@@ -6,14 +10,24 @@ export interface InviteButtonProps {
 
 const InviteButton = ({ onClick }: InviteButtonProps) => {
   return (
-    <div className="flex items-center flex-col w-[80px] gap-3">
-      <button
-        onClick={onClick}
-        className="text-black bg-white hover:bg-neutral-300 rounded-full size-14 text-xl"
-      >
-        +
-      </button>
-    </div>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex w-[80px] flex-col items-center gap-3">
+            <button
+              onClick={onClick}
+              className="relative flex size-14 items-center justify-center rounded-full border-2 border-dashed border-primary/60 text-primary/60 transition-all duration-200 hover:scale-105 hover:border-primary hover:bg-primary/10 hover:text-primary"
+            >
+<FontAwesomeIcon icon={faUserPlus} className="size-5" />
+            </button>
+            <span className="text-xs text-muted-foreground">Invite</span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="p-1 text-xs">
+          Copy invite link
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
 

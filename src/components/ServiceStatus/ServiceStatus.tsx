@@ -37,7 +37,7 @@ const ServiceStatus = ({ status }: Props) => {
         {status === 'connecting' && (
           <span className={`absolute inline-flex size-full animate-ping rounded-full ${pulse}`} />
         )}
-        <span className={`relative inline-flex size-2 rounded-full ${dot}`} />
+        <span className={`relative inline-flex size-2 rounded-full animate-heartbeat ${dot}`} />
       </span>
       <span className={`text-xs font-medium ${text}`}>{label}</span>
     </div>
