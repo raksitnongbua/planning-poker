@@ -1,4 +1,4 @@
-import { Metadata } from 'next'
+import type { Metadata } from 'next'
 import { getServerSession } from 'next-auth'
 import React from 'react'
 
@@ -9,20 +9,23 @@ interface Props {
   params: { id: string }
 }
 
-export const metadata: Metadata = {
-  title: 'Room',
-  alternates: {
-    canonical: '/room',
-  },
-  openGraph: {
-    title: 'Corgi Planning Poker | Room',
-    description: `Agile teams use this gamified technique to estimate task effort collaboratively,
-    fostering consensus and efficient planning.`,
-    locale: 'en_US',
-    siteName: 'www.corgiplanningpoker.com/room',
-    type: 'website',
-    images: ['/images/corgi-planning-poker-room-preview.png'],
-  },
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  return {
+    title: 'Room',
+    alternates: {
+      canonical: `https://www.corgiplanningpoker.com/room/${params.id}`,
+    },
+    robots: { index: false, follow: false },
+    openGraph: {
+      title: 'Corgi Planning Poker | Room',
+      description:
+        'Join this planning poker room to estimate story points with your agile team in real-time.',
+      locale: 'en_US',
+      siteName: 'Corgi Planning Poker',
+      type: 'website',
+      images: ['/images/corgi-planning-poker-room-preview.png'],
+    },
+  }
 }
 
 const Room = async ({ params }: Props) => {

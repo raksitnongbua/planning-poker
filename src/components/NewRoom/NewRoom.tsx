@@ -5,7 +5,7 @@ import { useMutation } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 import { getCookie, hasCookie, setCookie } from 'cookies-next'
 import { useRouter } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 
 import { DESK_CONFIG_KEY } from '@/constant/cookies'
@@ -20,11 +20,14 @@ import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { useToast } from '../ui/use-toast'
 
-const DEFAULT_DESK_CONFIG: DeskConfig = {
-  id: 'default',
-  displayName: '🃏 Default',
-  value: '0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6',
-}
+const FAVORITES_STORAGE_KEY = 'desk-favorites'
+
+const PRESET_DESK_CONFIGS: DeskConfig[] = [
+  { id: 'fibonacci', displayName: '🔢 Fibonacci', value: '1, 2, 3, 5, 8, 13, 21, 34', group: 'preset' },
+  { id: 'tshirt', displayName: '👕 T-Shirt', value: 'XS, S, M, L, XL, XXL', group: 'preset' },
+  { id: 'powers-of-2', displayName: '⚡ Powers of 2', value: '1, 2, 4, 8, 16, 32, 64', group: 'preset' },
+  { id: 'hours', displayName: '⏱️ Hours', value: '1, 2, 4, 8, 16, 24, 40', group: 'preset' },
+]
 
 const NewRoom = ({ }) => {
   const { uid } = useUserInfoStore()
@@ -32,9 +35,29 @@ const NewRoom = ({ }) => {
   const router = useRouter()
 
   const [roomName, setRoomName] = useState<string>('Planning Room')
-  const [deskSelectedId, setDeskSelectedId] = useState<string>('default')
+  const [deskSelectedId, setDeskSelectedId] = useState<string>('fibonacci')
   const [isRouting, setIsRouting] = useState<boolean>(false)
-  const [options, setOptions] = useState<DeskConfig[]>([DEFAULT_DESK_CONFIG])
+  const [options, setOptions] = useState<DeskConfig[]>(PRESET_DESK_CONFIGS)
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(['fibonacci'])
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(FAVORITES_STORAGE_KEY)
+      if (stored) {
+        const parsed: string[] = JSON.parse(stored)
+        setFavoriteIds(parsed)
+        if (parsed.length > 0) setDeskSelectedId(parsed[0])
+      }
+    } catch {}
+  }, [])
+
+  const handleToggleFavorite = useCallback((id: string) => {
+    setFavoriteIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+      try { localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(next)) } catch {}
+      return next
+    })
+  }, [])
 
   const { mutate, isPending } = useMutation<{ room_id: string }, unknown, Record<string, unknown>>({
     mutationFn: (variables) =>
@@ -58,7 +81,7 @@ const NewRoom = ({ }) => {
   })
 
   useEffect(() => {
-    if (!hasCookie(DESK_CONFIG_KEY) || options.length > 1) {
+    if (!hasCookie(DESK_CONFIG_KEY) || options.length > PRESET_DESK_CONFIGS.length) {
       return
     }
     try {
@@ -90,6 +113,7 @@ const NewRoom = ({ }) => {
       id: uuidv4(),
       value: deskValue,
       displayName: deskName,
+      group: 'custom',
     }
     setOptions([...options, newDeskConfig])
     setDeskSelectedId(newDeskConfig.id)
@@ -100,9 +124,9 @@ const NewRoom = ({ }) => {
   }
   return (
     <div className="flex min-h-[calc(100dvh-92px*2)] items-center justify-center">
-      <Card className="w-full max-w-screen-sm">
+      <Card className="w-full max-w-screen-sm animate-in fade-in zoom-in-95 duration-300">
         <CardHeader>
-          <h2 className="text-xl">Create Room</h2>
+          <h1 className="text-xl">Create Room</h1>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div>
@@ -126,6 +150,8 @@ const NewRoom = ({ }) => {
               onValueChange={setDeskSelectedId}
               disabled={disabledInputs}
               onCreateCustomDesk={handleCreateCustomDesk}
+              favoriteIds={favoriteIds}
+              onToggleFavorite={handleToggleFavorite}
             />
           </div>
         </CardContent>

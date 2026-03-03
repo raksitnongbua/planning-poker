@@ -47,20 +47,26 @@ const RoomHistory: React.FC<RoomHistoryProps> = ({ onClickJoinRoom, rooms }) => 
       </TableHeader>
       <TableBody>
         {!isNotFoundData &&
-          rooms.map((room) => (
-            <TableRow key={room.id}>
+          rooms.map((room, i) => (
+            <TableRow
+              key={room.id}
+              className="animate-in fade-in slide-in-from-left-3 duration-300 transition-colors"
+              style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
+            >
               <TableCell className="font-medium">{room.name}</TableCell>
               <TableCell className="text-center">{room.totalMembers}</TableCell>
               <TableCell className="text-right">{format(room.updatedAt,"eee dd-MMM-yyyy HH:mm")}</TableCell>
               <TableCell className="text-right">{format(room.createdAt,"eee dd-MMM-yyyy HH:mm")}</TableCell>
               <TableCell className="text-right">
                 <Button
-                  size="icon"
+                  size="sm"
                   id="join-recent-room"
-                  aria-label="Join recent room"
+                  aria-label="Resume room"
+                  className="gap-1.5"
                   onClick={handleClickJoinRoom(room.id)}
                 >
-                  <FontAwesomeIcon icon={faRightFromBracket} />
+                  <FontAwesomeIcon icon={faRightFromBracket} className="size-3.5" />
+                  Resume
                 </Button>
               </TableCell>
             </TableRow>
