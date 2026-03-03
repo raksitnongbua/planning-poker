@@ -33,6 +33,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const { setLoadingOpen } = useLoadingStore()
 
   const [openJoinRoomDialog, setOpenJoinRoomDialog] = useState(false)
+  const [isSpectator, setIsSpectator] = useState(false)
   const [members, setMembers] = useState<Member[]>([])
   const [roomStatus, setRoomStatus] = useState<Status>(Status.None)
   const [cardChoosing, setCardChoosing] = useState<string | null>(null)
@@ -101,7 +102,9 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
     const action = jsonMessage.action
     switch (action) {
       case 'NEED_TO_JOIN':
-        setOpenJoinRoomDialog(true)
+        if (!isSpectator) {
+          setOpenJoinRoomDialog(true)
+        }
         break
       case 'UPDATE_ROOM':
         const payload = jsonMessage.payload
@@ -142,7 +145,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
       })
       router.push('/')
     }
-  }, [lastMessage, lastMessage?.data, roomStatus, router, toast, uid])
+  }, [isSpectator, lastMessage, lastMessage?.data, roomStatus, router, toast, uid])
 
   return (
     <>
@@ -153,35 +156,50 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
           inviteLink={process.env.NEXT_PUBLIC_ORIGIN_URL + pathname}
         />
         {roomStatus !== Status.None && (
-          <>
-            <RoomTable
-              result={result}
-              isRevealable={members.some((member) => member.estimatedValue !== '')}
-              maxPoint={maxPoint}
-              onClickResetRoom={() => {
-                sendJsonMessage({ action: 'RESET_ROOM' })
+          <RoomTable
+            result={result}
+            isRevealable={members.some((member) => member.estimatedValue !== '')}
+            maxPoint={maxPoint}
+            onClickResetRoom={() => {
+              sendJsonMessage({ action: 'RESET_ROOM' })
+            }}
+            onClickRevealCards={() => {
+              sendJsonMessage({ action: 'REVEAL_CARDS' })
+            }}
+            roomName={roomName}
+            status={roomStatus}
+            isSpectator={isSpectator}
+          />
+        )}
+        {roomStatus !== Status.None && !isSpectator && (
+          <RoomCards
+            cardChoosing={String(cardChoosing) ?? '-1'}
+            cardOptions={cardOptions}
+            isEditPointMode={isEditPointMode}
+            onClickFlipCards={() => setIsEditEstimateValue((preVal) => !preVal)}
+            onClickVote={(value) => {
+              sendJsonMessage({
+                action: 'UPDATE_ESTIMATED_VALUE',
+                payload: { value },
+              })
+              setIsEditEstimateValue(false)
+            }}
+            status={roomStatus}
+          />
+        )}
+        {isSpectator && (
+          <div className="col-span-3 flex h-36 flex-col items-center justify-center gap-3">
+            <p className="text-sm text-muted-foreground">You are watching as a spectator</p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsSpectator(false)
+                setOpenJoinRoomDialog(true)
               }}
-              onClickRevealCards={() => {
-                sendJsonMessage({ action: 'REVEAL_CARDS' })
-              }}
-              roomName={roomName}
-              status={roomStatus}
-            />
-            <RoomCards
-              cardChoosing={String(cardChoosing) ?? '-1'}
-              cardOptions={cardOptions}
-              isEditPointMode={isEditPointMode}
-              onClickFlipCards={() => setIsEditEstimateValue((preVal) => !preVal)}
-              onClickVote={(value) => {
-                sendJsonMessage({
-                  action: 'UPDATE_ESTIMATED_VALUE',
-                  payload: { value },
-                })
-                setIsEditEstimateValue(false)
-              }}
-              status={roomStatus}
-            />
-          </>
+            >
+              Sit Down
+            </Button>
+          </div>
         )}
         <p className="fixed bottom-2 right-2 text-xs text-muted-foreground">
           The WebSocket is currently {connectionStatus}
@@ -191,6 +209,10 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
       <JoinRoomDialog
         open={openJoinRoomDialog}
         onClickConfirm={handleClickJoinRoom}
+        onClickSpectate={() => {
+          setIsSpectator(true)
+          setOpenJoinRoomDialog(false)
+        }}
         hasAvatar={Boolean(avatar)}
         defaultName={userName ?? undefined}
         signedIn={Boolean(sessionId)}

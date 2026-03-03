@@ -83,6 +83,14 @@ const config: Config = {
           '60%': { transform: 'rotate(-10deg)' },
           '80%': { transform: 'rotate(10deg)' },
         },
+        'shake-interval': {
+          '0%': { transform: 'rotate(0deg)' },
+          '5%': { transform: 'rotate(-2.5deg)' },
+          '10%': { transform: 'rotate(2.5deg)' },
+          '15%': { transform: 'rotate(-1.5deg)' },
+          '20%': { transform: 'rotate(1.5deg)' },
+          '25%, 100%': { transform: 'rotate(0deg)' },
+        },
         sway: {
           '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
           '30%': { transform: 'translateY(-10px) rotate(0.4deg)' },
@@ -94,6 +102,7 @@ const config: Config = {
         'accordion-up': 'accordion-up 0.2s ease-out',
         'spin-slow': 'spin 3s linear infinite',
         shake: 'shake 2.5s ease-in-out infinite',
+        'shake-interval': 'shake-interval 1.25s ease-in-out infinite',
         aura: 'aura 2.5s ease-out infinite',
         shine: 'shine 3s ease-in-out infinite',
         sway: 'sway 60s ease-in-out infinite',

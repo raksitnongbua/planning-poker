@@ -13,6 +13,7 @@ export interface RoomTableProps {
   onClickRevealCards: () => void
   roomName: string
   status: Status
+  isSpectator: boolean
 }
 
 const RoomTable: React.FC<RoomTableProps> = ({
@@ -23,6 +24,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
   onClickRevealCards,
   roomName,
   status,
+  isSpectator,
 }) => {
   const averagePoint = useMemo(() => {
     let votingCount = 0
@@ -44,7 +46,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
         <>
           <Table name={roomName} />
           <div>
-            {isRevealable && (
+            {isRevealable && !isSpectator && (
               <Button
                 variant="outline"
                 className="border-orange-400 text-orange-400 hover:text-orange-300"
@@ -62,13 +64,15 @@ const RoomTable: React.FC<RoomTableProps> = ({
           </div>
           <div className="flex min-w-[120px] flex-col justify-end gap-5">
             <p className="min-w-[200px] text-2xl">{`Average: ${averagePoint.toFixed(2)} point`}</p>
-            <Button
-              variant="outline"
-              className="border-orange-400 text-orange-400 hover:text-orange-300"
-              onClick={onClickResetRoom}
-            >
-              CLEAR
-            </Button>
+            {!isSpectator && (
+              <Button
+                variant="outline"
+                className="border-orange-400 text-orange-400 hover:text-orange-300"
+                onClick={onClickResetRoom}
+              >
+                CLEAR
+              </Button>
+            )}
           </div>
         </div>
       )}
