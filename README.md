@@ -1,27 +1,57 @@
-# Corgi Planning Poker Online
+<div align="center">
 
-Welcome to the Corgi Planning Poker Online project repository! This delightful web application, built with [Next.js](https://nextjs.org/), features a charming corgi mascot and utilizes Vercel for effortless frontend deployment. Dive into the world of agile planning while learning about websockets, all powered by the Golang backend known as the "Planning Poker Service."
+# 🐾 Corgi Planning Poker
 
-[Website](https://www.corgiplanningpoker.com)
+A free, real-time planning poker app for agile teams — featuring a charming corgi mascot.
 
-## Features
+**[corgiplanningpoker.com](https://www.corgiplanningpoker.com)**
 
-- User-Friendly Interface: Enjoy a clean and intuitive interface designed to streamline the estimation process.
-- Real-time Collaboration: Collaborate with team members in real-time, making the planning process efficient and engaging.
-- Scalable Architecture: Built with Next.js, the application ensures scalability and responsiveness, catering to various screen sizes and devices.
-- Vercel Deployment: Take advantage of Vercel's powerful and reliable deployment platform for hosting your frontend with ease.
+---
 
-## Getting Started with Next.js
+![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?style=for-the-badge&logo=vercel&logoColor=white)
+![Bun](https://img.shields.io/badge/Bun-Package_Manager-fbf0df?style=for-the-badge&logo=bun&logoColor=black)
 
-To get started with this project, follow the steps below.
+</div>
+
+---
+
+## ✨ Features
+
+- **Real-time collaboration** — Vote and reveal estimates simultaneously with your team via WebSockets
+- **Custom card configurations** — Choose from Fibonacci, T-shirt sizes, or custom sequences
+- **Room history** — Review past estimation sessions from recent rooms
+- **No account required** — Just create a room and share the link
+- **Mobile-friendly** — Responsive design across all screen sizes
+
+---
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | [Next.js 14](https://nextjs.org/) (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS + shadcn/ui (Radix UI) |
+| State | Zustand + TanStack Query |
+| Real-time | WebSockets (`react-use-websocket`) |
+| Auth | NextAuth.js |
+| Monitoring | Sentry |
+| Analytics | Vercel Analytics + Speed Insights |
+| Deployment | Vercel |
+| Package Manager | Bun |
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/en/) installed on your machine.
+- [Bun](https://bun.sh/) installed on your machine
 
 ### Installation
-
-Install the project dependencies:
 
 ```bash
 bun install
@@ -29,20 +59,64 @@ bun install
 
 ### Development
 
-To run the development server, execute the following command:
-
 ```bash
 bun dev
 ```
 
-## Contributing
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-If you'd like to contribute to the project, follow the standard GitHub workflow:
+### Build
 
-1. Fork the repository.
-2. Create a new branch for your feature or bug fix.
-3. Make changes and commit them.
-4. Push your changes to your fork.
-5. Create a pull request.
+```bash
+bun run build
+bun start
+```
 
-Happy Planning! 🚀
+### Lint
+
+```bash
+bun run lint
+```
+
+---
+
+## 📁 Project Structure
+
+```
+src/
+├── app/                  # Next.js App Router pages
+│   ├── page.tsx          # Home page
+│   ├── new-room/         # Create new room
+│   ├── room/[id]/        # Planning poker room
+│   ├── recent-rooms/     # Room history
+│   └── privacy-policy/   # Privacy policy
+├── components/           # UI components
+│   ├── Home/             # Landing page
+│   ├── Room/             # Poker room
+│   ├── NewRoom/          # Room creation form
+│   ├── Navbar/           # Navigation
+│   ├── Footer/           # Footer
+│   └── ui/               # Shared shadcn/ui components
+└── ...
+```
+
+---
+
+## 🔌 Backend
+
+This frontend connects to **Planning Poker Service** — a Golang-based WebSocket backend that manages rooms, members, and voting state.
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m "feat: add your feature"`
+4. Push to your fork and open a pull request
+
+---
+
+## 📄 License
+
+[MIT](./LICENSE)

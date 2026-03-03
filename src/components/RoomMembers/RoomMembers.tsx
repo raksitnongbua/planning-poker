@@ -1,7 +1,7 @@
 'use client'
 import React from 'react'
 
-import { MINUTES, SECONDS } from '@/utils/time'
+import { MINUTES } from '@/utils/time'
 
 import { InviteButton } from '../InviteButton'
 import MemberAvatar from '../MemberAvatar'
@@ -17,11 +17,11 @@ export interface RoomMembersProps {
 
 const RoomMembers: React.FC<RoomMembersProps> = ({ members, inviteLink, isCardReveled }) => {
   const getActiveStatus = (lastActiveAt: Date): ActiveStatus => {
-    const secDiff = (Date.now() - lastActiveAt.getTime()) / SECONDS
+    const msDiff = Date.now() - lastActiveAt.getTime()
 
-    if (secDiff <= 1 * MINUTES) {
+    if (msDiff <= 1 * MINUTES) {
       return ActiveStatus.Active
-    } else if (secDiff <= 10 * MINUTES) {
+    } else if (msDiff <= 10 * MINUTES) {
       return ActiveStatus.Busy
     } else {
       return ActiveStatus.Inactive

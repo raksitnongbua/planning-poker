@@ -9,6 +9,27 @@ import FrontCard from '../FrontCard'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
 import { ActiveStatus, Props } from './types'
 
+const statusConfig: Record<ActiveStatus, { dot: string; ring: string; ping: string; label: string }> = {
+  [ActiveStatus.Active]: {
+    dot: 'bg-green-400',
+    ring: 'ring-green-500/50',
+    ping: 'bg-green-400/50',
+    label: 'Online',
+  },
+  [ActiveStatus.Busy]: {
+    dot: 'bg-orange-400',
+    ring: 'ring-orange-400/50',
+    ping: 'bg-orange-400/50',
+    label: 'Busy',
+  },
+  [ActiveStatus.Inactive]: {
+    dot: 'bg-red-500',
+    ring: 'ring-red-500/40',
+    ping: 'bg-red-500/40',
+    label: 'Offline',
+  },
+}
+
 const MemberAvatar = ({
   avatar,
   name,
@@ -17,55 +38,34 @@ const MemberAvatar = ({
   isShowingCard,
   activeStatus,
 }: Props) => {
-  const getClassWithActiveStatus = (status: ActiveStatus): string => {
-    switch (status) {
-      case ActiveStatus.Active:
-        return `bg-green-400`
-      case ActiveStatus.Busy:
-        return `bg-orange-400`
-      case ActiveStatus.Inactive:
-        return `bg-red-500`
-      default:
-        return `bg-neutral-600`
-    }
-  }
-
-  const getDetailActiveStatus = (status: ActiveStatus): string => {
-    switch (status) {
-      case ActiveStatus.Active:
-        return 'Online'
-      case ActiveStatus.Busy:
-        return 'Busy'
-      case ActiveStatus.Inactive:
-        return 'Offline'
-      default:
-        return 'N/A'
-    }
+  const { dot, ring, ping, label } = statusConfig[activeStatus] ?? {
+    dot: 'bg-neutral-600',
+    ring: 'ring-neutral-600/30',
+    ping: 'bg-neutral-600/30',
+    label: 'N/A',
   }
 
   return (
     <div className="flex w-[80px] flex-col items-center gap-3">
       <div className="relative">
-        <Avatar className="size-14">
+        <Avatar className={clsx('size-14 ring-2 ring-offset-2 ring-offset-background', ring)}>
           <AvatarImage alt="profile-icon" src={avatar ?? '/images/corgi-tood-cute.png'} />
           <AvatarFallback>{name[0].toUpperCase()}</AvatarFallback>
         </Avatar>
-        <div
-          className={clsx(
-            'absolute bottom-0 right-0 size-[6px] rounded-full',
-            getClassWithActiveStatus(activeStatus)
-          )}
-        />
+        <div className={clsx('absolute bottom-0 right-0 size-3 rounded-full ring-2 ring-background', dot)}>
+          <span className={clsx('absolute inline-flex size-full rounded-full animate-ping', ping)} />
+        </div>
       </div>
+
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger>
-            <code className="relative block max-w-20 overflow-hidden overflow-ellipsis text-nowrap rounded bg-muted p-1 font-mono text-sm font-semibold">
+            <span className="block max-w-20 truncate rounded-md bg-muted/60 px-2 py-0.5 text-center text-xs font-medium text-foreground/80">
               {name}
-            </code>
+            </span>
           </TooltipTrigger>
           <TooltipContent className="p-1 text-xs" side="top">
-            {`${name} (${getDetailActiveStatus(activeStatus)})`}
+            {`${name} (${label})`}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

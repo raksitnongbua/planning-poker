@@ -25,7 +25,7 @@ const CorgiFeeling = ({ badlyPercentage }: CorgiFeelingProps) => {
       height={180}
       width={200}
       alt="corgi-feeling"
-      className="object-contain"
+      className="object-contain animate-shake-interval"
     />
   )
 }

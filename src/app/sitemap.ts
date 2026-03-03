@@ -5,20 +5,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: 'https://www.corgiplanningpoker.com',
       lastModified: new Date(),
-      changeFrequency: 'daily',
+      changeFrequency: 'weekly',
       priority: 1,
     },
     {
       url: 'https://www.corgiplanningpoker.com/new-room',
       lastModified: new Date(),
-      changeFrequency: 'daily',
+      changeFrequency: 'monthly',
       priority: 0.7,
-    },
-    {
-      url: 'https://www.corgiplanningpoker.com/recent-rooms',
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.4,
     },
   ]
 }

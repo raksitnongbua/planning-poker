@@ -11,20 +11,21 @@ import { Skeleton } from '../ui/skeleton'
 const Navbar = () => {
   const { data: session, status } = useSession()
   return (
-    <header className="container mx-auto px-2 py-4 sm:px-8">
+    <header className="container mx-auto border-b border-border/40 px-2 py-4 sm:px-8">
       <nav className="flex items-start justify-between">
-        <Link href="/">
+        <Link href="/" className="transition-transform duration-200 hover:scale-110 inline-block">
           <Image
             className="cursor-pointer"
             src="/images/corgi-logo.png"
-            alt="corgi-logo"
+            alt="Corgi Planning Poker home"
             width={60}
             height={60}
+            priority
           />
         </Link>
         <div className="flex items-center gap-2">
           <Link
-            className="p-2"
+            className="p-2 transition-opacity duration-200 hover:opacity-70"
             target="_blank"
             href="https://github.com/raksitnongbua/planning-poker"
             rel="noopener noreferrer"
@@ -32,9 +33,9 @@ const Navbar = () => {
             <Image
               className="size-8 cursor-pointer"
               src="/icons/github.svg"
-              alt="github-logo"
-              width={0}
-              height={0}
+              alt="GitHub repository"
+              width={32}
+              height={32}
             />
           </Link>
           {status === 'loading' ? (
