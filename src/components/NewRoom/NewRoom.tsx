@@ -23,7 +23,7 @@ import { useToast } from '../ui/use-toast'
 const FAVORITES_STORAGE_KEY = 'desk-favorites'
 
 const PRESET_DESK_CONFIGS: DeskConfig[] = [
-  { id: 'fibonacci', displayName: '🔢 Fibonacci', value: '1, 2, 3, 5, 8, 13, 21, 34', group: 'preset' },
+  { id: 'fibonacci', displayName: '🃏 Fibonacci', value: '1, 2, 3, 5, 8, 13, 21, 34', group: 'preset' },
   { id: 'tshirt', displayName: '👕 T-Shirt', value: 'XS, S, M, L, XL, XXL', group: 'preset' },
   { id: 'powers-of-2', displayName: '⚡ Powers of 2', value: '1, 2, 4, 8, 16, 32, 64', group: 'preset' },
   { id: 'hours', displayName: '⏱️ Hours', value: '1, 2, 4, 8, 16, 24, 40', group: 'preset' },

@@ -196,7 +196,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
 
   return (
     <>
-      <div className="flex min-h-[calc(100dvh-92px*2)] min-w-[700px]">
+      <div className="flex min-h-[calc(100dvh-92px*2)] min-w-[700px] rounded-t-2xl bg-muted/10 shadow-md">
 
         {/* ── Main column ── */}
         <div className="flex flex-1 flex-col">

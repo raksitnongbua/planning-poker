@@ -11,8 +11,8 @@ import { Skeleton } from '../ui/skeleton'
 const Navbar = () => {
   const { data: session, status } = useSession()
   return (
-    <header className="container mx-auto border-b border-border/40 px-2 py-4 sm:px-8">
-      <nav className="flex items-start justify-between">
+    <header>
+      <nav className="container mx-auto flex items-center justify-between px-2 py-2 sm:px-8">
         <Link href="/" className="transition-transform duration-200 hover:scale-110 inline-block">
           <Image
             className="cursor-pointer"
