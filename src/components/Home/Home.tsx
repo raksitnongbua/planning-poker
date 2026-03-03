@@ -4,8 +4,10 @@ import {
   faBolt,
   faClockRotateLeft,
   faCode,
+  faEye,
   faInfinity,
   faLayerGroup,
+  faSyncAlt,
   faUnlockKeyhole,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -59,6 +61,16 @@ const FEATURES = [
     description: 'Use the default Fibonacci deck, T-shirt sizes, or create your own custom values.',
   },
   {
+    icon: faSyncAlt,
+    title: 'Cross-platform sync',
+    description: 'Sign in with Google to link your identity across devices. Resume any room from your phone, tablet, or laptop — your history follows you.',
+  },
+  {
+    icon: faEye,
+    title: 'Spectator mode',
+    description: 'Join a room as a silent observer without casting votes. Sit down at any time when you\'re ready to participate.',
+  },
+  {
     icon: faCode,
     title: 'Open source',
     description: 'The full source code is publicly available on GitHub.',
@@ -73,11 +85,19 @@ const FAQS = [
   },
   {
     q: 'Do I need to create an account?',
-    a: 'No account is required to create or join a room. You can optionally sign in with Google to save your recent rooms for quick access later.',
+    a: 'No account is required. Every visitor is automatically assigned a unique guest ID so you can create and join rooms instantly. Signing in with Google links that ID to your Google account, which syncs your identity across browsers and devices — so you can resume any recent room from your phone, laptop, or any other device without losing your history.',
   },
   {
     q: 'What card decks are available?',
-    a: 'Four preset decks are built in: Fibonacci (1, 2, 3, 5, 8, 13, 21, 34), T-Shirt (XS, S, M, L, XL, XXL), Powers of 2 (1, 2, 4, 8, 16, 32, 64), and Hours (1, 2, 4, 8, 16, 24, 40). You can also create a fully custom deck by entering any comma-separated values when creating a room.',
+    a: 'Four preset decks are built in: Fibonacci (1, 2, 3, 5, 8, 13, 21, 34), T-Shirt (XS, S, M, L, XL, XXL), Powers of 2 (1, 2, 4, 8, 16, 32, 64), and Hours (1, 2, 4, 8, 16, 24, 40). You can also create a fully custom deck by entering any comma-separated values. Mark any deck as a favourite and it will be auto-selected the next time you create a room.',
+  },
+  {
+    q: 'Can I watch a session without voting?',
+    a: 'Yes. When joining a room you can choose "Watch as spectator" to observe without casting a vote. You can sit down and join the voting at any point during the session.',
+  },
+  {
+    q: 'How long does a room last?',
+    a: 'Rooms are automatically removed after 30 days of inactivity. As long as your team uses a room at least once a month, it stays available.',
   },
   {
     q: 'Is Corgi Planning Poker free?',
