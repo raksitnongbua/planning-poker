@@ -32,7 +32,7 @@ export interface ThrowLauncherOptions {
 }
 
 export function useThrowLauncher(
-  shooterRef: React.RefObject<HTMLDivElement>,
+  shooterRef: React.RefObject<HTMLDivElement | null>,
   options: ThrowLauncherOptions = {},
 ): ThrowLauncherReturn {
   const { onThrow } = options
