@@ -8,7 +8,9 @@ A free, real-time planning poker app for agile teams — featuring a charming co
 
 ---
 
-![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js&logoColor=white)
+![Version](https://img.shields.io/badge/version-2.0.2-blue?style=for-the-badge)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?style=for-the-badge&logo=vercel&logoColor=white)
@@ -32,7 +34,8 @@ A free, real-time planning poker app for agile teams — featuring a charming co
 
 | Layer | Technology |
 |---|---|
-| Framework | [Next.js 14](https://nextjs.org/) (App Router) |
+| Framework | [Next.js 16](https://nextjs.org/) (App Router) |
+| UI Library | React 19 |
 | Language | TypeScript |
 | Styling | Tailwind CSS + shadcn/ui (Radix UI) |
 | State | Zustand + TanStack Query |
@@ -120,3 +123,23 @@ This frontend connects to **Planning Poker Service** — a Golang-based WebSocke
 ## 📄 License
 
 [MIT](./LICENSE)
+
+---
+
+## 📦 Changelog
+
+### v2.0.2
+- Upgrade Next.js 14 → 16 and React 18 → 19
+- Update all Radix UI packages and Sentry v7 → v10
+- Add Turbopack config and migrate to flat ESLint config
+- SEO improvements: metadata, OG tags, schema markup
+
+### v2.0.1
+- Polish navbar and room layout
+- Update home page content and copy
+
+### v2.0.0
+- Revamp room page with table-first layout
+- Redesign home page with new SEO-focused content
+
+> Full release history: [GitHub Releases](https://github.com/raksitnongbua/planning-poker/releases)
