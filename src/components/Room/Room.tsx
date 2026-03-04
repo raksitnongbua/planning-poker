@@ -9,6 +9,7 @@ import useWebSocket, { ReadyState } from 'react-use-websocket'
 import { useToast } from '@/components/ui/use-toast'
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 
+import { ThrowOverlay, ThrowPanel, useThrowLauncher } from '../ThrowLauncher'
 import Dialog from '../common/Dialog'
 import JoinRoomDialog from '../JoinRoomDialog'
 import RoomCards from '../RoomCards'
@@ -16,6 +17,17 @@ import RoomTable from '../RoomTable'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from '../ui/button'
 import { Member, Props, Status } from './types'
+
+const ARMED_CURSOR =
+  `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'>` +
+  `<circle cx='16' cy='16' r='11' stroke='%23f97316' stroke-width='1.5' fill='none' opacity='0.9'/>` +
+  `<circle cx='16' cy='16' r='4' stroke='%23f97316' stroke-width='1' fill='none' opacity='0.6'/>` +
+  `<line x1='16' y1='1' x2='16' y2='9' stroke='%23f97316' stroke-width='1.5' stroke-linecap='round'/>` +
+  `<line x1='16' y1='23' x2='16' y2='31' stroke='%23f97316' stroke-width='1.5' stroke-linecap='round'/>` +
+  `<line x1='1' y1='16' x2='9' y2='16' stroke='%23f97316' stroke-width='1.5' stroke-linecap='round'/>` +
+  `<line x1='23' y1='16' x2='31' y2='16' stroke='%23f97316' stroke-width='1.5' stroke-linecap='round'/>` +
+  `<circle cx='16' cy='16' r='1.5' fill='%23f97316'/>` +
+  `</svg>") 16 16, crosshair`
 
 const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const { uid } = useUserInfoStore()
@@ -39,37 +51,20 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const [isSpectator, setIsSpectator] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
   const [isJoinerOpen, setIsJoinerOpen] = useState(true)
-  const [thrown, setThrown] = useState<Array<{ id: string; emoji: string; x: number; y: number; tx: number; ty: number }>>([])
-  const [lockedTarget, setLockedTarget] = useState<{ x: number; y: number; label: string } | null>(null)
-  const [isSelectingTarget, setIsSelectingTarget] = useState(false)
-
-  const launchPanelRef = React.useRef<HTMLDivElement>(null)
-
-  const fireAt = (emoji: string, targetX: number, targetY: number) => {
-    const panel = launchPanelRef.current?.getBoundingClientRect()
-    const startX = panel ? panel.left + panel.width / 2 : 40
-    const startY = panel ? panel.top + panel.height / 2 : window.innerHeight / 2
-    const id = Math.random().toString(36).slice(2)
-    setThrown(p => [...p, { id, emoji, x: startX, y: startY, tx: targetX - startX, ty: targetY - startY }])
-    setTimeout(() => setThrown(p => p.filter(t => t.id !== id)), 1400)
-  }
-
-  const lockTarget = (x: number, y: number, label: string) => {
-    setLockedTarget({ x, y, label })
-    setIsSelectingTarget(false)
-  }
-
-  const handleEmojiClick = (emoji: string) => {
-    if (!lockedTarget) return
-    fireAt(emoji, lockedTarget.x, lockedTarget.y)
-  }
-
-  useEffect(() => {
-    if (!isSelectingTarget) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsSelectingTarget(false) }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [isSelectingTarget])
+  const myCardRef = React.useRef<HTMLDivElement>(null)
+  const launcher = useThrowLauncher(myCardRef, {
+    onThrow: (emoji, targetX, targetY, targetMemberId, targetContext) => {
+      let payload: Record<string, unknown>
+      if (targetMemberId && targetContext === 'table') {
+        payload = { emoji, target_table_member_id: targetMemberId }
+      } else if (targetMemberId && targetContext === 'panel') {
+        payload = { emoji, target_panel_member_id: targetMemberId }
+      } else {
+        payload = { emoji, target_x_ratio: targetX / window.innerWidth, target_y_ratio: targetY / window.innerHeight }
+      }
+      sendJsonMessage({ action: 'THROW_EMOJI', payload })
+    },
+  })
   const [members, setMembers] = useState<Member[]>([])
   const [roomStatus, setRoomStatus] = useState<Status>(Status.None)
   const [cardChoosing, setCardChoosing] = useState<string | null>(null)
@@ -150,6 +145,36 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
           setOpenJoinRoomDialog(true)
         }
         break
+      case 'EMOJI_THROWN': {
+        const { from_user_id, emoji, target_table_member_id, target_panel_member_id, target_x_ratio, target_y_ratio } = jsonMessage.payload
+
+        // Origin: always the right-panel member card
+        const fromEl = document.querySelector<HTMLElement>(`[data-panel-member-id="${from_user_id}"]`)
+        const fromRect = fromEl?.getBoundingClientRect()
+        const fromX = fromRect ? fromRect.left + fromRect.width / 2 : window.innerWidth - 80
+        const fromY = fromRect ? fromRect.top + fromRect.height / 2 : window.innerHeight / 2
+
+        // Target: resolve to correct element on this client's screen
+        let targetX: number
+        let targetY: number
+        if (target_table_member_id) {
+          const el = document.querySelector<HTMLElement>(`[data-table-member-id="${target_table_member_id}"]`)
+          const r = el?.getBoundingClientRect()
+          targetX = r ? r.left + r.width / 2 : window.innerWidth / 2
+          targetY = r ? r.top + r.height / 2 : window.innerHeight / 2
+        } else if (target_panel_member_id) {
+          const el = document.querySelector<HTMLElement>(`[data-panel-member-id="${target_panel_member_id}"]`)
+          const r = el?.getBoundingClientRect()
+          targetX = r ? r.left + r.width / 2 : window.innerWidth - 80
+          targetY = r ? r.top + r.height / 2 : window.innerHeight / 2
+        } else {
+          targetX = target_x_ratio * window.innerWidth
+          targetY = target_y_ratio * window.innerHeight
+        }
+
+        launcher.fireRemote(emoji, fromX, fromY, targetX, targetY)
+        break
+      }
       case 'UPDATE_ROOM':
         const payload = jsonMessage.payload
         const transformedMembers = transformMembers(payload.members ?? [])
@@ -189,6 +214,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
       })
       router.push('/')
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSpectator, lastMessage, lastMessage?.data, roomStatus, router, toast, uid])
 
   const inviteLink = process.env.NEXT_PUBLIC_ORIGIN_URL + pathname
@@ -203,10 +229,17 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
 
           {/* Table centered in main space */}
           <div
-            className={`flex flex-1 items-center justify-center py-8 ${isSelectingTarget ? 'cursor-crosshair' : ''}`}
+            className="flex flex-1 items-center justify-center py-8"
+            style={launcher.armedEmoji ? { cursor: ARMED_CURSOR } : undefined}
             onClick={(e) => {
-              if (!isSelectingTarget) return
-              lockTarget(e.clientX, e.clientY, 'Table')
+              if (!launcher.armedEmoji) return
+              let el: HTMLElement | null = e.target as HTMLElement
+              let memberId: string | undefined
+              while (el && el !== e.currentTarget) {
+                if (el.dataset.tableMemberId) { memberId = el.dataset.tableMemberId; break }
+                el = el.parentElement
+              }
+              launcher.handleFire(e.clientX, e.clientY, memberId, memberId ? 'table' : undefined)
             }}
           >
             {roomStatus !== Status.None && (
@@ -404,17 +437,30 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
               return (
                 <div
                   key={member.id}
-                  className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all ${
-                    lockedTarget?.label === member.name
-                      ? 'border-primary bg-primary/10 ring-1 ring-primary/40'
-                      : isSelectingTarget
-                      ? 'cursor-crosshair border-orange-400/40 bg-orange-400/5 hover:border-orange-400 hover:bg-orange-400/15'
+                  ref={member.id === id ? myCardRef : undefined}
+                  data-panel-member-id={member.id}
+                  className={`relative flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all duration-200 ${
+                    launcher.armedEmoji && launcher.hoveredMemberId === member.id
+                      ? 'border-orange-400/70 bg-orange-400/10 ring-2 ring-orange-400/30 shadow-md shadow-orange-500/20'
+                      : launcher.armedEmoji
+                      ? 'border-orange-400/25 bg-orange-400/5 hover:border-orange-400/60 hover:bg-orange-400/10'
                       : 'border-border/40 bg-muted/20 hover:border-border/70 hover:bg-muted/40'
                   }`}
-                  onClick={(e) => {
-                    if (!isSelectingTarget) return
+                  style={launcher.armedEmoji ? { cursor: ARMED_CURSOR } : undefined}
+                  onMouseEnter={(e) => {
+                    if (!launcher.armedEmoji) return
                     const r = e.currentTarget.getBoundingClientRect()
-                    lockTarget(r.left + r.width / 2, r.top + r.height / 2, member.name)
+                    launcher.setHoveredMemberId(member.id)
+                    launcher.setHoveredCardCenter({ x: r.left + r.width / 2, y: r.top })
+                  }}
+                  onMouseLeave={() => {
+                    launcher.setHoveredMemberId(null)
+                    launcher.setHoveredCardCenter(null)
+                  }}
+                  onClick={(e) => {
+                    if (!launcher.armedEmoji) return
+                    const r = e.currentTarget.getBoundingClientRect()
+                    launcher.handleFire(r.left + r.width / 2, r.top + r.height / 2, member.id, 'panel')
                   }}
                 >
                   <div className="relative flex-shrink-0">
@@ -461,98 +507,29 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         onClickSpectate={() => {
           setIsSpectator(true)
           setOpenJoinRoomDialog(false)
+          launcher.disarm()
         }}
         hasAvatar={Boolean(avatar)}
         defaultName={userName ?? undefined}
         signedIn={Boolean(sessionId)}
       />
-      {/* ── Left reaction panel ── */}
-      <div ref={launchPanelRef} className="fixed left-4 top-1/2 z-20 -translate-y-1/2 flex max-h-[calc(100dvh-180px)] flex-col items-center gap-2 overflow-y-auto">
-        {/* Lock-target button */}
-        <button
-          title="Lock target"
-          onClick={() => { setIsSelectingTarget(p => !p); if (lockedTarget) setLockedTarget(null) }}
-          className={`flex size-9 items-center justify-center rounded-full border text-base backdrop-blur-sm transition-all duration-150 hover:scale-110 active:scale-95 ${
-            lockedTarget
-              ? 'border-primary bg-primary/20 text-primary ring-2 ring-primary/40'
-              : isSelectingTarget
-              ? 'animate-pulse border-orange-400 bg-orange-400/20 text-orange-400'
-              : 'border-border/40 bg-background/80 text-muted-foreground hover:border-border hover:bg-muted/60'
-          }`}
-        >
-          🎯
-        </button>
-
-        {(isSelectingTarget || lockedTarget) && (
-          <p className="max-w-[40px] text-center text-[9px] leading-tight text-muted-foreground">
-            {isSelectingTarget ? 'Pick\ntarget' : lockedTarget!.label}
-          </p>
-        )}
-
-        <div className="my-0.5 w-full border-t border-border/30" />
-
-        {/* Emoji buttons — fire when target locked */}
-        {[
-          { emoji: '🗑️' },
-          { emoji: '🚀' },
-          { emoji: '❤️' },
-          { emoji: '💩' },
-          { emoji: '🎉' },
-          { emoji: '💣' },
-          { emoji: '⚡' },
-          { emoji: '🍕' },
-          { emoji: '🥊' },
-        ].map(({ emoji }) => (
-          <button
-            key={emoji}
-            onClick={() => handleEmojiClick(emoji)}
-            disabled={!lockedTarget}
-            className={`flex size-10 items-center justify-center rounded-full border text-xl backdrop-blur-sm transition-all duration-100 active:scale-75 ${
-              lockedTarget
-                ? 'border-border/60 bg-background/80 hover:scale-125 hover:border-border hover:bg-muted/60 cursor-pointer'
-                : 'border-border/20 bg-background/40 opacity-40 cursor-not-allowed'
-            }`}
-          >
-            {emoji}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Locked-target crosshair indicator ── */}
-      {lockedTarget && (
-        <div
-          className="pointer-events-none fixed z-40 -translate-x-1/2 -translate-y-1/2 animate-in fade-in zoom-in-50 duration-200"
-          style={{ left: lockedTarget.x, top: lockedTarget.y }}
-        >
-          <div className="relative flex size-10 items-center justify-center">
-            {/* Outer ring */}
-            <span className="absolute size-10 rounded-full border-2 border-red-500/70 animate-ping" style={{ animationDuration: '1.5s' }} />
-            <span className="absolute size-10 rounded-full border-2 border-red-500/50" />
-            {/* Cross lines */}
-            <span className="absolute h-px w-5 bg-red-500/70" />
-            <span className="absolute h-5 w-px bg-red-500/70" />
-            {/* Center dot */}
-            <span className="absolute size-1.5 rounded-full bg-red-500" />
-          </div>
-        </div>
+      {!isSpectator && (
+        <>
+          <ThrowPanel
+            armedEmoji={launcher.armedEmoji}
+            isExpanded={launcher.isExpanded}
+            onToggleExpand={launcher.toggleExpanded}
+            onArmEmoji={launcher.handleArmEmoji}
+            onDisarm={launcher.disarm}
+          />
+          <ThrowOverlay
+            armedEmoji={launcher.armedEmoji}
+            hoveredCardCenter={launcher.hoveredCardCenter}
+            thrown={launcher.thrown}
+            impacts={launcher.impacts}
+          />
+        </>
       )}
-
-      {/* ── Flying thrown items ── */}
-      {thrown.map(({ id, emoji, x, y, tx, ty }) => (
-        <div
-          key={id}
-          className="pointer-events-none fixed z-50 select-none text-4xl animate-throw"
-          style={{
-            left: x,
-            top: y,
-            transform: 'translate(-50%, -50%)',
-            '--tx': `${tx}px`,
-            '--ty': `${ty}px`,
-          } as React.CSSProperties}
-        >
-          {emoji}
-        </div>
-      ))}
 
       <Dialog
         open={openRefreshDialog}
