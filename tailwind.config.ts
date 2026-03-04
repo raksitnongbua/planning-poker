@@ -70,6 +70,14 @@ const config: Config = {
           '88%':  { transform: 'translate(var(--tx), var(--ty)) scale(1.8)',          opacity: '0.9' },
           '100%': { transform: 'translate(var(--tx), var(--ty)) scale(0.1)',          opacity: '0'   },
         },
+        hit: {
+          '0%':   { transform: 'translate(-50%,-50%) scale(1.5)', opacity: '1' },
+          '100%': { transform: 'translate(-50%,-50%) scale(3.2)', opacity: '0' },
+        },
+        'hit-ring': {
+          '0%':   { transform: 'translate(-50%,-50%) scale(0.2)', opacity: '0.9' },
+          '100%': { transform: 'translate(-50%,-50%) scale(3.5)', opacity: '0' },
+        },
         aura: {
           '0%': { transform: 'scale(1)', opacity: '0.5' },
           '100%': { transform: 'scale(2)', opacity: '0' },
@@ -102,6 +110,10 @@ const config: Config = {
           '30%': { transform: 'translateY(-10px) rotate(0.4deg)' },
           '60%': { transform: 'translateY(-6px) rotate(-0.3deg)' },
         },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px) scale(1)' },
+          '50%': { transform: 'translateY(-10px) scale(1.08)' },
+        },
         heartbeat: {
           '0%, 100%': { transform: 'scale(1)' },
           '10%': { transform: 'scale(1.4)' },
@@ -115,8 +127,11 @@ const config: Config = {
         'accordion-up': 'accordion-up 0.2s ease-out',
         'spin-slow': 'spin 3s linear infinite',
         throw: 'throw 0.8s linear forwards',
+        hit: 'hit 0.5s ease-out forwards',
+        'hit-ring': 'hit-ring 0.5s ease-out forwards',
         shake: 'shake 2.5s ease-in-out infinite',
         'shake-interval': 'shake-interval 1.25s ease-in-out infinite',
+        float: 'float 1.1s ease-in-out infinite',
         heartbeat: 'heartbeat 2s ease-in-out infinite',
         aura: 'aura 2.5s ease-out infinite',
         shine: 'shine 3s ease-in-out infinite',

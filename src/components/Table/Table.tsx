@@ -150,6 +150,7 @@ const Table = ({ name, members }: TableProps) => {
         return (
           <div
             key={member.id}
+            data-table-member-id={member.id}
             className="absolute z-10"
             style={{
               left: `${W / 2 + x}px`,
