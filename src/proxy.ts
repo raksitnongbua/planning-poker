@@ -6,7 +6,7 @@ import { UID_KEY } from '@/constant/cookies'
 
 import { SECONDS } from './utils/time'
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const res = NextResponse.next()
   const hasUID = hasCookie(UID_KEY, { res, req })
   if (!hasUID) {

@@ -6,6 +6,7 @@ const { withSentryConfig } = require('@sentry/nextjs')
 
 module.exports = withSentryConfig(
   {
+    turbopack: {},
     images: {
       formats: ['image/avif', 'image/webp'],
     },

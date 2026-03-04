@@ -18,6 +18,14 @@ const websiteSchema = {
   '@type': 'WebSite',
   name: 'Corgi Planning Poker',
   url: 'https://www.corgiplanningpoker.com',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: 'https://www.corgiplanningpoker.com/?q={search_term_string}',
+    },
+    'query-input': 'required name=search_term_string',
+  },
 }
 
 const orgSchema = {
@@ -32,6 +40,7 @@ const orgSchema = {
     height: 60,
   },
   founder: { '@type': 'Person', name: 'Raksit Nongbua' },
+  foundingDate: '2024',
   sameAs: ['https://github.com/raksitnongbua/planning-poker'],
   contactPoint: {
     '@type': 'ContactPoint',
@@ -67,20 +76,29 @@ export const metadata: Metadata = {
     default: 'Free Online Planning Poker | Corgi Planning Poker',
     template: 'Corgi Planning Poker | %s',
   },
-  description: 'Free online planning poker tool for agile teams. Estimate story points collaboratively in real-time with your scrum team — no registration required.',
+  description: 'Free online planning poker for agile teams. Estimate story points collaboratively in real-time with your scrum team — no account, no install, ready in seconds.',
   openGraph: {
-    title: 'Corgi Planning Poker | The Easiest Way To Explain Story Points',
-    description: 'Free online planning poker tool for agile teams. Estimate story points collaboratively in real-time — no registration required.',
+    title: 'Free Online Planning Poker | Corgi Planning Poker',
+    description: 'Free online planning poker for agile teams. Estimate story points collaboratively in real-time — no registration required.',
     locale: 'en_US',
     siteName: 'Corgi Planning Poker',
     type: 'website',
-    images: ['/images/corgi-planning-poker-preview.png'],
+    images: [
+      {
+        url: '/images/corgi-planning-poker-preview.png',
+        width: 1200,
+        height: 630,
+        alt: 'Corgi Planning Poker — Free Online Planning Poker Tool',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
+    title: 'Free Online Planning Poker | Corgi Planning Poker',
+    description: 'Free online planning poker for agile teams. Estimate story points collaboratively in real-time — no registration required.',
     images: ['/images/corgi-planning-poker-preview.png'],
   },
-  keywords: 'planning poker, scrum poker, story points, agile estimation, sprint planning, free planning poker, online planning poker',
+  keywords: 'planning poker, online planning poker, free planning poker, scrum poker, agile estimation, story points, sprint planning, planning poker online, scrum estimation',
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

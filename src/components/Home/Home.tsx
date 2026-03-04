@@ -13,7 +13,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Image from 'next/image'
 import Link from 'next/link'
-import React from 'react'
+
 
 import { Button } from '../ui/button'
 import { Card, CardContent } from '../ui/card'
@@ -63,12 +63,14 @@ const FEATURES = [
   {
     icon: faSyncAlt,
     title: 'Cross-platform sync',
-    description: 'Sign in with Google to link your identity across devices. Resume any room from your phone, tablet, or laptop — your history follows you.',
+    description:
+      'Sign in with Google to link your identity across devices. Resume any room from your phone, tablet, or laptop — your history follows you.',
   },
   {
     icon: faEye,
     title: 'Spectator mode',
-    description: 'Join a room as a silent observer without casting votes. Sit down at any time when you\'re ready to participate.',
+    description:
+      "Join a room as a silent observer without casting votes. Sit down at any time when you're ready to participate.",
   },
   {
     icon: faCode,
@@ -110,44 +112,56 @@ const Home = () => {
     <>
       {/* Hero */}
       <div className="mx-auto flex min-h-[calc(100dvh-92px*2)] max-w-[1100px] items-center justify-center">
-        <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
+        <div className="duration-700 animate-in fade-in slide-in-from-bottom-6">
           <div className="my-5 grid max-w-[500px] gap-4">
             <h1 className="text-7xl font-bold leading-tight">
-              <span className="inline-block animate-in fade-in slide-in-from-left-8 duration-600 text-primary drop-shadow-[0_0_12px_hsl(var(--primary)/0.6)]" style={{ animationFillMode: 'both' }}>
+              <span
+                className="duration-600 inline-block text-primary drop-shadow-[0_0_12px_hsl(var(--primary)/0.6)] animate-in fade-in slide-in-from-left-8"
+                style={{ animationFillMode: 'both' }}
+              >
                 Corgi
               </span>
               <br />
-              <span className="inline-block animate-in fade-in slide-in-from-bottom-6 duration-600" style={{ animationDelay: '150ms', animationFillMode: 'both' }}>
+              <span
+                className="duration-600 inline-block animate-in fade-in slide-in-from-bottom-6"
+                style={{ animationDelay: '150ms', animationFillMode: 'both' }}
+              >
                 Planning
               </span>{' '}
-              <span className="inline-block animate-in fade-in slide-in-from-right-8 duration-600" style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
+              <span
+                className="duration-600 inline-block animate-in fade-in slide-in-from-right-8"
+                style={{ animationDelay: '300ms', animationFillMode: 'both' }}
+              >
                 Poker
               </span>
             </h1>
             <h2
-              className="text-lg font-light animate-in fade-in slide-in-from-bottom-3 duration-500"
+              className="text-lg font-light duration-500 animate-in fade-in slide-in-from-bottom-3"
               style={{ animationDelay: '500ms', animationFillMode: 'both' }}
             >
-              Agile teams use this gamified technique to estimate task effort collaboratively,
-              fostering consensus and efficient planning.
+              Free online planning poker for agile teams — estimate story points collaboratively in
+              real-time, no registration required.
             </h2>
           </div>
-          <div className="flex gap-2" style={{ animationDelay: '700ms', animationFillMode: 'both' }}>
+          <div
+            className="flex gap-2"
+            style={{ animationDelay: '700ms', animationFillMode: 'both' }}
+          >
             <div className="relative">
               {/* Glow halo */}
               <div
-                className="absolute inset-[-4px] rounded-lg bg-primary/40 blur-xl animate-pulse"
+                className="absolute inset-[-4px] animate-pulse rounded-lg bg-primary/40 blur-xl"
                 style={{ animationDuration: '2s' }}
               />
               {/* Shine + button */}
               <div className="relative overflow-hidden rounded-md">
                 <span
-                  className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shine"
+                  className="pointer-events-none absolute inset-0 z-10 animate-shine bg-gradient-to-r from-transparent via-white/30 to-transparent"
                   style={{ animationDuration: '3s' }}
                 />
                 <Button
                   asChild
-                  className="relative h-11 w-52 bg-gradient-to-r from-orange-500 via-primary to-orange-400 transition-transform duration-200 hover:scale-[1.03] hover:shadow-lg hover:shadow-primary/40 border-0"
+                  className="relative h-11 w-52 border-0 bg-gradient-to-r from-orange-500 via-primary to-orange-400 transition-transform duration-200 hover:scale-[1.03] hover:shadow-lg hover:shadow-primary/40"
                   style={{
                     backgroundSize: '200% 200%',
                     animation: 'gradient-shift 4s ease infinite',
@@ -175,13 +189,13 @@ const Home = () => {
             </Button>
           </div>
         </div>
-        <div className="hidden animate-in fade-in slide-in-from-right-10 duration-700 lg:block">
+        <div className="hidden duration-700 animate-in fade-in slide-in-from-right-10 lg:block">
           <Image
             src="/images/corgi-banner.png"
             className="animate-sway lg:h-[477px] lg:w-[600px]"
             style={{ animationDuration: '8s' }}
             alt="Corgi dog illustration for Corgi Planning Poker"
-            priority={false}
+            priority={true}
             width={600}
             height={477}
           />
@@ -192,20 +206,20 @@ const Home = () => {
       <section className="mx-auto max-w-[1100px] space-y-20 pb-24 pt-4">
         {/* What is Planning Poker? */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-semibold flex items-center gap-2">
-            <span className="size-2 rounded-full bg-primary animate-pulse inline-block" />
+          <h2 className="flex items-center gap-2 text-2xl font-semibold">
+            <span className="inline-block size-2 animate-pulse rounded-full bg-primary" />
             What is Planning Poker?
           </h2>
           <div className="space-y-3 border-l-2 border-primary pl-5 transition-all duration-300 hover:[box-shadow:-3px_0_16px_hsl(var(--primary)/0.35)]">
-            <p className="text-muted-foreground leading-relaxed">
+            <p className="leading-relaxed text-muted-foreground">
               Planning poker is a consensus-based agile estimation technique used by scrum teams
               during sprint planning. Each team member privately selects a card representing their
               estimate for a user story or task — typically using a Fibonacci-like sequence (1, 2,
-              3, 5, 8, 13…) or T-shirt sizes (XS, S, M, L, XL). Cards are revealed simultaneously
-              to prevent anchoring bias, then the team discusses any large discrepancies before
+              3, 5, 8, 13…) or T-shirt sizes (XS, S, M, L, XL). Cards are revealed simultaneously to
+              prevent anchoring bias, then the team discusses any large discrepancies before
               reaching a shared estimate.
             </p>
-            <p className="text-muted-foreground leading-relaxed">
+            <p className="leading-relaxed text-muted-foreground">
               The technique was popularised by James Grenning in 2002 and later described by Mike
               Cohn in <em>Agile Estimating and Planning</em>. It has since become the de-facto
               standard for story point estimation across scrum, kanban, and SAFe teams worldwide.
@@ -215,26 +229,26 @@ const Home = () => {
 
         {/* How It Works */}
         <div className="space-y-6">
-          <h2 className="text-2xl font-semibold flex items-center gap-2">
-            <span className="size-2 rounded-full bg-primary animate-pulse inline-block" />
+          <h2 className="flex items-center gap-2 text-2xl font-semibold">
+            <span className="inline-block size-2 animate-pulse rounded-full bg-primary" />
             How It Works
           </h2>
           <div className="grid gap-4 sm:grid-cols-3">
             {HOW_IT_WORKS.map(({ step, title, description }, i) => (
               <Card
                 key={step}
-                className="animate-in fade-in slide-in-from-bottom-4 duration-500 transition-shadow hover:shadow-md"
+                className="transition-shadow duration-500 animate-in fade-in slide-in-from-bottom-4 hover:shadow-md"
                 style={{ animationDelay: `${i * 100}ms`, animationFillMode: 'both' }}
               >
                 <CardContent className="pt-6">
                   <div className="relative mb-4 inline-flex">
-                    <span className="absolute inline-flex size-full rounded-full bg-primary animate-aura" />
+                    <span className="absolute inline-flex size-full animate-aura rounded-full bg-primary" />
                     <div className="relative flex size-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
                       {step}
                     </div>
                   </div>
                   <h3 className="mb-2 font-semibold">{title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+                  <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -243,21 +257,21 @@ const Home = () => {
 
         {/* Why Use Corgi Planning Poker? */}
         <div className="space-y-6">
-          <h2 className="text-2xl font-semibold flex items-center gap-2">
-            <span className="size-2 rounded-full bg-primary animate-pulse inline-block" />
+          <h2 className="flex items-center gap-2 text-2xl font-semibold">
+            <span className="inline-block size-2 animate-pulse rounded-full bg-primary" />
             Why Use Corgi Planning Poker?
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(({ icon, title, description, link }, i) => (
               <Card
                 key={title}
-                className="group animate-in fade-in slide-in-from-bottom-4 duration-500 transition-all hover:shadow-md hover:border-primary/30"
+                className="group transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 hover:border-primary/30 hover:shadow-md"
                 style={{ animationDelay: `${i * 80}ms`, animationFillMode: 'both' }}
               >
                 <CardContent className="pt-6">
                   <div className="relative mb-3 flex size-11 items-center justify-center transition-transform duration-300 group-hover:scale-110">
                     <span
-                      className="absolute inset-0 rounded-full animate-spin-slow bg-[conic-gradient(from_0deg,transparent_25%,hsl(var(--primary)/0.3)_60%,hsl(var(--primary))_100%)]"
+                      className="absolute inset-0 animate-spin-slow rounded-full bg-[conic-gradient(from_0deg,transparent_25%,hsl(var(--primary)/0.3)_60%,hsl(var(--primary))_100%)]"
                       style={{ animationDuration: '3s' }}
                     />
                     <div className="relative z-10 flex size-9 items-center justify-center rounded-full bg-background">
@@ -267,7 +281,7 @@ const Home = () => {
                     </div>
                   </div>
                   <h3 className="mb-1 font-semibold">{title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <p className="text-sm leading-relaxed text-muted-foreground">
                     {description}
                     {link && (
                       <>
@@ -291,30 +305,36 @@ const Home = () => {
 
         {/* FAQ */}
         <div className="space-y-6">
-          <h2 className="text-2xl font-semibold flex items-center gap-2">
-            <span className="size-2 rounded-full bg-primary animate-pulse inline-block" />
+          <h2 className="flex items-center gap-2 text-2xl font-semibold">
+            <span className="inline-block size-2 animate-pulse rounded-full bg-primary" />
             Frequently Asked Questions
           </h2>
           <div className="divide-y divide-border overflow-hidden rounded-xl border">
             {FAQS.map(({ q, a }) => (
-              <div key={q} className="group px-5 py-4 transition-colors duration-200 hover:bg-primary/5 cursor-default">
-                <h3 className="font-semibold transition-colors duration-200 group-hover:text-primary">{q}</h3>
-                <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{a}</p>
+              <div
+                key={q}
+                className="group cursor-default px-5 py-4 transition-colors duration-200 hover:bg-primary/5"
+              >
+                <h3 className="font-semibold transition-colors duration-200 group-hover:text-primary">
+                  {q}
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{a}</p>
               </div>
             ))}
-            <div className="group px-5 py-4 transition-colors duration-200 hover:bg-primary/5 cursor-default">
-              <h3 className="font-semibold transition-colors duration-200 group-hover:text-primary">What is the difference between story points and hours?</h3>
-              <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+            <div className="group cursor-default px-5 py-4 transition-colors duration-200 hover:bg-primary/5">
+              <h3 className="font-semibold transition-colors duration-200 group-hover:text-primary">
+                What is the difference between story points and hours?
+              </h3>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                 Story points measure relative effort and complexity rather than clock time. A
-                5-point story is roughly twice as complex as a 2-point story for <em>your</em>{' '}
-                team, but the actual hours vary by person. Using story points removes pressure to
-                commit to specific durations and focuses the conversation on scope and risk instead.
+                5-point story is roughly twice as complex as a 2-point story for <em>your</em> team,
+                but the actual hours vary by person. Using story points removes pressure to commit
+                to specific durations and focuses the conversation on scope and risk instead.
               </p>
             </div>
           </div>
         </div>
       </section>
-
     </>
   )
 }
