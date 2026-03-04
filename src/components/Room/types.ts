@@ -13,6 +13,15 @@ export interface Member {
   lastActiveAt: Date
 }
 
+export interface ChatMessage {
+  id: string
+  memberId: string
+  name: string
+  avatar?: string
+  text: string
+  at: Date
+}
+
 export enum Status {
   None = 'NONE',
   Voting = 'VOTING',

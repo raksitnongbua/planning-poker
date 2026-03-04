@@ -1,5 +1,5 @@
 'use client'
-import { faChair, faChevronLeft, faChevronRight, faCircleCheck, faEye, faRotateRight, faUserPlus } from '@fortawesome/free-solid-svg-icons'
+import { faChair, faCircleCheck, faCommentDots, faEye, faPaperPlane, faUserPlus } from '@fortawesome/free-solid-svg-icons'
 import { faCircle } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { usePathname, useRouter } from 'next/navigation'
@@ -16,7 +16,7 @@ import RoomCards from '../RoomCards'
 import RoomTable from '../RoomTable'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from '../ui/button'
-import { Member, Props, Status } from './types'
+import { ChatMessage, Member, Props, Status } from './types'
 
 const ARMED_CURSOR =
   `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'>` +
@@ -50,7 +50,8 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const [openJoinRoomDialog, setOpenJoinRoomDialog] = useState(false)
   const [isSpectator, setIsSpectator] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
-  const [isJoinerOpen, setIsJoinerOpen] = useState(true)
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const myCardRef = React.useRef<HTMLDivElement>(null)
   const launcher = useThrowLauncher(myCardRef, {
     onThrow: (emoji, targetX, targetY, targetMemberId, targetContext) => {
@@ -73,6 +74,19 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const [isEditPointMode, setIsEditEstimateValue] = useState<boolean>(false)
   const [cardOptions, setCardOptions] = useState<string[]>([])
   const [result, setResult] = useState<Map<string, number>>(new Map<string, number>())
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [chatInput, setChatInput] = useState('')
+  const chatEndRef = React.useRef<HTMLDivElement>(null)
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30_000)
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages])
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
     [ReadyState.OPEN]: 'Open',
@@ -115,6 +129,34 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
       .filter((option) => !!option)
     return Math.max(...mappedNumberOptions)
   }, [cardOptions])
+
+  useEffect(() => {
+    if (readyState !== ReadyState.OPEN) return
+    const MIN_PING_INTERVAL = 15_000
+    let lastPingAt = 0
+    const sendPing = () => {
+      sendJsonMessage({ action: 'PING' })
+      lastPingAt = Date.now()
+    }
+    const sendPingIfReady = () => {
+      if (Date.now() - lastPingAt >= MIN_PING_INTERVAL) sendPing()
+    }
+    sendPing()
+    let timer = setInterval(sendPing, 30_000)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        sendPingIfReady()
+        timer = setInterval(sendPing, 30_000)
+      } else {
+        clearInterval(timer)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [readyState, sendJsonMessage])
 
   useEffect(() => {
     switch (readyState) {
@@ -175,6 +217,18 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         launcher.fireRemote(emoji, fromX, fromY, targetX, targetY)
         break
       }
+      case 'CHAT_MESSAGE': {
+        const { member_id, name, avatar: msgAvatar, text, at } = jsonMessage.payload
+        setChatMessages((prev) => [
+          ...prev,
+          { id: `${member_id}-${at}`, memberId: member_id, name, avatar: msgAvatar || undefined, text, at: new Date(at) },
+        ])
+        setIsChatOpen((open) => {
+          if (!open) setUnreadCount((n) => n + 1)
+          return open
+        })
+        break
+      }
       case 'UPDATE_ROOM':
         const payload = jsonMessage.payload
         const transformedMembers = transformMembers(payload.members ?? [])
@@ -220,6 +274,32 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const inviteLink = process.env.NEXT_PUBLIC_ORIGIN_URL + pathname
   const isRevealed = roomStatus === Status.RevealedCards
 
+  const handleSendChat = () => {
+    const text = chatInput.trim()
+    if (!text) return
+    sendJsonMessage({ action: 'SEND_CHAT', payload: { text } })
+    setChatInput('')
+  }
+
+  const formatTimeAgo = (msDiff: number): string => {
+    if (msDiff < 60_000) return 'Just now'
+    if (msDiff < 3_600_000) return `${Math.floor(msDiff / 60_000)}m ago`
+    return `${Math.floor(msDiff / 3_600_000)}h ago`
+  }
+
+  const activityTier = (lastActiveAt: Date): number => {
+    const ms = now - lastActiveAt.getTime()
+    if (ms <= 1 * 60_000) return 0   // green
+    if (ms <= 10 * 60_000) return 1  // orange
+    return 2                          // offline
+  }
+
+  const sortedMembers = [...members].sort((a, b) => {
+    const tierDiff = activityTier(a.lastActiveAt) - activityTier(b.lastActiveAt)
+    if (tierDiff !== 0) return tierDiff
+    return a.name.localeCompare(b.name)
+  })
+
   return (
     <>
       <div className="flex min-h-[calc(100dvh-92px*2)] min-w-[700px] rounded-t-2xl bg-muted/10 shadow-md">
@@ -249,46 +329,16 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                 members={members}
                 roomName={roomName}
                 status={roomStatus}
+                isSpectator={isSpectator}
+                onReveal={() => sendJsonMessage({ action: 'REVEAL_CARDS' })}
+                onReset={() => sendJsonMessage({ action: 'RESET_ROOM' })}
               />
             )}
           </div>
 
-          {/* Sticky bottom — action button floats above divider, cards below */}
+          {/* Sticky bottom — cards bar */}
           {roomStatus !== Status.None && (
             <div className="sticky bottom-0 z-20">
-              {/* Floating button — sits above the divider line */}
-              {!isSpectator && (
-                <div className="relative flex justify-center">
-                  <div className="absolute bottom-full mb-3 z-10">
-                    {roomStatus === Status.Voting && members.some((m) => m.estimatedValue !== '') && (
-                      <div className="relative">
-                        <div className="absolute inset-[-4px] rounded-lg bg-primary/30 blur-xl animate-pulse" style={{ animationDuration: '2s' }} />
-                        <div className="relative overflow-hidden rounded-md">
-                          <span className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-transparent via-white/25 to-transparent animate-shine" style={{ animationDuration: '3s' }} />
-                          <Button
-                            className="relative gap-2 border-0 bg-gradient-to-r from-orange-500 via-primary to-orange-400 transition-transform duration-200 hover:scale-[1.04] hover:shadow-lg hover:shadow-primary/40"
-                            style={{ backgroundSize: '200% 200%', animation: 'gradient-shift 4s ease infinite' }}
-                            onClick={() => sendJsonMessage({ action: 'REVEAL_CARDS' })}
-                          >
-                            <FontAwesomeIcon icon={faEye} className="size-4" />
-                            Reveal Cards
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                    {roomStatus === Status.RevealedCards && (
-                      <Button
-                        variant="outline"
-                        className="gap-2 border-border text-muted-foreground transition-all duration-200 hover:border-destructive/60 hover:text-destructive"
-                        onClick={() => sendJsonMessage({ action: 'RESET_ROOM' })}
-                      >
-                        <FontAwesomeIcon icon={faRotateRight} className="size-3.5" />
-                        New Round
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
               <div className="border-t border-border/40 bg-background/90 backdrop-blur-md px-6 py-4">
               <div className="flex items-center justify-center gap-4">
                 {!isSpectator && (
@@ -334,42 +384,8 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
 
       </div>
 
-      {/* ── Fixed collapsible joiner panel ── */}
-      {/* Collapsed minimal strip */}
-      {!isJoinerOpen && (
-        <div
-          className="fixed right-0 z-30 flex flex-col items-center gap-2 border-l border-border/40 bg-background/95 px-2 py-4 backdrop-blur-md"
-          style={{ top: 64, bottom: 64 }}
-        >
-          <button onClick={() => setIsJoinerOpen(true)} className="mb-1 text-muted-foreground transition-colors hover:text-foreground">
-            <FontAwesomeIcon icon={faChevronLeft} className="size-3" />
-          </button>
-          <span className="text-[10px] font-bold tabular-nums text-muted-foreground">{members.length}</span>
-          <div className="my-1 w-full border-t border-border/30" />
-          <div className="flex flex-col gap-1.5 overflow-y-auto">
-            {members.slice(0, 8).map((member) => {
-              const msDiff = Date.now() - member.lastActiveAt.getTime()
-              const dot = msDiff <= 60_000 ? 'bg-green-500' : msDiff <= 600_000 ? 'bg-orange-400' : 'bg-neutral-500'
-              return (
-                <div key={member.id} className="relative">
-                  <Avatar className="size-7">
-                    <AvatarImage src={member.avatar ?? '/images/corgi-tood-cute.png'} alt={member.name} />
-                    <AvatarFallback className="text-[9px]">{member.name[0].toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <span className={`absolute -bottom-0.5 -right-0.5 size-2 rounded-full ring-1 ring-background ${dot}`} />
-                </div>
-              )
-            })}
-            {members.length > 8 && (
-              <span className="text-[10px] text-muted-foreground">+{members.length - 8}</span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Sliding panel */}
-      {isJoinerOpen && (
-      <div className="fixed right-0 top-[64px] z-20 flex flex-col border-l border-border/40 bg-background/95 backdrop-blur-md w-60 animate-in slide-in-from-right-4 duration-200"
+      {/* ── Fixed player panel ── */}
+      <div className="fixed right-0 top-[64px] z-20 flex flex-col border-l border-border/40 bg-background/95 backdrop-blur-md w-60"
         style={{ bottom: '64px' }}
       >
         <div className="flex flex-col gap-3 overflow-hidden p-5 h-full" style={{ width: 240 }}>
@@ -396,9 +412,6 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                 <FontAwesomeIcon icon={isCopied ? faCircleCheck : faUserPlus} className="size-3" />
                 {isCopied ? 'Copied!' : 'Invite'}
               </button>
-              <button onClick={() => setIsJoinerOpen(false)} className="text-muted-foreground transition-colors hover:text-foreground">
-                <FontAwesomeIcon icon={faChevronRight} className="size-3" />
-              </button>
             </div>
           </div>
 
@@ -423,17 +436,14 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
 
           {/* Player list — scrollable */}
           <div className="flex flex-col gap-1.5 overflow-y-auto pr-1 flex-1">
-            {members.map((member) => {
+            {sortedMembers.map((member) => {
               const picked = member.estimatedValue !== ''
-              const msDiff = Date.now() - member.lastActiveAt.getTime()
+              const msDiff = now - member.lastActiveAt.getTime()
               const activeDot =
                 msDiff <= 1 * 60_000 ? 'bg-green-500' :
                 msDiff <= 10 * 60_000 ? 'bg-orange-400' :
                 'bg-neutral-500'
-              const activeLabel =
-                msDiff <= 1 * 60_000 ? 'Active' :
-                msDiff <= 10 * 60_000 ? 'Away' :
-                'Offline'
+              const activeLabel = formatTimeAgo(msDiff)
               return (
                 <div
                   key={member.id}
@@ -489,7 +499,6 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
           </div>
         </div>
       </div>
-      )}
 
       <div className="fixed bottom-4 right-4 flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-3 py-1.5 backdrop-blur-sm">
           <span className="relative flex size-2">
@@ -500,6 +509,77 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
             {wsStatusConfig[connectionStatus]?.label ?? connectionStatus}
           </span>
         </div>
+
+      {/* ── Floating chat widget ── */}
+      <div className="fixed bottom-20 left-4 z-30 flex flex-col items-start gap-2">
+        {isChatOpen && (
+          <div className="flex flex-col w-64 h-80 rounded-2xl border border-border/50 bg-background/95 backdrop-blur-md shadow-2xl shadow-black/40 overflow-hidden animate-in slide-in-from-bottom-2 duration-200">
+            {/* Chat header */}
+            <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-border/40 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-foreground">Chat</span>
+                <span className="rounded-full border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary/70">Coming soon</span>
+              </div>
+              <button onClick={() => setIsChatOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors text-xs leading-none">✕</button>
+            </div>
+
+            {/* Messages */}
+            <div className="flex flex-col gap-2 overflow-y-auto flex-1 min-h-0 px-3 py-2">
+              {chatMessages.length === 0 && (
+                <p className="text-center text-[11px] text-muted-foreground/40 mt-6">No messages yet</p>
+              )}
+              {chatMessages.map((msg) => {
+                const isMe = msg.memberId === id
+                return (
+                  <div key={msg.id} className={`flex gap-1.5 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <Avatar className="size-5 flex-shrink-0 mt-0.5">
+                      <AvatarImage src={msg.avatar ?? '/images/corgi-tood-cute.png'} alt={msg.name} />
+                      <AvatarFallback className="text-[7px]">{msg.name[0].toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className={`flex flex-col gap-0.5 min-w-0 ${isMe ? 'items-end' : 'items-start'}`}>
+                      {!isMe && <span className="text-[10px] text-muted-foreground/60 leading-none">{msg.name}</span>}
+                      <div className={`rounded-2xl px-2.5 py-1.5 text-xs leading-snug break-words max-w-[168px] ${
+                        isMe ? 'bg-primary text-primary-foreground rounded-tr-sm' : 'bg-muted/60 text-foreground rounded-tl-sm'
+                      }`}>
+                        {msg.text}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Input */}
+            <div className="flex gap-1.5 px-3 py-2.5 border-t border-border/40 flex-shrink-0">
+              <input
+                className="flex-1 min-w-0 rounded-lg border border-border/50 bg-muted/20 px-2.5 py-1.5 text-xs placeholder:text-muted-foreground/25 cursor-not-allowed opacity-50"
+                placeholder="Coming soon…"
+                disabled
+              />
+              <button
+                disabled
+                className="flex-shrink-0 rounded-lg bg-primary/80 px-2.5 py-1.5 text-primary-foreground opacity-30 cursor-not-allowed"
+              >
+                <FontAwesomeIcon icon={faPaperPlane} className="size-3" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Toggle button */}
+        <button
+          onClick={() => { setIsChatOpen((o) => !o); setUnreadCount(0) }}
+          className="relative flex items-center justify-center size-10 rounded-full border border-border/50 bg-background/95 backdrop-blur-md shadow-lg text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <FontAwesomeIcon icon={faCommentDots} className="size-4" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex items-center justify-center size-4 rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </button>
+      </div>
 
       <JoinRoomDialog
         open={openJoinRoomDialog}

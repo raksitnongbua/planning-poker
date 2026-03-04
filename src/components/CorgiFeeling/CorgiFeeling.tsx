@@ -3,9 +3,11 @@ import React from 'react'
 
 export interface CorgiFeelingProps {
   badlyPercentage: number
+  width?: number
+  height?: number
 }
 
-const CorgiFeeling = ({ badlyPercentage }: CorgiFeelingProps) => {
+const CorgiFeeling = ({ badlyPercentage, width = 160, height = 144 }: CorgiFeelingProps) => {
   const getImagePathByPercentage = (percentage: number) => {
     if (percentage <= 20) {
       return '/images/corgi-love.png'
@@ -22,10 +24,11 @@ const CorgiFeeling = ({ badlyPercentage }: CorgiFeelingProps) => {
   return (
     <Image
       src={getImagePathByPercentage(badlyPercentage)}
-      height={180}
-      width={200}
+      height={height}
+      width={width}
       alt="corgi-feeling"
       className="object-contain animate-shake-interval"
+      style={{ width, height }}
     />
   )
 }
