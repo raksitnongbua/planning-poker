@@ -6,10 +6,11 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/option'
 import RoomComponent from '@/components/Room'
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   return {
     title: 'Room',
     alternates: {
@@ -28,7 +29,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-const Room = async ({ params }: Props) => {
+const Room = async (props: Props) => {
+  const params = await props.params;
   const session = await getServerSession(authOptions)
   const user = session?.user
 

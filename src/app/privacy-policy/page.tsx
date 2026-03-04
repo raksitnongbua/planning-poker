@@ -1,4 +1,14 @@
+import type { Metadata } from 'next'
 import React from 'react'
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description: 'Privacy Policy for Corgi Planning Poker — learn how we collect, use, and protect your data.',
+  alternates: {
+    canonical: 'https://www.corgiplanningpoker.com/privacy-policy',
+  },
+  robots: { index: true, follow: false },
+}
 
 const PrivacyPolicy = () => {
   return (
