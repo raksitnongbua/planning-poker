@@ -99,10 +99,10 @@ const config: Config = {
         },
         'shake-interval': {
           '0%': { transform: 'rotate(0deg)' },
-          '5%': { transform: 'rotate(-2.5deg)' },
-          '10%': { transform: 'rotate(2.5deg)' },
-          '15%': { transform: 'rotate(-1.5deg)' },
-          '20%': { transform: 'rotate(1.5deg)' },
+          '5%': { transform: 'rotate(-0.8deg)' },
+          '10%': { transform: 'rotate(0.8deg)' },
+          '15%': { transform: 'rotate(-0.5deg)' },
+          '20%': { transform: 'rotate(0.5deg)' },
           '25%, 100%': { transform: 'rotate(0deg)' },
         },
         sway: {
@@ -121,6 +121,17 @@ const config: Config = {
           '30%': { transform: 'scale(1.4)' },
           '40%, 100%': { transform: 'scale(1)' },
         },
+        wink: {
+          '0%, 78%, 100%': { transform: 'scaleY(1)' },
+          '81%': { transform: 'scaleY(0.05)' },
+          '84%': { transform: 'scaleY(1.08)' },
+          '87%': { transform: 'scaleY(0.95)' },
+          '90%': { transform: 'scaleY(1)' },
+        },
+        'card-idle': {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%':      { transform: 'translateY(-12px)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -136,6 +147,8 @@ const config: Config = {
         aura: 'aura 2.5s ease-out infinite',
         shine: 'shine 3s ease-in-out infinite',
         sway: 'sway 60s ease-in-out infinite',
+        wink: 'wink 4s ease-in-out infinite',
+        'card-idle': 'card-idle 6s ease-in-out infinite',
       },
     },
   },

@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
+    "dev:mock": "NEXT_PUBLIC_MSW_ENABLED=true next dev --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "eslint ."
@@ -57,6 +58,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "eslint-plugin-simple-import-sort": "^12.0.0",
+    "msw": "^2.12.10",
     "postcss": "^8",
     "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.11",
@@ -66,5 +68,10 @@
   "overrides": {
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

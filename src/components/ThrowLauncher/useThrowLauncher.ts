@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-const NO_SPIN_EMOJIS = new Set(['🔥', '🎉', '🧨', '🎃', '🧸', '❤️', '💀'])
+const NO_SPIN_EMOJIS = new Set(['🔥', '🎉', '🧨', '🎃', '🧸', '❤️', '💀', '👍', '👎', '👆', '👇', '👉', '🤙', '😊', '😂', '😭', '😡'])
 
 export interface ThrownItem {
   id: string

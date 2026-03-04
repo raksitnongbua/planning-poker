@@ -7,6 +7,7 @@ import type { Metadata } from 'next'
 import { Coda } from 'next/font/google'
 
 import Layout from '@/components/Layout'
+import MSWProvider from '@/components/MSWProvider'
 import { Toaster } from '@/components/ui/toaster'
 
 config.autoAddCss = false
@@ -107,7 +108,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className={coda.className}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }} />
-        <Layout>{children}</Layout>
+        <MSWProvider>
+          <Layout>{children}</Layout>
+        </MSWProvider>
         <SpeedInsights />
         <Analytics />
         <Toaster />

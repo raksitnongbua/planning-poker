@@ -2,11 +2,13 @@ import React from 'react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
+import PokerCard from '../PokerCard'
 import { Member } from '../Room/types'
 
 export interface TableProps {
   name: string
   members: Member[]
+  isRevealed?: boolean
 }
 
 // ─── Geometry ────────────────────────────────────────────────────────────────
@@ -59,37 +61,18 @@ function buildSeats(n: number): SeatInfo[] {
   })
 }
 
-// ─── MiniCard ─────────────────────────────────────────────────────────────────
-/** Card rotated to face the table center (inward direction). */
-const MiniCard = ({ inwardAngle }: { inwardAngle: number }) => {
-  const deg = ((inwardAngle + Math.PI / 2) * 180) / Math.PI
-  return (
-    <div style={{ transform: `rotate(${deg}deg)`, width: 38, height: 38, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="relative overflow-hidden rounded-sm">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/corgi-card-back.png"
-          alt="placed card"
-          style={{ width: 26, height: 38, display: 'block' }}
-          className="border border-border/60 opacity-90"
-        />
-        <span
-          className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shine"
-          style={{ animationDuration: '4s' }}
-        />
-      </div>
-    </div>
-  )
-}
-
 // ─── SeatAvatar ───────────────────────────────────────────────────────────────
-const AVATAR_R = 24   // half of size-12 (48 px)
-const NAME_H = 16     // approximate rendered height of the name label + gap
-const CARD_OFFSET = OFFSET + 14 // card centre lands 14px inside the table border
+const AVATAR_R = 24    // half of size-12 (48 px)
+const NAME_H = 16      // approximate rendered height of the name label + gap
+const CARD_OFFSET = OFFSET + 14  // card centre lands 14px inside the table border
+const CARD_SCALE = 0.55
+const CARD_W = Math.round(80 * CARD_SCALE)   // 44 px visual width
+const CARD_H = Math.round(120 * CARD_SCALE)  // 66 px visual height
 
-const SeatAvatar = ({ member, normalAngle }: { member: Member; normalAngle: number }) => {
+const SeatAvatar = ({ member, normalAngle, isRevealed }: { member: Member; normalAngle: number; isRevealed?: boolean }) => {
   const hasVoted = member.estimatedValue !== ''
   const inwardAngle = normalAngle + Math.PI
+  const rotateDeg = ((inwardAngle + Math.PI / 2) * 180) / Math.PI
 
   const cardX = CARD_OFFSET * Math.cos(inwardAngle)
   const cardY = CARD_OFFSET * Math.sin(inwardAngle)
@@ -124,10 +107,20 @@ const SeatAvatar = ({ member, normalAngle }: { member: Member; normalAngle: numb
           style={{
             left: `calc(50% + ${cardX}px)`,
             top: `${avatarCenterY + cardY}px`,
-            transform: 'translate(-50%, -50%)',
+            transform: `translate(-50%, -50%) rotate(${rotateDeg}deg)`,
           }}
         >
-          <MiniCard inwardAngle={inwardAngle} />
+          {/* Clip to the visual size so the scaled card doesn't bleed into layout */}
+          <div style={{ width: CARD_W, height: CARD_H, overflow: 'hidden' }}>
+            <div style={{ transform: `scale(${CARD_SCALE})`, transformOrigin: 'top left' }}>
+              <PokerCard
+                label={member.estimatedValue}
+                value={member.estimatedValue}
+                isRevealed={!!isRevealed}
+                isChosen={false}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -135,7 +128,7 @@ const SeatAvatar = ({ member, normalAngle }: { member: Member; normalAngle: numb
 }
 
 // ─── Table ────────────────────────────────────────────────────────────────────
-const Table = ({ name, members }: TableProps) => {
+const Table = ({ name, members, isRevealed }: TableProps) => {
   const seats = buildSeats(members.length)
 
   return (
@@ -158,7 +151,7 @@ const Table = ({ name, members }: TableProps) => {
               transform: 'translate(-50%, -50%)',
             }}
           >
-            <SeatAvatar member={member} normalAngle={normalAngle} />
+            <SeatAvatar member={member} normalAngle={normalAngle} isRevealed={isRevealed} />
           </div>
         )
       })}

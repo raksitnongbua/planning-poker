@@ -12,7 +12,7 @@ const FrontCard = ({ label, className }: FrontCardProps) => {
   return (
     <div
       className={twMerge(
-        'border rounded-md flex justify-center items-center cursor-pointer text-4xl text-black',
+        'relative border rounded-md flex justify-center items-center cursor-pointer text-4xl',
         className
       )}
     >
@@ -23,7 +23,7 @@ const FrontCard = ({ label, className }: FrontCardProps) => {
         width="120"
         height="180"
       />
-      <span className="absolute ">{label}</span>
+      <span className="absolute font-bold text-black drop-shadow-sm">{label}</span>
     </div>
   )
 }
