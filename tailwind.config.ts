@@ -130,7 +130,7 @@ const config: Config = {
         },
         'card-idle': {
           '0%, 100%': { transform: 'translateY(0px)' },
-          '50%':      { transform: 'translateY(-12px)' },
+          '50%':      { transform: 'translateY(-4px)' },
         },
       },
       animation: {
@@ -148,7 +148,7 @@ const config: Config = {
         shine: 'shine 3s ease-in-out infinite',
         sway: 'sway 60s ease-in-out infinite',
         wink: 'wink 4s ease-in-out infinite',
-        'card-idle': 'card-idle 6s ease-in-out infinite',
+        'card-idle': 'card-idle 24s ease-in-out infinite',
       },
     },
   },

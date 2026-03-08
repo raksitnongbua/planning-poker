@@ -1,6 +1,5 @@
 'use client'
-import { faChair, faCircleCheck, faCommentDots, faEye, faPaperPlane, faUserPlus } from '@fortawesome/free-solid-svg-icons'
-import { faCircle } from '@fortawesome/free-regular-svg-icons'
+import { faChair, faEye, faUserPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { usePathname, useRouter } from 'next/navigation'
 import React, { useEffect, useMemo, useState } from 'react'
@@ -9,14 +8,18 @@ import useWebSocket, { ReadyState } from 'react-use-websocket'
 import { useToast } from '@/components/ui/use-toast'
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 
-import { ThrowOverlay, ThrowPanel, useThrowLauncher } from '../ThrowLauncher'
 import Dialog from '../common/Dialog'
 import JoinRoomDialog from '../JoinRoomDialog'
 import RoomCards from '../RoomCards'
 import RoomTable from '../RoomTable'
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
+import { ThrowOverlay, ThrowPanel, useThrowLauncher } from '../ThrowLauncher'
 import { Button } from '../ui/button'
-import { ChatMessage, Member, Props, Status } from './types'
+import ActivityFeed, { ActivityEvent, INITIAL_ACTIVITY } from './ActivityFeed'
+import ChatWidget from './ChatWidget'
+import MobilePlayersSheet from './MobilePlayersSheet'
+import { Member, Props, Status } from './types'
+import VoterPanel from './VoterPanel'
+
 
 const ARMED_CURSOR =
   `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'>` +
@@ -77,6 +80,15 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [chatInput, setChatInput] = useState('')
   const chatEndRef = React.useRef<HTMLDivElement>(null)
+  const [activityLog, setActivityLog] = useState<ActivityEvent[]>(INITIAL_ACTIVITY)
+  const [activeActivityTab, setActiveActivityTab] = useState<'room' | 'personal'>('room')
+  const [isMobilePlayersOpen, setIsMobilePlayersOpen] = useState(false)
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false)
+  const [panelWidth, setPanelWidth] = useState(200)
+  const [isDraggingPanel, setIsDraggingPanel] = useState(false)
+  const prevMembersRef = React.useRef<Member[]>([])
+  const prevRoomStatusRef = React.useRef<Status>(Status.None)
+  const pendingActionActorRef = React.useRef<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
@@ -233,17 +245,24 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         const payload = jsonMessage.payload
         const transformedMembers = transformMembers(payload.members ?? [])
         setMembers(transformedMembers)
-        const meData = transformedMembers.find((member) => member.id === uid)
+        const meData = transformedMembers.find((member) => member.id === id)
         const myEstimatedPoint = meData?.estimatedValue ?? null
-        setCardChoosing(String(myEstimatedPoint))
+        const serverChoosing = String(myEstimatedPoint)
         const newRoomState = payload.status
+        const isNewRound = prevRoomStatusRef.current === Status.RevealedCards && newRoomState === Status.Voting
+        setCardChoosing(prev => {
+          if (serverChoosing !== '' && serverChoosing !== 'null') return serverChoosing
+          if (isNewRound) return serverChoosing
+          return prev
+        })
         setRoomStatus(newRoomState)
         if (newRoomState === Status.Voting) {
           setIsEditEstimateValue(false)
         }
         setRoomName(payload.name)
         const options = payload.desk_config
-        setCardOptions(options.split(',').map((option: string) => option.trim()))
+        const parsedOptions = options.split(',').map((option: string) => option.trim()).filter(Boolean)
+        setCardOptions([...new Set(parsedOptions)])
 
         if (payload.result) {
           const newResult = new Map<string, number>()
@@ -251,6 +270,47 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
             newResult.set(key, payload.result[key])
           })
           setResult(newResult)
+        }
+
+        {
+          const prevMembers = prevMembersRef.current
+          const prevStatus = prevRoomStatusRef.current
+          const ts = new Date()
+          const addEvent = (event: Omit<ActivityEvent, 'id'>) =>
+            setActivityLog((prev) => [...prev.slice(-200), { ...event, id: `${event.type}-${ts.getTime()}-${Math.random()}` }])
+
+          transformedMembers.forEach((m) => {
+            if (!prevMembers.some((pm) => pm.id === m.id)) {
+              addEvent({ type: 'join', actor: m.name, at: ts })
+            }
+          })
+
+          if (newRoomState === Status.Voting) {
+            transformedMembers.forEach((m) => {
+              const prev = prevMembers.find((pm) => pm.id === m.id)
+              if (prev && prev.estimatedValue === '' && m.estimatedValue !== '') {
+                addEvent({ type: 'vote', actor: m.name, at: ts })
+              }
+            })
+          }
+
+          if (prevStatus !== Status.RevealedCards && newRoomState === Status.RevealedCards) {
+            const votes = transformedMembers
+              .filter((m) => m.estimatedValue !== '')
+              .map((m) => ({ name: m.name, value: m.estimatedValue }))
+            const numericVotes = votes.map((v) => Number(v.value)).filter((v) => !isNaN(v) && isFinite(v))
+            const avg = numericVotes.length > 0 ? numericVotes.reduce((s, v) => s + v, 0) / numericVotes.length : 0
+            addEvent({ type: 'reveal', actor: pendingActionActorRef.current ?? undefined, at: ts, roundResult: { votes, avg } })
+            pendingActionActorRef.current = null
+          }
+
+          if (prevStatus === Status.RevealedCards && newRoomState === Status.Voting) {
+            addEvent({ type: 'reset', actor: pendingActionActorRef.current ?? undefined, at: ts })
+            pendingActionActorRef.current = null
+          }
+
+          prevMembersRef.current = transformedMembers
+          prevRoomStatusRef.current = newRoomState
         }
 
         break
@@ -284,7 +344,9 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const formatTimeAgo = (msDiff: number): string => {
     if (msDiff < 60_000) return 'Just now'
     if (msDiff < 3_600_000) return `${Math.floor(msDiff / 60_000)}m ago`
-    return `${Math.floor(msDiff / 3_600_000)}h ago`
+    if (msDiff < 86_400_000) return `${Math.floor(msDiff / 3_600_000)}h ago`
+    if (msDiff < 2_592_000_000) return `${Math.floor(msDiff / 86_400_000)}d ago`
+    return `${Math.floor(msDiff / 2_592_000_000)}mo ago`
   }
 
   const activityTier = (lastActiveAt: Date): number => {
@@ -300,16 +362,33 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
     return a.name.localeCompare(b.name)
   })
 
+  const { roundGroups, personalEvents } = useMemo(() => {
+    const groups: { round: number; events: ActivityEvent[] }[] = [{ round: 1, events: [] }]
+    const personal: ActivityEvent[] = []
+    for (const event of activityLog) {
+      if (event.type === 'reveal' || event.type === 'reset') {
+        groups[groups.length - 1].events.push(event)
+        if (event.type === 'reset') groups.push({ round: groups.length + 1, events: [] })
+      } else {
+        personal.push(event)
+      }
+    }
+    return { roundGroups: groups, personalEvents: personal }
+  }, [activityLog])
+
   return (
     <>
-      <div className="flex min-h-[calc(100dvh-92px*2)] min-w-[700px] rounded-t-2xl bg-muted/10 shadow-md">
+      <div
+        className={`flex min-h-[calc(100dvh-92px*2)] overflow-x-hidden md:pl-14 ${!isDraggingPanel ? 'transition-[padding] duration-300' : ''} ${isPanelCollapsed ? 'md:pr-10' : panelWidth === 200 ? 'md:pr-[200px]' : ''}`}
+        style={!isPanelCollapsed && panelWidth !== 200 ? { paddingRight: panelWidth } : {}}
+      >
 
         {/* ── Main column ── */}
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col min-w-0">
 
           {/* Table centered in main space */}
           <div
-            className="flex flex-1 items-center justify-center py-8"
+            className="relative flex flex-1 flex-col items-center justify-center py-8 w-full overflow-hidden"
             style={launcher.armedEmoji ? { cursor: ARMED_CURSOR } : undefined}
             onClick={(e) => {
               if (!launcher.armedEmoji) return
@@ -330,8 +409,27 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                 roomName={roomName}
                 status={roomStatus}
                 isSpectator={isSpectator}
-                onReveal={() => sendJsonMessage({ action: 'REVEAL_CARDS' })}
-                onReset={() => sendJsonMessage({ action: 'RESET_ROOM' })}
+                onReveal={() => {
+                  pendingActionActorRef.current = members.find((m) => m.id === id)?.name ?? null
+                  sendJsonMessage({ action: 'REVEAL_CARDS' })
+                }}
+                onReset={() => {
+                  pendingActionActorRef.current = members.find((m) => m.id === id)?.name ?? null
+                  sendJsonMessage({ action: 'RESET_ROOM' })
+                }}
+              />
+            )}
+
+            {/* Activity feed — right of table, within center area */}
+            {roomStatus !== Status.None && process.env.NEXT_PUBLIC_ROOM_ACTIVITY_HISTORY_ENABLED === 'true' && (
+              <ActivityFeed
+                activeTab={activeActivityTab}
+                roundGroups={roundGroups}
+                personalEvents={personalEvents}
+                now={now}
+                armedEmoji={launcher.armedEmoji}
+                formatTimeAgo={formatTimeAgo}
+                onTabChange={setActiveActivityTab}
               />
             )}
           </div>
@@ -339,7 +437,23 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
           {/* Sticky bottom — cards bar */}
           {roomStatus !== Status.None && (
             <div className="sticky bottom-0 z-20">
-              <div className="border-t border-border/40 bg-background/90 backdrop-blur-md px-6 py-4">
+              <div className="border-t border-border/30 bg-background/95 backdrop-blur-md px-4 pb-5 pt-3">
+                {/* Label row */}
+                {!isSpectator && (
+                  <div className="mb-2 flex items-center justify-center gap-2">
+                    {roomStatus === Status.Voting && cardChoosing !== 'null' && cardChoosing !== '-1' && cardChoosing !== '' ? (
+                      <>
+                        <span className="size-1.5 rounded-full bg-primary animate-pulse inline-block" />
+                        <span className="text-[11px] font-semibold text-primary/80 uppercase tracking-widest">Voted</span>
+                      </>
+                    ) : roomStatus === Status.Voting ? (
+                      <>
+                        <span className="size-1.5 rounded-full bg-muted-foreground/40 inline-block" />
+                        <span className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-widest">Pick a card</span>
+                      </>
+                    ) : null}
+                  </div>
+                )}
               <div className="flex items-center justify-center gap-4">
                 {!isSpectator && (
                   <RoomCards
@@ -348,6 +462,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                     isEditPointMode={isEditPointMode}
                     onClickFlipCards={() => setIsEditEstimateValue((preVal) => !preVal)}
                     onClickVote={(value) => {
+                      setCardChoosing(value)
                       sendJsonMessage({ action: 'UPDATE_ESTIMATED_VALUE', payload: { value } })
                       setIsEditEstimateValue(false)
                     }}
@@ -384,121 +499,62 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
 
       </div>
 
+
       {/* ── Fixed player panel ── */}
-      <div className="fixed right-0 top-[64px] z-20 flex flex-col border-l border-border/40 bg-background/95 backdrop-blur-md w-60"
-        style={{ bottom: '64px' }}
-      >
-        <div className="flex flex-col gap-3 overflow-hidden p-5 h-full" style={{ width: 240 }}>
+      <VoterPanel
+        members={members}
+        sortedMembers={sortedMembers}
+        panelWidth={panelWidth}
+        isPanelCollapsed={isPanelCollapsed}
+        isDraggingPanel={isDraggingPanel}
+        myId={id}
+        isRevealed={isRevealed}
+        roomStatus={roomStatus}
+        now={now}
+        armedEmoji={launcher.armedEmoji}
+        hoveredMemberId={launcher.hoveredMemberId}
+        inviteLink={inviteLink}
+        isCopied={isCopied}
+        formatTimeAgo={formatTimeAgo}
+        onCollapse={() => setIsPanelCollapsed(true)}
+        onExpand={() => setIsPanelCollapsed(false)}
+        onCopy={() => { navigator.clipboard.writeText(inviteLink); setIsCopied(true); setTimeout(() => setIsCopied(false), 3000) }}
+        onWidthChange={setPanelWidth}
+        onDragStart={() => setIsDraggingPanel(true)}
+        onDragEnd={() => setIsDraggingPanel(false)}
+        onHoverMember={launcher.setHoveredMemberId}
+        onSetHoveredCardCenter={launcher.setHoveredCardCenter}
+        onFireAt={(x, y, memberId, context) => launcher.handleFire(x, y, memberId, context)}
+        myCardRef={myCardRef}
+      />
 
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">In Room</p>
-              <p className="text-lg font-bold tabular-nums leading-tight">{members.length} <span className="text-xs font-normal text-muted-foreground">players</span></p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(inviteLink)
-                  setIsCopied(true)
-                  setTimeout(() => setIsCopied(false), 3000)
-                }}
-                className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all duration-300 ${
-                  isCopied
-                    ? 'border-green-500/60 bg-green-500/10 text-green-400'
-                    : 'border-dashed border-primary/50 text-primary/70 hover:border-primary hover:text-primary'
-                }`}
-              >
-                <FontAwesomeIcon icon={isCopied ? faCircleCheck : faUserPlus} className="size-3" />
-                {isCopied ? 'Copied!' : 'Invite'}
-              </button>
-            </div>
-          </div>
+      {/* Mobile players toggle button */}
+      {roomStatus !== Status.None && (
+        <button
+          className="fixed top-[68px] right-3 z-30 md:hidden flex items-center gap-1.5 rounded-full border border-border/50 bg-background/95 px-3 py-1.5 text-xs text-muted-foreground shadow-md backdrop-blur-sm"
+          onClick={() => setIsMobilePlayersOpen(true)}
+        >
+          <FontAwesomeIcon icon={faUserPlus} className="size-3.5" />
+          <span>{members.length}</span>
+        </button>
+      )}
 
-          {/* Vote progress bar */}
-          {roomStatus === Status.Voting && members.length > 0 && (() => {
-            const votedCount = members.filter(m => m.estimatedValue !== '').length
-            return (
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{votedCount} voted</span>
-                  <span>{members.length - votedCount} waiting</span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted/40">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all duration-500"
-                    style={{ width: `${(votedCount / members.length) * 100}%` }}
-                  />
-                </div>
-              </div>
-            )
-          })()}
-
-          {/* Player list — scrollable */}
-          <div className="flex flex-col gap-1.5 overflow-y-auto pr-1 flex-1">
-            {sortedMembers.map((member) => {
-              const picked = member.estimatedValue !== ''
-              const msDiff = now - member.lastActiveAt.getTime()
-              const activeDot =
-                msDiff <= 1 * 60_000 ? 'bg-green-500' :
-                msDiff <= 10 * 60_000 ? 'bg-orange-400' :
-                'bg-neutral-500'
-              const activeLabel = formatTimeAgo(msDiff)
-              return (
-                <div
-                  key={member.id}
-                  ref={member.id === id ? myCardRef : undefined}
-                  data-panel-member-id={member.id}
-                  className={`relative flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all duration-200 ${
-                    launcher.armedEmoji && launcher.hoveredMemberId === member.id
-                      ? 'border-orange-400/70 bg-orange-400/10 ring-2 ring-orange-400/30 shadow-md shadow-orange-500/20'
-                      : launcher.armedEmoji
-                      ? 'border-orange-400/25 bg-orange-400/5 hover:border-orange-400/60 hover:bg-orange-400/10'
-                      : 'border-border/40 bg-muted/20 hover:border-border/70 hover:bg-muted/40'
-                  }`}
-                  style={launcher.armedEmoji ? { cursor: ARMED_CURSOR } : undefined}
-                  onMouseEnter={(e) => {
-                    if (!launcher.armedEmoji) return
-                    const r = e.currentTarget.getBoundingClientRect()
-                    launcher.setHoveredMemberId(member.id)
-                    launcher.setHoveredCardCenter({ x: r.left + r.width / 2, y: r.top })
-                  }}
-                  onMouseLeave={() => {
-                    launcher.setHoveredMemberId(null)
-                    launcher.setHoveredCardCenter(null)
-                  }}
-                  onClick={(e) => {
-                    if (!launcher.armedEmoji) return
-                    const r = e.currentTarget.getBoundingClientRect()
-                    launcher.handleFire(r.left + r.width / 2, r.top + r.height / 2, member.id, 'panel')
-                  }}
-                >
-                  <div className="relative flex-shrink-0">
-                    <Avatar className="size-8 ring-1 ring-border">
-                      <AvatarImage src={member.avatar ?? '/images/corgi-tood-cute.png'} alt={member.name} />
-                      <AvatarFallback className="text-xs">{member.name[0].toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <span className={`absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full ring-2 ring-background ${activeDot}`} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium leading-tight">{member.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{activeLabel}</p>
-                  </div>
-                  {isRevealed && picked ? (
-                    <span className="min-w-[24px] rounded-md bg-primary/20 px-1.5 py-0.5 text-center text-xs font-bold text-primary">
-                      {member.estimatedValue}
-                    </span>
-                  ) : picked ? (
-                    <FontAwesomeIcon icon={faCircleCheck} className="size-4 flex-shrink-0 text-primary" />
-                  ) : (
-                    <FontAwesomeIcon icon={faCircle} className="size-4 flex-shrink-0 text-muted-foreground/25" />
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
+      {/* Mobile players bottom sheet */}
+      {isMobilePlayersOpen && roomStatus !== Status.None && (
+        <MobilePlayersSheet
+          members={members}
+          sortedMembers={sortedMembers}
+          roomStatus={roomStatus}
+          isRevealed={isRevealed}
+          myId={id}
+          now={now}
+          inviteLink={inviteLink}
+          isCopied={isCopied}
+          formatTimeAgo={formatTimeAgo}
+          onClose={() => setIsMobilePlayersOpen(false)}
+          onCopy={() => { navigator.clipboard.writeText(inviteLink); setIsCopied(true); setTimeout(() => setIsCopied(false), 3000) }}
+        />
+      )}
 
       <div className="fixed bottom-4 right-4 flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-3 py-1.5 backdrop-blur-sm">
           <span className="relative flex size-2">
@@ -511,75 +567,17 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         </div>
 
       {/* ── Floating chat widget ── */}
-      <div className="fixed bottom-20 left-4 z-30 flex flex-col items-start gap-2">
-        {isChatOpen && (
-          <div className="flex flex-col w-64 h-80 rounded-2xl border border-border/50 bg-background/95 backdrop-blur-md shadow-2xl shadow-black/40 overflow-hidden animate-in slide-in-from-bottom-2 duration-200">
-            {/* Chat header */}
-            <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-border/40 flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-foreground">Chat</span>
-                <span className="rounded-full border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary/70">Coming soon</span>
-              </div>
-              <button onClick={() => setIsChatOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors text-xs leading-none">✕</button>
-            </div>
-
-            {/* Messages */}
-            <div className="flex flex-col gap-2 overflow-y-auto flex-1 min-h-0 px-3 py-2">
-              {chatMessages.length === 0 && (
-                <p className="text-center text-[11px] text-muted-foreground/40 mt-6">No messages yet</p>
-              )}
-              {chatMessages.map((msg) => {
-                const isMe = msg.memberId === id
-                return (
-                  <div key={msg.id} className={`flex gap-1.5 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <Avatar className="size-5 flex-shrink-0 mt-0.5">
-                      <AvatarImage src={msg.avatar ?? '/images/corgi-tood-cute.png'} alt={msg.name} />
-                      <AvatarFallback className="text-[7px]">{msg.name[0].toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div className={`flex flex-col gap-0.5 min-w-0 ${isMe ? 'items-end' : 'items-start'}`}>
-                      {!isMe && <span className="text-[10px] text-muted-foreground/60 leading-none">{msg.name}</span>}
-                      <div className={`rounded-2xl px-2.5 py-1.5 text-xs leading-snug break-words max-w-[168px] ${
-                        isMe ? 'bg-primary text-primary-foreground rounded-tr-sm' : 'bg-muted/60 text-foreground rounded-tl-sm'
-                      }`}>
-                        {msg.text}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-              <div ref={chatEndRef} />
-            </div>
-
-            {/* Input */}
-            <div className="flex gap-1.5 px-3 py-2.5 border-t border-border/40 flex-shrink-0">
-              <input
-                className="flex-1 min-w-0 rounded-lg border border-border/50 bg-muted/20 px-2.5 py-1.5 text-xs placeholder:text-muted-foreground/25 cursor-not-allowed opacity-50"
-                placeholder="Coming soon…"
-                disabled
-              />
-              <button
-                disabled
-                className="flex-shrink-0 rounded-lg bg-primary/80 px-2.5 py-1.5 text-primary-foreground opacity-30 cursor-not-allowed"
-              >
-                <FontAwesomeIcon icon={faPaperPlane} className="size-3" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Toggle button */}
-        <button
-          onClick={() => { setIsChatOpen((o) => !o); setUnreadCount(0) }}
-          className="relative flex items-center justify-center size-10 rounded-full border border-border/50 bg-background/95 backdrop-blur-md shadow-lg text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <FontAwesomeIcon icon={faCommentDots} className="size-4" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex items-center justify-center size-4 rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </button>
-      </div>
+      <ChatWidget
+        isOpen={isChatOpen}
+        messages={chatMessages}
+        unreadCount={unreadCount}
+        chatInput={chatInput}
+        myId={id}
+        chatEndRef={chatEndRef}
+        onToggle={() => { setIsChatOpen((o) => !o); setUnreadCount(0) }}
+        onInputChange={setChatInput}
+        onSend={handleSendChat}
+      />
 
       <JoinRoomDialog
         open={openJoinRoomDialog}

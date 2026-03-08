@@ -8,7 +8,7 @@ A free, real-time planning poker app for agile teams — featuring a charming co
 
 ---
 
-![Version](https://img.shields.io/badge/version-2.1.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.3.0-blue?style=for-the-badge)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -24,10 +24,10 @@ A free, real-time planning poker app for agile teams — featuring a charming co
 
 - **Real-time collaboration** — Vote and reveal estimates simultaneously with your team via WebSockets
 - **Emoji throwables** — Arm an emoji and throw it at teammates with physics-based gravity arc, impact bursts, and multiplayer sync
-- **Custom card configurations** — Choose from Fibonacci, T-shirt sizes, or custom sequences
+- **Custom card configurations** — Choose from Fibonacci, Fibo+Manday, T-shirt sizes, or custom sequences
 - **Room history** — Review past estimation sessions from recent rooms
 - **No account required** — Just create a room and share the link
-- **Mobile-friendly** — Responsive design across all screen sizes
+- **Responsive design** — Optimised for **Mac M5 14" (1512×982)** and **iPhone Pro (393×852)** as primary targets; fully usable across all screen sizes
 
 ---
 
@@ -133,6 +133,21 @@ This frontend connects to **Planning Poker Service** — a Golang-based WebSocke
 ---
 
 ## 📦 Changelog
+
+### v2.3.0
+- **Responsive**: primary targets Mac M5 14" (1512×982) desktop and iPhone Pro (393×852) mobile — CSS transform table scaling, horizontal snap-scroll card bar, mobile bottom sheet for players
+- Room UX: collapsible/draggable voter panel (160–320px), hover preview when collapsed, time ago per player (supports m/h/d/mo)
+- Room UX: ThrowPanel default expanded on desktop, revamped to match design system
+- Room UX: card idle animation slowed, avatar ring visibility fixed, avatar overflow clipping fixed, pill name badges with hover tooltip
+- Room UX: optimistic card selection, fix voted state flicker, fix member lookup for Google-authenticated users
+- Room Creation: glassmorphism form card, Continue Room section (latest room), Fibo+Manday preset deck (`0–13`)
+- Recent Rooms: responsive card list on mobile, fix broken date overflow
+- Navbar: edge-to-edge layout
+- Refactor: Room.tsx (~1274 lines) split into VoterPanel, ChatWidget, MobilePlayersSheet, ActivityFeed components
+
+### v2.2.0
+- Chat widget (coming soon placeholder), activity feed, jumbo card result with animated average score
+- Room table responsive scaling, dark design system overhaul
 
 ### v2.1.0
 - Add ThrowLauncher — physics-based emoji throwing with gravity arc, spin, impact burst, and floating holding preview

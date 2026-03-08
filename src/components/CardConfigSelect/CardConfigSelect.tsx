@@ -1,4 +1,7 @@
 'use client'
+import { faStar } from '@fortawesome/free-solid-svg-icons'
+import { faStar as faStarOutline } from '@fortawesome/free-regular-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { CheckIcon } from '@radix-ui/react-icons'
 import * as SelectPrimitive from '@radix-ui/react-select'
 import React, { useState } from 'react'
@@ -62,9 +65,9 @@ const DeckOption = ({ id, displayName, value }: DeckOptionProps) => {
         </span>
       </div>
       <div className="flex flex-wrap gap-1">
-        {chips.map((chip) => (
+        {chips.map((chip, i) => (
           <span
-            key={chip}
+            key={i}
             className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-mono text-muted-foreground"
           >
             {chip}
@@ -137,12 +140,21 @@ const CardConfigSelect: React.FC<CardConfigSelectProps> = (props) => {
           type="button"
           disabled={disabled}
           onClick={() => onToggleFavorite(value)}
-          className="flex items-center justify-center text-xl leading-none transition-colors disabled:opacity-40"
+          className={`group relative flex size-9 flex-shrink-0 items-center justify-center rounded-xl border transition-all duration-200 disabled:opacity-40 ${
+            isFavorite
+              ? 'border-yellow-500/40 bg-yellow-500/10 hover:border-yellow-500/60 hover:bg-yellow-500/15'
+              : 'border-border/40 bg-transparent hover:border-yellow-500/30 hover:bg-yellow-500/10'
+          }`}
           aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
         >
-          <span className={isFavorite ? 'text-yellow-400 hover:text-yellow-500' : 'text-muted-foreground hover:text-yellow-400'}>
-            {isFavorite ? '★' : '☆'}
-          </span>
+          <FontAwesomeIcon
+            icon={isFavorite ? faStar : faStarOutline}
+            className={`size-3.5 transition-all duration-200 ${
+              isFavorite
+                ? 'text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.5)] group-hover:scale-110'
+                : 'text-muted-foreground/50 group-hover:scale-110 group-hover:text-yellow-400'
+            }`}
+          />
         </button>
       </div>
 

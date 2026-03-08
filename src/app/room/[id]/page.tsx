@@ -1,9 +1,16 @@
 import type { Metadata } from 'next'
+import { Viewport } from 'next'
 import { getServerSession } from 'next-auth'
 import React from 'react'
 
 import { authOptions } from '@/app/api/auth/[...nextauth]/option'
 import RoomComponent from '@/components/Room'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+}
 
 interface Props {
   params: Promise<{ id: string }>

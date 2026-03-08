@@ -83,7 +83,7 @@ const SeatAvatar = ({ member, normalAngle, isRevealed }: { member: Member; norma
   const avatarCenterY = nameAbove ? NAME_H + AVATAR_R : AVATAR_R
 
   const name = (
-    <span className="max-w-[60px] truncate text-center text-[10px] leading-tight text-muted-foreground">
+    <span title={member.name} className="max-w-[72px] truncate rounded-full border border-border/40 bg-background/80 px-2 py-0.5 text-center text-[10px] font-medium leading-tight text-foreground/80 backdrop-blur-sm shadow-sm">
       {member.name}
     </span>
   )
@@ -92,8 +92,8 @@ const SeatAvatar = ({ member, normalAngle, isRevealed }: { member: Member; norma
     <div className="relative flex flex-col items-center gap-0.5">
       {nameAbove && name}
       <Avatar
-        className={`size-12 ring-2 ring-background transition-all duration-300 ${
-          hasVoted ? 'ring-primary/60' : ''
+        className={`size-12 ring-2 transition-all duration-300 ${
+          hasVoted ? 'ring-primary/60' : 'ring-border/40'
         }`}
       >
         <AvatarImage src={member.avatar ?? '/images/corgi-tood-cute.png'} alt={member.name} />
@@ -132,7 +132,7 @@ const Table = ({ name, members, isRevealed }: TableProps) => {
   const seats = buildSeats(members.length)
 
   return (
-    <div className="relative flex h-[212px] min-w-[600px] items-center justify-center rounded-[72px] border border-border bg-gradient-to-b from-muted/30 to-muted/10">
+    <div className="relative flex h-[212px] w-[600px] items-center justify-center rounded-[72px] border border-border bg-gradient-to-b from-muted/30 to-muted/10">
       <div className="absolute inset-[7px] rounded-[65px] border border-border/30" />
       <span className="relative z-10 max-w-[280px] truncate px-8 text-base font-semibold uppercase tracking-widest text-muted-foreground">
         {name}
