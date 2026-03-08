@@ -29,8 +29,9 @@ const RoomTable: React.FC<RoomTableProps> = ({ result, maxPoint, members, roomNa
   useEffect(() => {
     const updateScale = () => {
       if (window.innerWidth < 768) {
-        // content width = viewport - 2×16px layout padding
-        setTableScale(Math.min(1, (window.innerWidth - 32) / TABLE_W))
+        // Scale against full container (TABLE_W + 140px avatar bleed) + 16px safe margin (8px each side)
+        // Avatars bleed ~14px outside the container in natural coords; the margin prevents overflow-x-hidden clipping
+        setTableScale(Math.min(1, (window.innerWidth - 48) / (TABLE_W + 140)))
       } else {
         setTableScale(1)
       }
@@ -179,10 +180,10 @@ const RoomTable: React.FC<RoomTableProps> = ({ result, maxPoint, members, roomNa
     <div data-section="room-table" className="flex flex-col items-center gap-4 w-full md:flex-row md:items-center md:justify-center md:gap-16">
 
       {/* ── Mobile: card + action buttons above the table ── */}
-      <div className="flex flex-col items-center gap-3 md:hidden">
-        <ReactCardFlip isFlipped={isRevealed} flipDirection="horizontal" containerStyle={{ width: '120px', height: '180px' }}>
-          {jumboCardBack(120, 180)}
-          {jumboCardFront(120, 180)}
+      <div className="flex flex-col items-center gap-2 md:hidden">
+        <ReactCardFlip isFlipped={isRevealed} flipDirection="horizontal" containerStyle={{ width: '90px', height: '135px' }}>
+          {jumboCardBack(90, 135)}
+          {jumboCardFront(90, 135)}
         </ReactCardFlip>
         <div className="flex h-10 items-center justify-center">{actionButtons}</div>
       </div>

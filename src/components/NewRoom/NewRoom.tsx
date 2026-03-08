@@ -107,7 +107,7 @@ const NewRoom = ({ }) => {
     })
   }
 
-  const { data: recentRooms } = useQuery<{ id: string; name: string; totalMembers: number; updatedAt: Date }[]>({
+  const { data: recentRooms, isLoading: isLoadingRecentRooms } = useQuery<{ id: string; name: string; totalMembers: number; updatedAt: Date }[]>({
     queryKey: ['recent-rooms-preview', uid],
     queryFn: async () => {
       if (!uid) return []
@@ -276,38 +276,55 @@ const NewRoom = ({ }) => {
           </CardFooter>
         </Card>
 
-        {recentRooms && recentRooms.length > 0 && (
+        {!!uid && (
           <div className="mt-4 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <p className="text-center text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/50">
               Continue a Room
             </p>
             <div className="space-y-1.5">
-              {recentRooms.map((room) => (
-                <button
-                  key={room.id}
-                  onClick={() => router.push(`/room/${room.id}`)}
-                  className="flex w-full items-center gap-3 rounded-xl border border-border/30 bg-background/40 px-4 py-3 text-left backdrop-blur-sm transition-all duration-200 hover:border-border/60 hover:bg-background/60"
-                >
-                  <div className="flex size-8 flex-shrink-0 items-center justify-center rounded-lg border border-border/40 bg-muted/20 text-base">
-                    🃏
+              {isLoadingRecentRooms ? (
+                <div className="flex w-full items-center gap-3 rounded-xl border border-border/30 bg-background/40 px-4 py-3 backdrop-blur-sm">
+                  <div className="size-8 flex-shrink-0 rounded-lg bg-muted/20 animate-pulse" />
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="h-3.5 w-2/3 rounded-md bg-muted/30 animate-pulse" />
+                    <div className="h-2.5 w-1/3 rounded-md bg-muted/20 animate-pulse" />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{room.name}</p>
-                    <p className="text-[10px] text-muted-foreground/50">
-                      {room.totalMembers} player{room.totalMembers !== 1 ? 's' : ''} · {timeAgo(room.updatedAt)}
-                    </p>
-                  </div>
-                  <span className="flex-shrink-0 text-[10px] text-muted-foreground/40">→</span>
-                </button>
-              ))}
+                  <div className="size-4 flex-shrink-0 rounded bg-muted/20 animate-pulse" />
+                </div>
+              ) : recentRooms && recentRooms.length > 0 ? (
+                recentRooms.map((room) => (
+                  <button
+                    key={room.id}
+                    onClick={() => router.push(`/room/${room.id}`)}
+                    className="flex w-full items-center gap-3 rounded-xl border border-border/30 bg-background/40 px-4 py-3 text-left backdrop-blur-sm transition-all duration-200 hover:border-border/60 hover:bg-background/60"
+                  >
+                    <div className="flex size-8 flex-shrink-0 items-center justify-center rounded-lg border border-border/40 bg-muted/20 text-base">
+                      🃏
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{room.name}</p>
+                      <p className="text-[10px] text-muted-foreground/50">
+                        {room.totalMembers} player{room.totalMembers !== 1 ? 's' : ''} · {timeAgo(room.updatedAt)}
+                      </p>
+                    </div>
+                    <span className="flex-shrink-0 text-[10px] text-muted-foreground/40">→</span>
+                  </button>
+                ))
+              ) : (
+                <div className="flex items-center justify-center rounded-xl border border-border/20 bg-background/30 px-4 py-3">
+                  <p className="text-[11px] text-muted-foreground/40">No recent rooms yet</p>
+                </div>
+              )}
             </div>
-            <button
-              onClick={() => router.push('/')}
-              className="mt-1 flex w-full items-center justify-center gap-1 py-1.5 text-[11px] text-muted-foreground/50 transition-colors duration-200 hover:text-muted-foreground"
-            >
-              View all rooms
-              <span className="text-[10px]">→</span>
-            </button>
+            {!isLoadingRecentRooms && recentRooms && recentRooms.length > 0 && (
+              <button
+                onClick={() => router.push('/recent-rooms')}
+                className="mt-1 flex w-full items-center justify-center gap-1 py-1.5 text-[11px] text-muted-foreground/50 transition-colors duration-200 hover:text-muted-foreground"
+              >
+                View all rooms
+                <span className="text-[10px]">→</span>
+              </button>
+            )}
           </div>
         )}
       </div>
