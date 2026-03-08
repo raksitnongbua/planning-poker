@@ -12,7 +12,7 @@ const Navbar = () => {
   const { data: session, status } = useSession()
   return (
     <header>
-      <nav className="container mx-auto flex items-center justify-between px-2 py-2 sm:px-8">
+      <nav className="w-full flex items-center justify-between px-3 py-2 sm:px-5">
         <Link href="/" className="transition-transform duration-200 hover:scale-110 inline-block">
           <Image
             className="cursor-pointer"

@@ -24,27 +24,30 @@ const RoomCards: React.FC<RoomCardsProps> = ({
   status,
 }) => {
   return (
-    <div data-section="room-cards" className="col-span-3 mx-auto flex h-36 flex-col gap-4">
-      <div className="grid auto-cols-fr grid-flow-col content-end gap-4">
-        {cardOptions.map((value) => {
-          const isRevealed = status === Status.Voting || isEditPointMode
-          return (
-            <PokerCard
-              key={`card-${value}`}
-              label={String(value)}
-              value={value}
-              isRevealed={isRevealed}
-              onClick={onClickVote}
-              isChosen={cardChoosing === value && isRevealed}
-            />
-          )
-        })}
+    <div data-section="room-cards" className="flex flex-col items-center gap-2">
+      {/* Scrollable on mobile, natural width on desktop */}
+      <div className="-mx-4 px-4 overflow-x-auto overflow-y-visible md:mx-0 md:px-0 md:overflow-visible">
+        <div className="flex items-end gap-2 md:gap-3 min-w-max" style={{ height: 'clamp(5.5rem, 12vw, 8rem)' }}>
+          {cardOptions.map((value) => {
+            const isRevealed = status === Status.Voting || isEditPointMode
+            return (
+              <PokerCard
+                key={`card-${value}`}
+                label={String(value)}
+                value={value}
+                isRevealed={isRevealed}
+                onClick={onClickVote}
+                isChosen={cardChoosing === value && isRevealed}
+              />
+            )
+          })}
+        </div>
       </div>
       {status === Status.RevealedCards && (
         <Button
           size="sm"
           variant="ghost"
-          className="self-end gap-1.5 text-muted-foreground transition-colors duration-200 hover:text-foreground"
+          className="gap-1.5 text-muted-foreground transition-colors duration-200 hover:text-foreground"
           onClick={onClickFlipCards}
         >
           <FontAwesomeIcon icon={isEditPointMode ? faXmark : faPenToSquare} className="size-3.5" />
