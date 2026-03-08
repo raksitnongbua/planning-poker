@@ -11,7 +11,7 @@ interface MobilePlayersSheetProps {
   sortedMembers: Member[]
   roomStatus: Status
   isRevealed: boolean
-  myId: string
+  myId: string | null
   now: number
   inviteLink: string
   isCopied: boolean

@@ -107,7 +107,7 @@ const NewRoom = ({ }) => {
     })
   }
 
-  const { data: recentRooms } = useQuery({
+  const { data: recentRooms } = useQuery<{ id: string; name: string; totalMembers: number; updatedAt: Date }[]>({
     queryKey: ['recent-rooms-preview', uid],
     queryFn: async () => {
       if (!uid) return []

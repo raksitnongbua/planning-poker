@@ -24,7 +24,7 @@ interface VoterPanelProps {
   panelWidth: number
   isPanelCollapsed: boolean
   isDraggingPanel: boolean
-  myId: string
+  myId: string | null
   isRevealed: boolean
   roomStatus: Status
   now: number

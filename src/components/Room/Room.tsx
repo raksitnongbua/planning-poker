@@ -17,7 +17,7 @@ import { Button } from '../ui/button'
 import ActivityFeed, { ActivityEvent, INITIAL_ACTIVITY } from './ActivityFeed'
 import ChatWidget from './ChatWidget'
 import MobilePlayersSheet from './MobilePlayersSheet'
-import { Member, Props, Status } from './types'
+import { ChatMessage, Member, Props, Status } from './types'
 import VoterPanel from './VoterPanel'
 
 
@@ -262,7 +262,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         setRoomName(payload.name)
         const options = payload.desk_config
         const parsedOptions = options.split(',').map((option: string) => option.trim()).filter(Boolean)
-        setCardOptions([...new Set(parsedOptions)])
+        setCardOptions(Array.from(new Set(parsedOptions)))
 
         if (payload.result) {
           const newResult = new Map<string, number>()

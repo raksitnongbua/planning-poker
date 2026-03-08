@@ -11,7 +11,7 @@ interface ChatWidgetProps {
   messages: ChatMessage[]
   unreadCount: number
   chatInput: string
-  myId: string
+  myId: string | null
   chatEndRef: React.RefObject<HTMLDivElement | null>
   onToggle: () => void
   onInputChange: (val: string) => void
