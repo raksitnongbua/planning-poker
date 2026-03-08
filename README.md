@@ -27,7 +27,7 @@ A free, real-time planning poker app for agile teams — featuring a charming co
 - **Custom card configurations** — Choose from Fibonacci, Fibo+Manday, T-shirt sizes, or custom sequences
 - **Room history** — Review past estimation sessions from recent rooms
 - **No account required** — Just create a room and share the link
-- **Mobile-friendly** — Responsive design across all screen sizes
+- **Responsive design** — Optimised for **Mac M5 14" (1512×982)** and **iPhone Pro (393×852)** as primary targets; fully usable across all screen sizes
 
 ---
 
@@ -135,15 +135,15 @@ This frontend connects to **Planning Poker Service** — a Golang-based WebSocke
 ## 📦 Changelog
 
 ### v2.3.0
-- Room UX: collapsible/draggable voter panel (160–320px), hover preview when collapsed, time ago per player
+- **Responsive**: primary targets Mac M5 14" (1512×982) desktop and iPhone Pro (393×852) mobile — CSS transform table scaling, horizontal snap-scroll card bar, mobile bottom sheet for players
+- Room UX: collapsible/draggable voter panel (160–320px), hover preview when collapsed, time ago per player (supports m/h/d/mo)
 - Room UX: ThrowPanel default expanded on desktop, revamped to match design system
-- Room UX: card idle animation slowed, mobile table scaling, horizontal snap-scroll card bar
-- Room UX: fix avatar ring visibility, fix avatar overflow clipping, pill name badges with hover tooltip
-- Room UX: optimistic card selection, fix voted state flicker, fix member lookup for logged-in users
-- Room Creation: glassmorphism form card, Continue Room section (latest room), Fibo+Manday preset deck
+- Room UX: card idle animation slowed, avatar ring visibility fixed, avatar overflow clipping fixed, pill name badges with hover tooltip
+- Room UX: optimistic card selection, fix voted state flicker, fix member lookup for Google-authenticated users
+- Room Creation: glassmorphism form card, Continue Room section (latest room), Fibo+Manday preset deck (`0–13`)
 - Recent Rooms: responsive card list on mobile, fix broken date overflow
 - Navbar: edge-to-edge layout
-- Refactor: Room.tsx split into VoterPanel, ChatWidget, MobilePlayersSheet, ActivityFeed components
+- Refactor: Room.tsx (~1274 lines) split into VoterPanel, ChatWidget, MobilePlayersSheet, ActivityFeed components
 
 ### v2.2.0
 - Chat widget (coming soon placeholder), activity feed, jumbo card result with animated average score

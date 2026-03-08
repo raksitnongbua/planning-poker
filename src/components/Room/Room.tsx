@@ -344,7 +344,9 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const formatTimeAgo = (msDiff: number): string => {
     if (msDiff < 60_000) return 'Just now'
     if (msDiff < 3_600_000) return `${Math.floor(msDiff / 60_000)}m ago`
-    return `${Math.floor(msDiff / 3_600_000)}h ago`
+    if (msDiff < 86_400_000) return `${Math.floor(msDiff / 3_600_000)}h ago`
+    if (msDiff < 2_592_000_000) return `${Math.floor(msDiff / 86_400_000)}d ago`
+    return `${Math.floor(msDiff / 2_592_000_000)}mo ago`
   }
 
   const activityTier = (lastActiveAt: Date): number => {
