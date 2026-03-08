@@ -65,9 +65,9 @@ const DeckOption = ({ id, displayName, value }: DeckOptionProps) => {
         </span>
       </div>
       <div className="flex flex-wrap gap-1">
-        {chips.map((chip) => (
+        {chips.map((chip, i) => (
           <span
-            key={chip}
+            key={i}
             className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-mono text-muted-foreground"
           >
             {chip}

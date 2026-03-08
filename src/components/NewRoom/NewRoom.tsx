@@ -24,6 +24,7 @@ const FAVORITES_STORAGE_KEY = 'desk-favorites'
 
 const PRESET_DESK_CONFIGS: DeskConfig[] = [
   { id: 'fibonacci', displayName: '🃏 Fibonacci', value: '1, 2, 3, 5, 8, 13, 21, 34', group: 'preset' },
+  { id: 'fibo-manday', displayName: '📅 Fibo + Manday', value: '0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 8, 13', group: 'preset' },
   { id: 'tshirt', displayName: '👕 T-Shirt', value: 'XS, S, M, L, XL, XXL', group: 'preset' },
   { id: 'powers-of-2', displayName: '⚡ Powers of 2', value: '1, 2, 4, 8, 16, 32, 64', group: 'preset' },
   { id: 'hours', displayName: '⏱️ Hours', value: '1, 2, 4, 8, 16, 24, 40', group: 'preset' },
@@ -114,7 +115,7 @@ const NewRoom = ({ }) => {
         const res = await axios(`/api/v1/room/recent-rooms/${uid}`)
         const data = res.data?.data
         if (!data) return []
-        return data.slice(0, 3).map((room: any) => ({
+        return data.slice(0, 1).map((room: any) => ({
           id: room.id,
           name: room.name,
           totalMembers: room.members.length,

@@ -83,7 +83,7 @@ const SeatAvatar = ({ member, normalAngle, isRevealed }: { member: Member; norma
   const avatarCenterY = nameAbove ? NAME_H + AVATAR_R : AVATAR_R
 
   const name = (
-    <span className="max-w-[60px] truncate text-center text-[10px] leading-tight text-muted-foreground">
+    <span title={member.name} className="max-w-[72px] truncate rounded-full border border-border/40 bg-background/80 px-2 py-0.5 text-center text-[10px] font-medium leading-tight text-foreground/80 backdrop-blur-sm shadow-sm">
       {member.name}
     </span>
   )
