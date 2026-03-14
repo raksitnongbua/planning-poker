@@ -2,6 +2,8 @@
 import Link from 'next/link'
 import React from 'react'
 
+import { DonateButton } from '../DonateButton'
+
 export interface FooterProps {
   // types...
 }
@@ -10,7 +12,10 @@ const Footer: React.FC<FooterProps> = ({}) => {
   return (
     <footer className="border-t mt-auto py-6 px-4">
       <div className="container mx-auto flex flex-col items-center gap-3 text-center text-sm text-muted-foreground sm:flex-row sm:justify-between">
-        <span>© {new Date().getFullYear()} Corgi Planning Poker</span>
+        <div className="flex flex-col items-center gap-2 sm:items-start">
+          <span>© {new Date().getFullYear()} Corgi Planning Poker</span>
+          <DonateButton />
+        </div>
         <div className="flex items-center gap-4">
           <Link href="/privacy-policy" className="hover:text-foreground transition-colors">
             Privacy Policy
