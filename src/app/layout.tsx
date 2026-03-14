@@ -20,12 +20,9 @@ const websiteSchema = {
   name: 'Corgi Planning Poker',
   url: 'https://www.corgiplanningpoker.com',
   potentialAction: {
-    '@type': 'SearchAction',
-    target: {
-      '@type': 'EntryPoint',
-      urlTemplate: 'https://www.corgiplanningpoker.com/?q={search_term_string}',
-    },
-    'query-input': 'required name=search_term_string',
+    '@type': 'CreateAction',
+    target: 'https://www.corgiplanningpoker.com/new-room',
+    result: { '@type': 'Thing', name: 'Planning Poker Room' },
   },
 }
 
@@ -71,11 +68,13 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: ['/favicon-48.ico', '/favicon-96.ico', '/favicon-144.ico'],
+    apple: '/images/corgi-logo.png',
+    other: [{ rel: 'manifest', url: '/site.webmanifest' }],
   },
   applicationName: 'Corgi Planning Poker',
   title: {
     default: 'Free Online Planning Poker | Corgi Planning Poker',
-    template: 'Corgi Planning Poker | %s',
+    template: '%s | Corgi Planning Poker',
   },
   description: 'Free online planning poker for agile teams. Estimate story points collaboratively in real-time with your scrum team — no account, no install, ready in seconds.',
   openGraph: {

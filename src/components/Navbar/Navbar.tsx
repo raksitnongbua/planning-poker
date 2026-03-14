@@ -25,6 +25,12 @@ const Navbar = () => {
         </Link>
         <div className="flex items-center gap-2">
           <Link
+            href="/blog"
+            className="px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
+          >
+            Blog
+          </Link>
+          <Link
             className="p-2 transition-opacity duration-200 hover:opacity-70"
             target="_blank"
             href="https://github.com/raksitnongbua/planning-poker"

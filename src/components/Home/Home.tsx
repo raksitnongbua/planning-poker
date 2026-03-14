@@ -4,6 +4,7 @@ import {
   faBolt,
   faClockRotateLeft,
   faCode,
+  faCodeBranch,
   faEye,
   faInfinity,
   faLayerGroup,
@@ -75,7 +76,7 @@ const FEATURES = [
   {
     icon: faCode,
     title: 'Open source',
-    description: 'The full source code is publicly available on GitHub.',
+    description: 'The full source code is publicly available on GitHub. Found a bug? Open an issue. Want to improve the app? Submit a pull request.',
     link: { href: 'https://github.com/raksitnongbua/planning-poker', label: 'View on GitHub' },
   },
 ]
@@ -87,7 +88,7 @@ const FAQS = [
   },
   {
     q: 'Do I need to create an account?',
-    a: 'No account is required. Every visitor is automatically assigned a unique guest ID so you can create and join rooms instantly. Signing in with Google links that ID to your Google account, which syncs your identity across browsers and devices — so you can resume any recent room from your phone, laptop, or any other device without losing your history.',
+    a: 'No account is required. Every visitor is automatically assigned a unique guest ID so you can create and join rooms instantly. Signing in with Google links that ID to your Google account, which syncs your identity across browsers and devices — so you can resume any recent room from your phone, laptop, or any other device without losing your history. In our experience, removing this barrier is the single most impactful change for teams adopting a new estimation tool.',
   },
   {
     q: 'What card decks are available?',
@@ -119,28 +120,27 @@ const Home = () => {
                 className="duration-600 inline-block text-primary drop-shadow-[0_0_12px_hsl(var(--primary)/0.6)] animate-in fade-in slide-in-from-left-8"
                 style={{ animationFillMode: 'both' }}
               >
-                Corgi
+                Free
               </span>
               <br />
               <span
                 className="duration-600 inline-block animate-in fade-in slide-in-from-bottom-6"
                 style={{ animationDelay: '150ms', animationFillMode: 'both' }}
               >
-                Planning
+                Online
               </span>{' '}
               <span
                 className="duration-600 inline-block animate-in fade-in slide-in-from-right-8"
                 style={{ animationDelay: '300ms', animationFillMode: 'both' }}
               >
-                Poker
+                Planning Poker
               </span>
             </h1>
             <h2
               className="text-lg font-light duration-500 animate-in fade-in slide-in-from-bottom-3"
               style={{ animationDelay: '500ms', animationFillMode: 'both' }}
             >
-              Free online planning poker for agile teams — estimate story points collaboratively in
-              real-time, no registration required.
+              by Corgi — estimate story points with your scrum team, no registration required.
             </h2>
           </div>
           <div
@@ -194,7 +194,7 @@ const Home = () => {
             src="/images/corgi-banner.png"
             className="animate-sway lg:h-[477px] lg:w-[600px]"
             style={{ animationDuration: '8s' }}
-            alt="Corgi dog illustration for Corgi Planning Poker"
+            alt="Free online planning poker — agile estimation tool illustration"
             priority={true}
             width={600}
             height={477}
@@ -220,8 +220,8 @@ const Home = () => {
               reaching a shared estimate.
             </p>
             <p className="leading-relaxed text-muted-foreground">
-              The technique was popularised by James Grenning in 2002 and later described by Mike
-              Cohn in <em>Agile Estimating and Planning</em>. It has since become the de-facto
+              The technique was introduced by James Grenning in 2002 and popularised by Mike Cohn
+              in <em>Agile Estimating and Planning</em> (2005). It has since become the de-facto
               standard for story point estimation across scrum, kanban, and SAFe teams worldwide.
             </p>
           </div>
@@ -303,6 +303,44 @@ const Home = () => {
           </div>
         </div>
 
+        {/* Our Story */}
+        <div className="space-y-4">
+          <h2 className="flex items-center gap-2 text-2xl font-semibold">
+            <span className="inline-block size-2 animate-pulse rounded-full bg-primary" />
+            The Story Behind Corgi Planning Poker
+          </h2>
+          <div className="space-y-4 rounded-xl border border-border/40 bg-muted/20 px-6 py-6">
+            <p className="leading-relaxed text-muted-foreground">
+              Like most agile teams, I started out using whatever free planning poker tool came up first in
+              search. They worked great — until they didn&apos;t. One by one, the tools I relied on started
+              rolling out paywalls: caps on how many sessions you could run per month, limits on room count,
+              limits on how many people could vote, and the ability to customise your point values locked
+              behind a subscription. For a practice that&apos;s supposed to be lightweight and collaborative,
+              that felt like the wrong direction.
+            </p>
+            <p className="leading-relaxed text-muted-foreground">
+              So I built one from scratch — permanently free, no artificial limits, and full control over
+              your card deck so you can match the scale your team actually uses. The result is what
+              you&apos;re using now.
+            </p>
+            <p className="leading-relaxed text-muted-foreground">
+              The corgi theme is personal. I have a corgi at home named{' '}
+              <a
+                href="https://www.instagram.com/kimicorgi_?igsh=MWc4bjRneHg4NmdjaA=="
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline-offset-4 hover:underline"
+              >
+                Kimi
+              </a>{' '}
+              — and naming a side project after your dog is basically mandatory. Corgi Planning Poker
+              started as a tool for my own team and a way to keep sharpening my skills, and it continues
+              to grow in both directions.
+            </p>
+            <p className="text-sm italic text-muted-foreground/70">— Raksit, builder &amp; corgi dad</p>
+          </div>
+        </div>
+
         {/* FAQ */}
         <div className="space-y-6">
           <h2 className="flex items-center gap-2 text-2xl font-semibold">
@@ -333,6 +371,73 @@ const Home = () => {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Open Source */}
+      <section className="mx-auto max-w-[1100px] pb-4">
+        <div className="flex flex-col gap-6 rounded-2xl border border-primary/20 bg-primary/5 px-8 py-8 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faCodeBranch} className="size-4 text-primary" />
+              <p className="text-lg font-semibold">This app is open source</p>
+            </div>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Found a bug or have an idea for improvement? Open an issue on GitHub. Want to
+              contribute code? Pull requests are welcome — check the repo for contribution
+              guidelines.
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+            <a
+              href="https://github.com/raksitnongbua/planning-poker/issues/new"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
+            >
+              <FontAwesomeIcon icon={faBolt} className="size-3" />
+              Open an Issue
+            </a>
+            <a
+              href="https://github.com/raksitnongbua/planning-poker/pulls"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
+              Contribute via PR
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Explore More */}
+      <section className="mx-auto max-w-[1100px] pb-24">
+        <h2 className="mb-6 flex items-center gap-2 text-2xl font-semibold">
+          <span className="inline-block size-2 animate-pulse rounded-full bg-primary" />
+          Explore More
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Link href="/scrum-poker" className="group flex flex-col gap-2 rounded-xl border border-border/40 bg-muted/20 p-5 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5">
+            <p className="font-semibold transition-colors group-hover:text-primary">Scrum Poker Online</p>
+            <p className="text-sm text-muted-foreground">Run real-time scrum poker sessions with your agile team.</p>
+          </Link>
+          <Link href="/agile-estimation" className="group flex flex-col gap-2 rounded-xl border border-border/40 bg-muted/20 p-5 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5">
+            <p className="font-semibold transition-colors group-hover:text-primary">Agile Estimation Tool</p>
+            <p className="text-sm text-muted-foreground">Estimate user stories collaboratively using proven agile techniques.</p>
+          </Link>
+          <Link href="/story-points-estimator" className="group flex flex-col gap-2 rounded-xl border border-border/40 bg-muted/20 p-5 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5">
+            <p className="font-semibold transition-colors group-hover:text-primary">Story Points Estimator</p>
+            <p className="text-sm text-muted-foreground">Calculate story points as a team with simultaneous card reveal.</p>
+          </Link>
+          <Link href="/sprint-planning" className="group flex flex-col gap-2 rounded-xl border border-border/40 bg-muted/20 p-5 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5">
+            <p className="font-semibold transition-colors group-hover:text-primary">Sprint Planning Poker</p>
+            <p className="text-sm text-muted-foreground">Make sprint planning faster and more collaborative.</p>
+          </Link>
+          <Link href="/blog" className="group flex flex-col gap-2 rounded-xl border border-border/40 bg-muted/20 p-5 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5">
+            <p className="font-semibold transition-colors group-hover:text-primary">Planning Poker Blog</p>
+            <p className="text-sm text-muted-foreground">Guides on agile estimation, Fibonacci scales, and scrum best practices.</p>
+          </Link>
         </div>
       </section>
     </>

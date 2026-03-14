@@ -29,6 +29,22 @@ const Footer: React.FC<FooterProps> = ({}) => {
           >
             GitHub
           </a>
+          <a
+            href="https://github.com/raksitnongbua/planning-poker/issues/new"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-foreground transition-colors"
+          >
+            Open Issue
+          </a>
+          <a
+            href="https://github.com/raksitnongbua/planning-poker/pulls"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-foreground transition-colors"
+          >
+            Contribute
+          </a>
         </div>
       </div>
     </footer>
