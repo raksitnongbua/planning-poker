@@ -8,7 +8,7 @@ A free, real-time planning poker app for agile teams — featuring a charming co
 
 ---
 
-![Version](https://img.shields.io/badge/version-2.3.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/github/v/release/raksitnongbua/planning-poker?style=for-the-badge&color=blue)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -131,43 +131,5 @@ This frontend connects to **Planning Poker Service** — a Golang-based WebSocke
 [MIT](./LICENSE)
 
 ---
-
-## 📦 Changelog
-
-### v2.3.0
-- **Responsive**: primary targets Mac M5 14" (1512×982) desktop and iPhone Pro (393×852) mobile — CSS transform table scaling, horizontal snap-scroll card bar, mobile bottom sheet for players
-- Room UX: collapsible/draggable voter panel (160–320px), hover preview when collapsed, time ago per player (supports m/h/d/mo)
-- Room UX: ThrowPanel default expanded on desktop, revamped to match design system
-- Room UX: card idle animation slowed, avatar ring visibility fixed, avatar overflow clipping fixed, pill name badges with hover tooltip
-- Room UX: optimistic card selection, fix voted state flicker, fix member lookup for Google-authenticated users
-- Room Creation: glassmorphism form card, Continue Room section (latest room), Fibo+Manday preset deck (`0–13`)
-- Recent Rooms: responsive card list on mobile, fix broken date overflow
-- Navbar: edge-to-edge layout
-- Refactor: Room.tsx (~1274 lines) split into VoterPanel, ChatWidget, MobilePlayersSheet, ActivityFeed components
-
-### v2.2.0
-- Chat widget (coming soon placeholder), activity feed, jumbo card result with animated average score
-- Room table responsive scaling, dark design system overhaul
-
-### v2.1.0
-- Add ThrowLauncher — physics-based emoji throwing with gravity arc, spin, impact burst, and floating holding preview
-- Multiplayer sync: `THROW_EMOJI` / `EMOJI_THROWN` WebSocket events with resolution-independent targeting
-- Custom SVG crosshair cursor, text selection disabled while aiming, disarm hint bar
-- Spectator mode: panel and overlays hidden for spectators
-- Docs: `WS_THROW_EMOJI.md` backend API spec and `THROW_LAUNCHER.md` feature guide
-
-### v2.0.2
-- Upgrade Next.js 14 → 16 and React 18 → 19
-- Update all Radix UI packages and Sentry v7 → v10
-- Add Turbopack config and migrate to flat ESLint config
-- SEO improvements: metadata, OG tags, schema markup
-
-### v2.0.1
-- Polish navbar and room layout
-- Update home page content and copy
-
-### v2.0.0
-- Revamp room page with table-first layout
-- Redesign home page with new SEO-focused content
 
 > Full release history: [GitHub Releases](https://github.com/raksitnongbua/planning-poker/releases)

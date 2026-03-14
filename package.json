@@ -1,6 +1,6 @@
 {
   "name": "planning-poker",
-  "version": "2.1.0",
+  "version": "2.5.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
