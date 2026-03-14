@@ -16,6 +16,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 
+import { DonateButton } from '../DonateButton'
 import { Button } from '../ui/button'
 import { Card, CardContent } from '../ui/card'
 
@@ -104,7 +105,7 @@ const FAQS = [
   },
   {
     q: 'Is Corgi Planning Poker free?',
-    a: 'Yes, completely free. There are no paid plans, no advertisements, and no data is sold.',
+    a: 'Yes, completely free — no paid plans, no advertisements, no data sold, ever. If it saves your team time each sprint, consider buying Corgi a treat via Ko-fi or GitHub Sponsors. It helps keep the project alive and the corgi fed.',
   },
 ]
 
@@ -338,6 +339,19 @@ const Home = () => {
               to grow in both directions.
             </p>
             <p className="text-sm italic text-muted-foreground/70">— Raksit, builder &amp; corgi dad</p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              This will always be free. But if it&apos;s useful to you and your team, you&apos;re
+              welcome to{' '}
+              <a
+                href="https://ko-fi.com/raksitnongbua"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline-offset-4 hover:underline"
+              >
+                buy Corgi a treat
+              </a>
+              {' '}— it means a lot.
+            </p>
           </div>
         </div>
 
@@ -376,37 +390,69 @@ const Home = () => {
 
       {/* Open Source */}
       <section className="mx-auto max-w-[1100px] pb-4">
-        <div className="flex flex-col gap-6 rounded-2xl border border-primary/20 bg-primary/5 px-8 py-8 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faCodeBranch} className="size-4 text-primary" />
-              <p className="text-lg font-semibold">This app is open source</p>
+        <h2 className="mb-6 flex items-center gap-2 text-2xl font-semibold">
+          <span className="inline-block size-2 animate-pulse rounded-full bg-primary" />
+          Free &amp; Open Source
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {/* Open an Issue */}
+          <div className="flex flex-col gap-4 rounded-2xl border border-border/40 bg-muted/20 p-6 transition-all duration-200 hover:border-primary/30 hover:bg-primary/5">
+            <div className="flex size-11 items-center justify-center rounded-full bg-primary/10">
+              <FontAwesomeIcon icon={faBolt} className="size-4 text-primary" />
             </div>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Found a bug or have an idea for improvement? Open an issue on GitHub. Want to
-              contribute code? Pull requests are welcome — check the repo for contribution
-              guidelines.
-            </p>
-          </div>
-          <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+            <div className="space-y-1.5">
+              <p className="font-semibold">Found a bug?</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Something not working as expected? Open an issue on GitHub and we&apos;ll look into it.
+              </p>
+            </div>
             <a
               href="https://github.com/raksitnongbua/planning-poker/issues/new"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
+              className="mt-auto inline-flex items-center justify-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
             >
               <FontAwesomeIcon icon={faBolt} className="size-3" />
               Open an Issue
             </a>
+          </div>
+
+          {/* Contribute */}
+          <div className="flex flex-col gap-4 rounded-2xl border border-border/40 bg-muted/20 p-6 transition-all duration-200 hover:border-primary/30 hover:bg-primary/5">
+            <div className="flex size-11 items-center justify-center rounded-full bg-primary/10">
+              <FontAwesomeIcon icon={faCodeBranch} className="size-4 text-primary" />
+            </div>
+            <div className="space-y-1.5">
+              <p className="font-semibold">Want to contribute?</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                The codebase is open on GitHub. Pull requests are welcome — check the repo for guidelines.
+              </p>
+            </div>
             <a
               href="https://github.com/raksitnongbua/planning-poker/pulls"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="mt-auto inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               <FontAwesomeIcon icon={faCodeBranch} className="size-3" />
               Contribute via PR
             </a>
+          </div>
+
+          {/* Support */}
+          <div className="flex flex-col gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-6 transition-all duration-200 hover:border-primary/40 hover:bg-primary/10">
+            <div className="flex size-11 items-center justify-center rounded-full bg-primary/15 text-xl">
+              🦴
+            </div>
+            <div className="space-y-1.5">
+              <p className="font-semibold">Enjoying the app?</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                This will always be free. But if it saves your team time each sprint, buying Corgi a treat means a lot.
+              </p>
+            </div>
+            <div className="mt-auto">
+              <DonateButton />
+            </div>
           </div>
         </div>
       </section>

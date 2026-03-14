@@ -2,30 +2,31 @@
 import Link from 'next/link'
 import React from 'react'
 
+import { DonateButton } from '../DonateButton'
+
 export interface FooterProps {
   // types...
 }
 
 const Footer: React.FC<FooterProps> = ({}) => {
   return (
-    <footer className="border-t mt-auto py-6 px-4">
-      <div className="container mx-auto flex flex-col items-center gap-3 text-center text-sm text-muted-foreground sm:flex-row sm:justify-between">
-        <span>© {new Date().getFullYear()} Corgi Planning Poker</span>
-        <div className="flex items-center gap-4">
-          <Link href="/privacy-policy" className="hover:text-foreground transition-colors">
+    <footer className="mt-auto border-t border-border/40 px-4 py-5">
+      <div className="container mx-auto flex flex-col-reverse items-center gap-4 sm:flex-row sm:justify-between">
+        <span className="text-xs text-muted-foreground/50">
+          © {new Date().getFullYear()} Corgi Planning Poker
+        </span>
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground/70">
+          <Link href="/privacy-policy" className="transition-colors duration-150 hover:text-foreground">
             Privacy Policy
           </Link>
-          <a
-            href="mailto:tan.raksit@gmail.com"
-            className="hover:text-foreground transition-colors"
-          >
+          <a href="mailto:tan.raksit@gmail.com" className="transition-colors duration-150 hover:text-foreground">
             Contact
           </a>
           <a
             href="https://github.com/raksitnongbua/planning-poker"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-foreground transition-colors"
+            className="transition-colors duration-150 hover:text-foreground"
           >
             GitHub
           </a>
@@ -33,7 +34,7 @@ const Footer: React.FC<FooterProps> = ({}) => {
             href="https://github.com/raksitnongbua/planning-poker/issues/new"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-foreground transition-colors"
+            className="transition-colors duration-150 hover:text-foreground"
           >
             Open Issue
           </a>
@@ -41,10 +42,12 @@ const Footer: React.FC<FooterProps> = ({}) => {
             href="https://github.com/raksitnongbua/planning-poker/pulls"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-foreground transition-colors"
+            className="transition-colors duration-150 hover:text-foreground"
           >
             Contribute
           </a>
+          <span className="text-border/60">·</span>
+          <DonateButton />
         </div>
       </div>
     </footer>

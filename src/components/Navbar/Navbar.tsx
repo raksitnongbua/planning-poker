@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { signIn, signOut, useSession } from 'next-auth/react'
 import React from 'react'
 
+import { DonateButton } from '../DonateButton'
 import { Profile } from '../Profile'
 import { Button } from '../ui/button'
 import { Skeleton } from '../ui/skeleton'
@@ -24,6 +25,7 @@ const Navbar = () => {
           />
         </Link>
         <div className="flex items-center gap-2">
+          <DonateButton compact />
           <Link
             href="/blog"
             className="px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
@@ -45,7 +47,7 @@ const Navbar = () => {
             />
           </Link>
           {status === 'loading' ? (
-            <Skeleton className="size-8 rounded-full" />
+            <Skeleton className="h-9 w-16 rounded-md" />
           ) : status === 'authenticated' ? (
             <Profile
               imageSrc={session?.user?.image ?? ''}

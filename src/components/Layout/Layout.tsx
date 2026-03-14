@@ -1,11 +1,16 @@
 'use client'
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { getCookie } from 'cookies-next'
+import dynamic from 'next/dynamic'
 import { SessionProvider } from 'next-auth/react'
 import React, { ReactNode, useEffect } from 'react'
 
 import { UID_KEY } from '@/constant/cookies'
+
+const ReactQueryDevtools =
+  process.env.NODE_ENV === 'development'
+    ? dynamic(() => import('@tanstack/react-query-devtools').then((m) => ({ default: m.ReactQueryDevtools })), { ssr: false })
+    : () => null
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 import { httpClient } from '@/utils/httpClient'
 import { SECONDS } from '@/utils/time'
