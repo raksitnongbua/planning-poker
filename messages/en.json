@@ -23,7 +23,7 @@
     "whatIs": {
       "heading": "What is Planning Poker?",
       "p1": "Planning poker is a consensus-based agile estimation technique used by scrum teams during sprint planning. Each team member privately selects a card representing their estimate for a user story or task — typically using a Fibonacci-like sequence (1, 2, 3, 5, 8, 13…) or T-shirt sizes (XS, S, M, L, XL). Cards are revealed simultaneously to prevent anchoring bias, then the team discusses any large discrepancies before reaching a shared estimate.",
-      "p2": "The technique was introduced by James Grenning in 2002 and popularised by Mike Cohn in {book} (2005). It has since become the de-facto standard for story point estimation across scrum, kanban, and SAFe teams worldwide."
+      "p2": "The technique was introduced by James Grenning in 2002 and popularised by Mike Cohn in <book>Agile Estimating and Planning</book> (2005). It has since become the de-facto standard for story point estimation across scrum, kanban, and SAFe teams worldwide."
     },
     "howItWorks": {
       "heading": "How It Works",

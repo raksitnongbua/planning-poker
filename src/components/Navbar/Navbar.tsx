@@ -8,7 +8,6 @@ import React from 'react'
 import { DonateButton } from '../DonateButton'
 import { LanguageSwitcher } from '../LanguageSwitcher'
 import { Profile } from '../Profile'
-import { Button } from '../ui/button'
 import { Skeleton } from '../ui/skeleton'
 
 const Navbar = () => {
@@ -28,31 +27,17 @@ const Navbar = () => {
             priority
           />
         </Link>
-        <div className="flex items-center gap-2">
-          <DonateButton compact />
+        <div className="flex items-center gap-1.5">
           <Link
             href="/blog"
             className="px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
           >
             {t('blog')}
           </Link>
-          <Link
-            className="p-2 transition-opacity duration-200 hover:opacity-70"
-            target="_blank"
-            href="https://github.com/raksitnongbua/planning-poker"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="size-8 cursor-pointer"
-              src="/icons/github.svg"
-              alt="GitHub repository"
-              width={32}
-              height={32}
-            />
-          </Link>
           <LanguageSwitcher />
+          <div className="mx-1 h-5 w-px bg-border/50" />
           {status === 'loading' ? (
-            <Skeleton className="h-9 w-16 rounded-md" />
+            <Skeleton className="h-8 w-16 rounded-lg" />
           ) : status === 'authenticated' ? (
             <Profile
               imageSrc={session?.user?.image ?? ''}
@@ -60,10 +45,24 @@ const Navbar = () => {
               onClickLogout={() => signOut()}
             />
           ) : (
-            <Button onClick={() => signIn('google')} size="sm">
+            <button
+              onClick={() => signIn('google')}
+              className="rounded-lg border border-border/50 bg-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all duration-150 hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
+            >
               {t('signIn')}
-            </Button>
+            </button>
           )}
+          <div className="mx-1 h-5 w-px bg-border/50" />
+          <Link
+            href="https://github.com/raksitnongbua/planning-poker"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub repository"
+            className="flex items-center justify-center rounded-lg border border-border/40 bg-muted/20 p-2 transition-all duration-150 hover:border-border/70 hover:bg-muted/40"
+          >
+            <Image src="/icons/github.svg" alt="" width={18} height={18} />
+          </Link>
+          <DonateButton compact />
         </div>
       </nav>
     </header>
