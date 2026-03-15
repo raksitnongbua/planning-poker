@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query'
 import axios, { AxiosError } from 'axios'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import React, { useEffect } from 'react'
 
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
@@ -15,6 +16,7 @@ import { useToast } from '../ui/use-toast'
 
 const RecentRooms = () => {
   const { uid } = useUserInfoStore()
+  const t = useTranslations('recentRooms')
   const { setLoadingOpen } = useLoadingStore()
   const router = useRouter()
   const { toast } = useToast()
@@ -74,9 +76,9 @@ const RecentRooms = () => {
   return (
     <main className="mx-auto flex max-w-screen-lg flex-col items-start justify-center gap-y-2 px-2 sm:px-8">
       <div className="flex w-full justify-between animate-in fade-in slide-in-from-top-3 duration-400">
-        <h2 className="text-2xl">Recent Rooms</h2>
+        <h2 className="text-2xl">{t('title')}</h2>
         <Button onClick={() => router.push('new-room')} variant="outline">
-          New Room
+          {t('newRoom')}
         </Button>
       </div>
       <RoomHistory rooms={data ?? []} onClickJoinRoom={handleClickJoinRoom} />

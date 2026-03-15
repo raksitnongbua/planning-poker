@@ -5,6 +5,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import axios, { AxiosError } from 'axios'
 import { getCookie, hasCookie, setCookie } from 'cookies-next'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import React, { useEffect, useState, useCallback } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -34,6 +35,7 @@ const NewRoom = ({ }) => {
   const { uid } = useUserInfoStore()
   const { toast } = useToast()
   const router = useRouter()
+  const t = useTranslations('newRoom')
 
   const [roomName, setRoomName] = useState<string>('Planning Room')
   const [deskSelectedId, setDeskSelectedId] = useState<string>('fibonacci')
@@ -174,8 +176,8 @@ const NewRoom = ({ }) => {
           <div className="mb-3 inline-flex size-14 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 shadow-lg shadow-primary/10">
             <span className="text-2xl">🃏</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Create a Room</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Set up your planning session in seconds</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
         </div>
 
         <Card className="border-border/30 bg-background/60 backdrop-blur-md shadow-2xl shadow-black/80">
@@ -183,12 +185,12 @@ const NewRoom = ({ }) => {
             {/* Room name */}
             <div className="space-y-2">
               <Label htmlFor="room-name" className="text-sm font-semibold">
-                Room name
+                {t('roomNameLabel')}
               </Label>
               <Input
                 id="room-name"
                 maxLength={25}
-                placeholder="e.g. Sprint 42 Planning"
+                placeholder={t('roomNamePlaceholder')}
                 value={roomName}
                 onChange={(e) => setRoomName(e.target.value)}
                 autoFocus
@@ -204,7 +206,7 @@ const NewRoom = ({ }) => {
 
             {/* Deck selection */}
             <div className="space-y-2">
-              <Label className="text-sm font-semibold">Card deck</Label>
+              <Label className="text-sm font-semibold">{t('cardDeckLabel')}</Label>
               <CardConfigSelect
                 value={deskSelectedId}
                 options={options}
@@ -267,11 +269,11 @@ const NewRoom = ({ }) => {
                 ) : (
                   <span className="text-base">🚀</span>
                 )}
-                {disabledInputs ? 'Creating…' : 'Create Room'}
+                {disabledInputs ? t('creatingButton') : t('createButton')}
               </Button>
             </div>
             <p className="text-center text-[11px] text-muted-foreground/40">
-              No account required · Free forever
+              {t('noAccountRequired')}
             </p>
           </CardFooter>
         </Card>
@@ -279,7 +281,7 @@ const NewRoom = ({ }) => {
         {!!uid && (
           <div className="mt-4 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <p className="text-center text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/50">
-              Continue a Room
+              {t('continueRoom')}
             </p>
             <div className="space-y-1.5">
               {isLoadingRecentRooms ? (
@@ -312,7 +314,7 @@ const NewRoom = ({ }) => {
                 ))
               ) : (
                 <div className="flex items-center justify-center rounded-xl border border-border/20 bg-background/30 px-4 py-3">
-                  <p className="text-[11px] text-muted-foreground/40">No recent rooms yet</p>
+                  <p className="text-[11px] text-muted-foreground/40">{t('noRecentRooms')}</p>
                 </div>
               )}
             </div>
@@ -321,7 +323,7 @@ const NewRoom = ({ }) => {
                 onClick={() => router.push('/recent-rooms')}
                 className="mt-1 flex w-full items-center justify-center gap-1 py-1.5 text-[11px] text-muted-foreground/50 transition-colors duration-200 hover:text-muted-foreground"
               >
-                View all rooms
+                {t('viewAllRooms')}
                 <span className="text-[10px]">→</span>
               </button>
             )}

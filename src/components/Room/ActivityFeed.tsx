@@ -1,6 +1,7 @@
 'use client'
 import { faCircleCheck, faEye, faRightToBracket, faRotate } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useTranslations } from 'next-intl'
 
 export type ActivityEventType = 'join' | 'vote' | 'reveal' | 'reset' | 'spectate'
 export interface RoundResult {
@@ -145,13 +146,15 @@ const AVATAR_PALETTES = [
 ]
 const avatarPalette = (name: string) => AVATAR_PALETTES[(name?.charCodeAt(0) ?? 0) % AVATAR_PALETTES.length]
 
-const activityConfig: Record<ActivityEventType, { icon: typeof faEye; color: string; bgColor: string; label: (actor?: string) => string }> = {
-  join:     { icon: faRightToBracket, color: 'text-blue-400',   bgColor: 'bg-blue-500/15',    label: (a) => `${a ?? 'Someone'} joined` },
-  vote:     { icon: faCircleCheck,    color: 'text-emerald-400', bgColor: 'bg-emerald-500/15', label: (a) => `${a ?? 'Someone'} voted` },
-  reveal:   { icon: faEye,            color: 'text-yellow-400', bgColor: 'bg-yellow-500/15',  label: (a) => `${a ?? 'Someone'} revealed` },
-  reset:    { icon: faRotate,         color: 'text-orange-400', bgColor: 'bg-orange-500/15',  label: (a) => `${a ?? 'Someone'} new round` },
-  spectate: { icon: faEye,            color: 'text-purple-400', bgColor: 'bg-purple-500/15',  label: (a) => `${a ?? 'Someone'} watching` },
-}
+type TranslationFn = ReturnType<typeof useTranslations<'activity'>>
+
+const getActivityConfig = (t: TranslationFn): Record<ActivityEventType, { icon: typeof faEye; color: string; bgColor: string; label: (actor?: string) => string }> => ({
+  join:     { icon: faRightToBracket, color: 'text-blue-400',   bgColor: 'bg-blue-500/15',    label: (a) => t('activityJoined', { actor: a ?? t('someone') }) },
+  vote:     { icon: faCircleCheck,    color: 'text-emerald-400', bgColor: 'bg-emerald-500/15', label: (a) => t('activityVoted', { actor: a ?? t('someone') }) },
+  reveal:   { icon: faEye,            color: 'text-yellow-400', bgColor: 'bg-yellow-500/15',  label: (a) => t('activityRevealed', { actor: a ?? t('someone') }) },
+  reset:    { icon: faRotate,         color: 'text-orange-400', bgColor: 'bg-orange-500/15',  label: (a) => t('activityNewRound', { actor: a ?? t('someone') }) },
+  spectate: { icon: faEye,            color: 'text-purple-400', bgColor: 'bg-purple-500/15',  label: (a) => t('activityWatching', { actor: a ?? t('someone') }) },
+})
 
 interface ActivityFeedProps {
   activeTab: 'room' | 'personal'
@@ -172,6 +175,8 @@ const ActivityFeed = ({
   formatTimeAgo,
   onTabChange,
 }: ActivityFeedProps) => {
+  const t = useTranslations('activity')
+  const activityConfig = getActivityConfig(t)
   return (
     <div
       className={`hidden md:flex absolute right-3 top-6 bottom-6 w-52 flex-col transition-opacity duration-200 ${
@@ -192,7 +197,7 @@ const ActivityFeed = ({
                   : 'text-muted-foreground/60 hover:text-muted-foreground'
               }`}
             >
-              {tab === 'room' ? 'Room' : 'Members'}
+              {tab === 'room' ? t('tabRoom') : t('tabMembers')}
             </button>
           ))}
         </div>
@@ -210,10 +215,10 @@ const ActivityFeed = ({
                       ? 'bg-primary/20 text-primary'
                       : 'bg-muted/60 text-muted-foreground'
                   }`}>
-                    Round {round}
+                    {t('round', { n: round })}
                   </span>
                   {events.length === 0 && (
-                    <span className="animate-pulse text-[9px] font-semibold text-primary/70">live</span>
+                    <span className="animate-pulse text-[9px] font-semibold text-primary/70">{t('live')}</span>
                   )}
                   <div className="h-px flex-1 bg-border/40" />
                 </div>
@@ -225,7 +230,7 @@ const ActivityFeed = ({
                       <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary/50" />
                       <span className="relative inline-flex size-2 rounded-full bg-primary" />
                     </span>
-                    <span className="text-[11px] font-medium text-primary/80">Voting in progress</span>
+                    <span className="text-[11px] font-medium text-primary/80">{t('votingInProgress')}</span>
                   </div>
                 ) : (
                   events.map((event) => {
@@ -264,7 +269,7 @@ const ActivityFeed = ({
                             {/* Avg row */}
                             <div className="flex items-center justify-between border-t border-border/30 bg-muted/20 px-3 py-2">
                               <div>
-                                <p className="text-[8px] font-semibold uppercase tracking-widest text-muted-foreground/50">Average</p>
+                                <p className="text-[8px] font-semibold uppercase tracking-widest text-muted-foreground/50">{t('average')}</p>
                                 <p className={`text-xl font-bold tabular-nums leading-tight ${avgStyle(event.roundResult.avg)}`}>
                                   {Number.isInteger(event.roundResult.avg) ? event.roundResult.avg : event.roundResult.avg.toFixed(1)}
                                 </p>
@@ -308,7 +313,7 @@ const ActivityFeed = ({
         {activeTab === 'personal' && (
           <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-2 min-h-0">
             {personalEvents.length === 0 && (
-              <p className="mt-8 text-center text-[11px] text-muted-foreground/40">No activity yet</p>
+              <p className="mt-8 text-center text-[11px] text-muted-foreground/40">{t('noActivity')}</p>
             )}
             {[...personalEvents].reverse().map((event) => {
               const palette = avatarPalette(event.actor ?? '')
@@ -319,7 +324,7 @@ const ActivityFeed = ({
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[11px] font-semibold text-foreground/80">{event.actor ?? 'Someone'}</p>
-                    <p className="text-[9px] text-muted-foreground/50">{event.type === 'join' ? 'joined the room' : 'cast a vote'}</p>
+                    <p className="text-[9px] text-muted-foreground/50">{event.type === 'join' ? t('joinedRoom') : t('castVote')}</p>
                   </div>
                   <span className="flex-shrink-0 text-[9px] text-muted-foreground/40">{formatTimeAgo(now - event.at.getTime())}</span>
                 </div>

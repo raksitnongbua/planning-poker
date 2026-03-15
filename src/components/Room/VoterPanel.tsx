@@ -2,6 +2,7 @@
 import { faCircle } from '@fortawesome/free-regular-svg-icons'
 import { faAnglesLeft, faAnglesRight, faCircleCheck, faGripVertical, faUserPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useTranslations } from 'next-intl'
 import React from 'react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
@@ -71,6 +72,7 @@ const VoterPanel = ({
   onFireAt,
   myCardRef,
 }: VoterPanelProps) => {
+  const t = useTranslations('room')
   return (
     <div
       className={`hidden md:flex fixed right-0 top-[64px] z-20 flex-col border-l border-border/40 bg-background/95 backdrop-blur-md ${!isDraggingPanel ? 'transition-[width] duration-300' : ''} ${isPanelCollapsed ? 'w-10' : panelWidth === 200 ? 'w-[200px]' : ''}`}
@@ -118,7 +120,7 @@ const VoterPanel = ({
           >
             <div className="invisible absolute right-full top-0 mr-1.5 w-52 rounded-xl border border-border/40 bg-background/95 py-2 opacity-0 shadow-xl shadow-black/40 backdrop-blur-md transition-all duration-200 group-hover:visible group-hover:opacity-100 pointer-events-none">
               <p className="mb-1.5 px-3 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">
-                Players · {members.length}
+                {t('players')} · {members.length}
               </p>
               <div className="flex flex-col gap-0.5 px-2 max-h-60 overflow-y-auto">
                 {sortedMembers.map((member) => {
@@ -167,7 +169,7 @@ const VoterPanel = ({
                   className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/60"
                   style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
                 >
-                  Players
+                  {t('players')}
                 </span>
               </>
             )}
@@ -202,7 +204,7 @@ const VoterPanel = ({
                 }`}
               >
                 <FontAwesomeIcon icon={isCopied ? faCircleCheck : faUserPlus} className="size-3" />
-                {isCopied ? 'Copied!' : 'Invite'}
+                {isCopied ? t('copied') : t('invite')}
               </button>
               {/* Collapse button — inside header */}
               <button
@@ -222,8 +224,8 @@ const VoterPanel = ({
               <div className="flex-shrink-0 space-y-1">
                 {!isCompact && (
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{votedCount} voted</span>
-                    <span>{members.length - votedCount} waiting</span>
+                    <span>{t('votedCount', { count: votedCount })}</span>
+                    <span>{t('waitingCount', { count: members.length - votedCount })}</span>
                   </div>
                 )}
                 <div className="h-1 overflow-hidden rounded-full bg-muted/40">
@@ -233,7 +235,7 @@ const VoterPanel = ({
                   />
                 </div>
                 {isCompact && (
-                  <p className="text-[9px] text-muted-foreground/50 tabular-nums">{votedCount}/{members.length} voted</p>
+                  <p className="text-[9px] text-muted-foreground/50 tabular-nums">{t('votedCount', { count: votedCount })}/{members.length}</p>
                 )}
               </div>
             )

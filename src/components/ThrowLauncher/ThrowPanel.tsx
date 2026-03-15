@@ -1,6 +1,7 @@
 'use client'
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useTranslations } from 'next-intl'
 
 const EMOJIS = [
   '🗑️', '🚀', '❤️', '💩', '🎉', '💣', '⚡', '🍕', '🥊',
@@ -24,6 +25,7 @@ export default function ThrowPanel({
   onArmEmoji,
   onDisarm,
 }: Props) {
+  const t = useTranslations('throwPanel')
   return (
     <div
       className={`fixed left-3 top-[72px] z-20 hidden flex-col overflow-hidden rounded-2xl border border-border/40 bg-background/95 shadow-xl shadow-black/30 backdrop-blur-md transition-all duration-300 md:flex`}
@@ -34,7 +36,7 @@ export default function ThrowPanel({
           <div className="flex items-center gap-1.5 overflow-hidden">
             <span className="text-sm leading-none">🎯</span>
             <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-              Throw
+              {t('throw')}
             </span>
           </div>
         )}
@@ -69,7 +71,7 @@ export default function ThrowPanel({
                 <span className="absolute -right-1 -top-1 size-2 animate-pulse rounded-full bg-primary ring-1 ring-background" />
               </button>
               <span className="text-[9px] font-semibold uppercase tracking-widest text-primary/70">
-                Armed
+                {t('armed')}
               </span>
             </div>
           )}

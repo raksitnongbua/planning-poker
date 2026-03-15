@@ -4,7 +4,9 @@ import { config } from '@fortawesome/fontawesome-svg-core'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import type { Metadata } from 'next'
-import { Coda } from 'next/font/google'
+import { Coda, IBM_Plex_Sans_Thai } from 'next/font/google'
+import { getLocale, getMessages } from 'next-intl/server'
+import { NextIntlClientProvider } from 'next-intl'
 
 import Layout from '@/components/Layout'
 import MSWProvider from '@/components/MSWProvider'
@@ -13,6 +15,11 @@ import { Toaster } from '@/components/ui/toaster'
 config.autoAddCss = false
 
 const coda = Coda({ weight: '400', display: 'swap', subsets: ['latin'] })
+const ibmPlexSansThai = IBM_Plex_Sans_Thai({
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+  subsets: ['latin', 'thai'],
+})
 
 const websiteSchema = {
   '@context': 'https://schema.org',
@@ -102,17 +109,22 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale()
+  const messages = await getMessages()
+
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={coda.className}>
+    <html lang={locale} className="dark" suppressHydrationWarning>
+      <body className={locale === 'th' ? ibmPlexSansThai.className : coda.className}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }} />
-        <MSWProvider>
-          <Layout>{children}</Layout>
-        </MSWProvider>
-        <SpeedInsights />
-        <Analytics />
-        <Toaster />
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <MSWProvider>
+            <Layout>{children}</Layout>
+          </MSWProvider>
+          <SpeedInsights />
+          <Analytics />
+          <Toaster />
+        </NextIntlClientProvider>
       </body>
     </html>
   )

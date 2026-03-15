@@ -5,6 +5,8 @@ import { usePathname, useRouter } from 'next/navigation'
 import React, { useEffect, useMemo, useState } from 'react'
 import useWebSocket, { ReadyState } from 'react-use-websocket'
 
+import { useTranslations } from 'next-intl'
+
 import { useToast } from '@/components/ui/use-toast'
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 
@@ -33,6 +35,7 @@ const ARMED_CURSOR =
   `</svg>") 16 16, crosshair`
 
 const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
+  const t = useTranslations('room')
   const { uid } = useUserInfoStore()
   const id = sessionId ?? uid
 
@@ -108,11 +111,11 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   }[readyState]
 
   const wsStatusConfig: Record<string, { dot: string; pulse: string; text: string; label: string }> = {
-    Open: { dot: 'bg-green-500', pulse: 'bg-green-500/40', text: 'text-green-400', label: 'WS Connected' },
-    Connecting: { dot: 'bg-yellow-400', pulse: 'bg-yellow-400/40', text: 'text-yellow-400', label: 'WS Connecting' },
-    Closing: { dot: 'bg-orange-400', pulse: 'bg-orange-400/40', text: 'text-orange-400', label: 'WS Closing' },
-    Closed: { dot: 'bg-red-500', pulse: 'bg-red-500/40', text: 'text-red-400', label: 'WS Disconnected' },
-    Uninstantiated: { dot: 'bg-neutral-500', pulse: 'bg-neutral-500/40', text: 'text-neutral-400', label: 'WS Offline' },
+    Open: { dot: 'bg-green-500', pulse: 'bg-green-500/40', text: 'text-green-400', label: t('wsConnected') },
+    Connecting: { dot: 'bg-yellow-400', pulse: 'bg-yellow-400/40', text: 'text-yellow-400', label: t('wsConnecting') },
+    Closing: { dot: 'bg-orange-400', pulse: 'bg-orange-400/40', text: 'text-orange-400', label: t('wsClosing') },
+    Closed: { dot: 'bg-red-500', pulse: 'bg-red-500/40', text: 'text-red-400', label: t('wsDisconnected') },
+    Uninstantiated: { dot: 'bg-neutral-500', pulse: 'bg-neutral-500/40', text: 'text-neutral-400', label: t('wsOffline') },
   }
 
   const handleClickJoinRoom = (name: string, isCheckedUseAvatar: boolean) => {
@@ -444,12 +447,12 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                     {roomStatus === Status.Voting && cardChoosing !== 'null' && cardChoosing !== '-1' && cardChoosing !== '' ? (
                       <>
                         <span className="size-1.5 rounded-full bg-primary animate-pulse inline-block" />
-                        <span className="text-[11px] font-semibold text-primary/80 uppercase tracking-widest">Voted</span>
+                        <span className="text-[11px] font-semibold text-primary/80 uppercase tracking-widest">{t('voted')}</span>
                       </>
                     ) : roomStatus === Status.Voting ? (
                       <>
                         <span className="size-1.5 rounded-full bg-muted-foreground/40 inline-block" />
-                        <span className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-widest">Pick a card</span>
+                        <span className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-widest">{t('pickCard')}</span>
                       </>
                     ) : null}
                   </div>
@@ -473,7 +476,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1">
                       <FontAwesomeIcon icon={faEye} className="size-3 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Watching as spectator</span>
+                      <span className="text-xs text-muted-foreground">{t('watchingAsSpectator')}</span>
                     </div>
                     <div className="relative">
                       <div className="absolute inset-[-4px] rounded-lg bg-primary/30 blur-xl animate-pulse" style={{ animationDuration: '2s' }} />
@@ -485,7 +488,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                           onClick={() => { setIsSpectator(false); setOpenJoinRoomDialog(true) }}
                         >
                           <FontAwesomeIcon icon={faChair} className="size-4" />
-                          Sit Down
+                          {t('sitDown')}
                         </Button>
                       </div>
                     </div>
@@ -611,14 +614,14 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
 
       <Dialog
         open={openRefreshDialog}
-        title="Connection lost"
-        content="Oops! it seems like the connection was lost. Please refresh the page."
+        title={t('connectionLost')}
+        content={t('connectionLostDesc')}
         action={
           <>
             <Button variant="outline" onClick={() => router.push('/')}>
               Home
             </Button>
-            <Button onClick={() => window.location.reload()}>Refresh</Button>
+            <Button onClick={() => window.location.reload()}>{t('refresh')}</Button>
           </>
         }
       />
