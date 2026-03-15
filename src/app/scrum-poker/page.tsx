@@ -1,7 +1,15 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { useLocale } from 'next-intl'
+import { getLocale } from 'next-intl/server'
+
+export const metadata: Metadata = {
+  title: 'Free Scrum Poker Online | Corgi Planning Poker',
+  description: 'Run free scrum poker sessions online with your agile team. Real-time voting, Fibonacci cards, no registration required. Start in under 30 seconds.',
+  alternates: {
+    canonical: 'https://www.corgiplanningpoker.com/scrum-poker',
+  },
+  keywords: 'scrum poker, scrum poker online, planning poker, free scrum poker, online scrum poker, agile estimation',
+}
 
 const translations = {
   en: {
@@ -82,8 +90,8 @@ const translations = {
   }
 }
 
-export default function ScrumPokerPage() {
-  const locale = useLocale() as 'en' | 'th'
+export default async function ScrumPokerPage() {
+  const locale = (await getLocale()) as 'en' | 'th'
   const t = translations[locale]
 
   const breadcrumbSchema = {

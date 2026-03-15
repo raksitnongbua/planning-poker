@@ -1,7 +1,6 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { useLocale } from 'next-intl'
+import { getLocale } from 'next-intl/server'
 
 const translations = {
   en: {
@@ -116,8 +115,17 @@ const translations = {
   },
 }
 
-export default function BlogPage() {
-  const locale = useLocale() as 'en' | 'th'
+export const metadata: Metadata = {
+  title: 'Blog — Agile Estimation & Planning Poker Guides',
+  description:
+    'Practical guides on planning poker, story points, sprint planning, and agile estimation. Written for scrum teams who want better estimation practices.',
+  alternates: {
+    canonical: 'https://www.corgiplanningpoker.com/blog',
+  },
+}
+
+export default async function BlogPage() {
+  const locale = (await getLocale()) as 'en' | 'th'
   const t = translations[locale]
 
   return (

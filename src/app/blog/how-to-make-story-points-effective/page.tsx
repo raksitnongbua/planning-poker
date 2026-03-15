@@ -1,7 +1,6 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { useLocale } from 'next-intl'
+import { getLocale } from 'next-intl/server'
 
 const translations = {
   en: {
@@ -144,8 +143,17 @@ const translations = {
   },
 }
 
-export default function EffectiveStoryPointsPage() {
-  const locale = useLocale() as 'en' | 'th'
+export const metadata: Metadata = {
+  title: 'How to Make Story Points Effective: Best Practices for Agile Teams',
+  description:
+    'Best practices for making story points work in agile estimation. Anchor stories, avoiding the hours trap, building stable velocity, and common pitfalls to avoid.',
+  alternates: {
+    canonical: 'https://www.corgiplanningpoker.com/blog/how-to-make-story-points-effective',
+  },
+}
+
+export default async function EffectiveStoryPointsPage() {
+  const locale = (await getLocale()) as 'en' | 'th'
   const t = translations[locale]
 
   return (

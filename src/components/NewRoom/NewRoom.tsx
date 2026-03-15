@@ -6,7 +6,7 @@ import axios, { AxiosError } from 'axios'
 import { getCookie, hasCookie, setCookie } from 'cookies-next'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useCallback,useEffect, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 
 import { DESK_CONFIG_KEY } from '@/constant/cookies'
@@ -31,6 +31,14 @@ const PRESET_DESK_CONFIGS: DeskConfig[] = [
   { id: 'hours', displayName: '⏱️ Hours', value: '1, 2, 4, 8, 16, 24, 40', group: 'preset' },
 ]
 
+const timeAgo = (date: Date) => {
+  const s = Math.floor((Date.now() - date.getTime()) / 1000)
+  if (s < 60) return 'Just now'
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`
+  return `${Math.floor(s / 86400)}d ago`
+}
+
 const NewRoom = ({ }) => {
   const { uid } = useUserInfoStore()
   const { toast } = useToast()
@@ -38,21 +46,39 @@ const NewRoom = ({ }) => {
   const t = useTranslations('newRoom')
 
   const [roomName, setRoomName] = useState<string>('Planning Room')
-  const [deskSelectedId, setDeskSelectedId] = useState<string>('fibonacci')
-  const [isRouting, setIsRouting] = useState<boolean>(false)
-  const [options, setOptions] = useState<DeskConfig[]>(PRESET_DESK_CONFIGS)
-  const [favoriteIds, setFavoriteIds] = useState<string[]>(['fibonacci'])
-
-  useEffect(() => {
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(FAVORITES_STORAGE_KEY)
+      if (stored) return JSON.parse(stored)
+    } catch {}
+    return ['fibonacci']
+  })
+  const [deskSelectedId, setDeskSelectedId] = useState<string>(() => {
     try {
       const stored = localStorage.getItem(FAVORITES_STORAGE_KEY)
       if (stored) {
         const parsed: string[] = JSON.parse(stored)
-        setFavoriteIds(parsed)
-        if (parsed.length > 0) setDeskSelectedId(parsed[0])
+        if (parsed.length > 0) return parsed[0]
       }
     } catch {}
-  }, [])
+    return 'fibonacci'
+  })
+  const [isRouting, setIsRouting] = useState<boolean>(false)
+  const [options, setOptions] = useState<DeskConfig[]>(() => {
+    try {
+      if (!hasCookie(DESK_CONFIG_KEY)) return PRESET_DESK_CONFIGS
+      const deskConfigCookie = getCookie(DESK_CONFIG_KEY)
+      const cookieOptions = deskConfigCookie
+        ?.split('&')
+        .map((config) => JSON.parse(config) as DeskConfig)
+      if (cookieOptions && cookieOptions.length > 0) {
+        return [...PRESET_DESK_CONFIGS, ...cookieOptions]
+      }
+    } catch (error) {
+      console.error('Cannot fetch desk custom config:', error)
+    }
+    return PRESET_DESK_CONFIGS
+  })
 
   const handleToggleFavorite = useCallback((id: string) => {
     setFavoriteIds((prev) => {
@@ -82,24 +108,6 @@ const NewRoom = ({ }) => {
       }
     },
   })
-
-  useEffect(() => {
-    if (!hasCookie(DESK_CONFIG_KEY) || options.length > PRESET_DESK_CONFIGS.length) {
-      return
-    }
-    try {
-      const deskConfigCookie = getCookie(DESK_CONFIG_KEY)
-      const cookieOptions = deskConfigCookie
-        ?.split('&')
-        .map((config) => JSON.parse(config) as DeskConfig)
-
-      if (cookieOptions && cookieOptions.length > 0) {
-        setOptions([...options, ...cookieOptions])
-      }
-    } catch (error) {
-      console.error('Cannot fetch desk custom config:', error)
-    }
-  }, [options])
 
   const createRoom = () => {
     mutate({
@@ -131,14 +139,6 @@ const NewRoom = ({ }) => {
     gcTime: 30_000,
     staleTime: 30_000,
   })
-
-  const timeAgo = (date: Date) => {
-    const s = Math.floor((Date.now() - date.getTime()) / 1000)
-    if (s < 60) return 'Just now'
-    if (s < 3600) return `${Math.floor(s / 60)}m ago`
-    if (s < 86400) return `${Math.floor(s / 3600)}h ago`
-    return `${Math.floor(s / 86400)}d ago`
-  }
 
   const disabledInputs = isPending || isRouting
 

@@ -1,7 +1,6 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { useLocale } from 'next-intl'
+import { getLocale } from 'next-intl/server'
 
 const translations = {
   en: {
@@ -128,8 +127,17 @@ const translations = {
   },
 }
 
-export default function WhyWeBuiltCorgiPage() {
-  const locale = useLocale() as 'en' | 'th'
+export const metadata: Metadata = {
+  title: "Why We Built Corgi Planning Poker (And Why It's Free)",
+  description:
+    "The story behind Corgi Planning Poker — why we built a free, open-source planning poker tool and why it will always stay free with no paywalls.",
+  alternates: {
+    canonical: 'https://www.corgiplanningpoker.com/blog/why-we-built-corgi-planning-poker',
+  },
+}
+
+export default async function WhyWeBuiltCorgiPage() {
+  const locale = (await getLocale()) as 'en' | 'th'
   const t = translations[locale]
 
   return (

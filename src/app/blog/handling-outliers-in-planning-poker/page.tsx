@@ -1,7 +1,6 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { useLocale } from 'next-intl'
+import { getLocale } from 'next-intl/server'
 
 const translations = {
   en: {
@@ -118,8 +117,17 @@ const translations = {
   },
 }
 
-export default function HandlingOutliersPage() {
-  const locale = useLocale() as 'en' | 'th'
+export const metadata: Metadata = {
+  title: 'Handling Outliers in Planning Poker: Techniques for Reaching Consensus',
+  description:
+    'Practical techniques for handling outlier votes and deadlocks in planning poker. The high-low discussion, hidden work, three-round limit, and more.',
+  alternates: {
+    canonical: 'https://www.corgiplanningpoker.com/blog/handling-outliers-in-planning-poker',
+  },
+}
+
+export default async function HandlingOutliersPage() {
+  const locale = (await getLocale()) as 'en' | 'th'
   const t = translations[locale]
 
   return (

@@ -1,7 +1,6 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { useLocale } from 'next-intl'
+import { getLocale } from 'next-intl/server'
 
 const translations = {
   en: {
@@ -166,8 +165,17 @@ const translations = {
   },
 }
 
-export default function PlanningPokerFibonacciPage() {
-  const locale = useLocale() as 'en' | 'th'
+export const metadata: Metadata = {
+  title: 'Why Planning Poker Uses Fibonacci Numbers (And When to Use Other Scales)',
+  description:
+    'Why agile teams use Fibonacci for planning poker estimates, how it reduces false precision, and when to use T-shirt sizes or Powers of 2 instead.',
+  alternates: {
+    canonical: 'https://www.corgiplanningpoker.com/blog/planning-poker-fibonacci',
+  },
+}
+
+export default async function PlanningPokerFibonacciPage() {
+  const locale = (await getLocale()) as 'en' | 'th'
   const t = translations[locale]
 
   return (

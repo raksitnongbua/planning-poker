@@ -18,7 +18,7 @@ const appSchema = {
   description:
     'Free online planning poker tool for agile teams to estimate story points collaboratively in real-time. No registration required.',
   datePublished: '2024-01-01',
-  softwareVersion: '2.1',
+  softwareVersion: '2.5.0',
   screenshot: [
     {
       '@type': 'ImageObject',
@@ -105,6 +105,14 @@ const faqSchema = {
       acceptedAnswer: {
         '@type': 'Answer',
         text: 'Yes, completely free. There are no paid plans, no advertisements, and no data is sold.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is the difference between story points and hours?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Story points measure relative effort and complexity rather than clock time. A 5-point story is roughly twice as complex as a 2-point story for your team, but the actual hours vary by person. Using story points removes pressure to commit to specific durations and focuses the conversation on scope and risk instead.',
       },
     },
   ],

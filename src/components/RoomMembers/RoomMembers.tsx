@@ -15,18 +15,19 @@ export interface RoomMembersProps {
   inviteLink: string
 }
 
-const RoomMembers: React.FC<RoomMembersProps> = ({ members, inviteLink, isCardReveled }) => {
-  const getActiveStatus = (lastActiveAt: Date): ActiveStatus => {
-    const msDiff = Date.now() - lastActiveAt.getTime()
+const getActiveStatus = (lastActiveAt: Date): ActiveStatus => {
+  const msDiff = Date.now() - lastActiveAt.getTime()
 
-    if (msDiff <= 1 * MINUTES) {
-      return ActiveStatus.Active
-    } else if (msDiff <= 10 * MINUTES) {
-      return ActiveStatus.Busy
-    } else {
-      return ActiveStatus.Inactive
-    }
+  if (msDiff <= 1 * MINUTES) {
+    return ActiveStatus.Active
+  } else if (msDiff <= 10 * MINUTES) {
+    return ActiveStatus.Busy
+  } else {
+    return ActiveStatus.Inactive
   }
+}
+
+const RoomMembers: React.FC<RoomMembersProps> = ({ members, inviteLink, isCardReveled }) => {
   return (
     <div data-section="room-members" className="col-span-3 flex min-h-[200px] justify-center gap-2">
       {members.map(({ name, id, estimatedValue, lastActiveAt, avatar }) => (

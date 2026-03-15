@@ -1,5 +1,6 @@
 'use server'
 import { cookies } from 'next/headers'
+
 import { Locale, locales } from '@/i18n/request'
 
 export async function setLocale(locale: Locale) {

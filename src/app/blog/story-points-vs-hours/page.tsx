@@ -1,7 +1,6 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { useLocale } from 'next-intl'
+import { getLocale } from 'next-intl/server'
 
 const translations = {
   en: {
@@ -241,8 +240,17 @@ const translations = {
   },
 }
 
-export default function StoryPointsVsHoursPage() {
-  const locale = useLocale() as 'en' | 'th'
+export const metadata: Metadata = {
+  title: 'Story Points vs Hours: Which Should Your Team Use?',
+  description:
+    'Story points vs hours for agile estimation — key differences, when each works best, and why most experienced scrum teams prefer story points for sprint planning.',
+  alternates: {
+    canonical: 'https://www.corgiplanningpoker.com/blog/story-points-vs-hours',
+  },
+}
+
+export default async function StoryPointsVsHoursPage() {
+  const locale = (await getLocale()) as 'en' | 'th'
   const t = translations[locale]
 
   return (

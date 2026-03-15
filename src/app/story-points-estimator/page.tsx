@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import React from 'react'
 import { getLocale } from 'next-intl/server'
+import React from 'react'
 
 export const metadata: Metadata = {
   title: 'Story Points Estimator for Agile Teams — Corgi Planning Poker',

@@ -2,10 +2,9 @@
 import { faChair, faEye, faUserPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { usePathname, useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import React, { useEffect, useMemo, useState } from 'react'
 import useWebSocket, { ReadyState } from 'react-use-websocket'
-
-import { useTranslations } from 'next-intl'
 
 import { useToast } from '@/components/ui/use-toast'
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'

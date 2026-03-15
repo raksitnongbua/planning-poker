@@ -1,7 +1,6 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { useLocale } from 'next-intl'
+import { getLocale } from 'next-intl/server'
 
 const translations = {
   en: {
@@ -240,8 +239,17 @@ const translations = {
   },
 }
 
-export default function HowPlanningPokerWorksPage() {
-  const locale = useLocale() as 'en' | 'th'
+export const metadata: Metadata = {
+  title: 'How Planning Poker Works: A Complete Guide for Agile Teams',
+  description:
+    'A complete guide to planning poker for agile teams. Learn the rules, card deck options, common mistakes, and how to run effective estimation sessions.',
+  alternates: {
+    canonical: 'https://www.corgiplanningpoker.com/blog/how-planning-poker-works',
+  },
+}
+
+export default async function HowPlanningPokerWorksPage() {
+  const locale = (await getLocale()) as 'en' | 'th'
   const t = translations[locale]
 
   return (
