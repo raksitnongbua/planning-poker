@@ -245,6 +245,10 @@ export const metadata: Metadata = {
     'A complete guide to planning poker for agile teams. Learn the rules, card deck options, common mistakes, and how to run effective estimation sessions.',
   alternates: {
     canonical: 'https://www.corgiplanningpoker.com/blog/how-planning-poker-works',
+    languages: {
+      en: 'https://www.corgiplanningpoker.com/blog/how-planning-poker-works',
+      th: 'https://www.corgiplanningpoker.com/blog/how-planning-poker-works?hl=th',
+    },
   },
 }
 
@@ -252,8 +256,37 @@ export default async function HowPlanningPokerWorksPage() {
   const locale = (await getLocale()) as 'en' | 'th'
   const t = translations[locale]
 
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: locale === 'th' ? 'หน้าหลัก' : 'Home',
+        item: 'https://www.corgiplanningpoker.com',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: locale === 'th' ? 'แหล่งเรียนรู้' : 'Blog',
+        item: 'https://www.corgiplanningpoker.com/blog',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: t.title,
+        item: 'https://www.corgiplanningpoker.com/blog/how-planning-poker-works',
+      },
+    ],
+  }
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <Link
         href="/blog"
         className="mb-8 inline-block text-sm text-muted-foreground transition-colors hover:text-primary"

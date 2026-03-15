@@ -123,6 +123,10 @@ export const metadata: Metadata = {
     'Practical techniques for handling outlier votes and deadlocks in planning poker. The high-low discussion, hidden work, three-round limit, and more.',
   alternates: {
     canonical: 'https://www.corgiplanningpoker.com/blog/handling-outliers-in-planning-poker',
+    languages: {
+      en: 'https://www.corgiplanningpoker.com/blog/handling-outliers-in-planning-poker',
+      th: 'https://www.corgiplanningpoker.com/blog/handling-outliers-in-planning-poker?hl=th',
+    },
   },
 }
 

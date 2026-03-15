@@ -16,6 +16,10 @@ export const metadata: Metadata = {
     'Create a free planning poker room in seconds. Invite your agile team with a single link — no registration required.',
   alternates: {
     canonical: 'https://www.corgiplanningpoker.com/new-room',
+    languages: {
+      en: 'https://www.corgiplanningpoker.com/new-room',
+      th: 'https://www.corgiplanningpoker.com/new-room?hl=th',
+    },
   },
 }
 

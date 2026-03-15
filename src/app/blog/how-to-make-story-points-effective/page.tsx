@@ -149,6 +149,10 @@ export const metadata: Metadata = {
     'Best practices for making story points work in agile estimation. Anchor stories, avoiding the hours trap, building stable velocity, and common pitfalls to avoid.',
   alternates: {
     canonical: 'https://www.corgiplanningpoker.com/blog/how-to-make-story-points-effective',
+    languages: {
+      en: 'https://www.corgiplanningpoker.com/blog/how-to-make-story-points-effective',
+      th: 'https://www.corgiplanningpoker.com/blog/how-to-make-story-points-effective?hl=th',
+    },
   },
 }
 

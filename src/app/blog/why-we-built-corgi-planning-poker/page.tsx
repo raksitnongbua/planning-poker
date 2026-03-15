@@ -133,6 +133,10 @@ export const metadata: Metadata = {
     "The story behind Corgi Planning Poker — why we built a free, open-source planning poker tool and why it will always stay free with no paywalls.",
   alternates: {
     canonical: 'https://www.corgiplanningpoker.com/blog/why-we-built-corgi-planning-poker',
+    languages: {
+      en: 'https://www.corgiplanningpoker.com/blog/why-we-built-corgi-planning-poker',
+      th: 'https://www.corgiplanningpoker.com/blog/why-we-built-corgi-planning-poker?hl=th',
+    },
   },
 }
 

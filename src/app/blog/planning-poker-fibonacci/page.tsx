@@ -171,6 +171,10 @@ export const metadata: Metadata = {
     'Why agile teams use Fibonacci for planning poker estimates, how it reduces false precision, and when to use T-shirt sizes or Powers of 2 instead.',
   alternates: {
     canonical: 'https://www.corgiplanningpoker.com/blog/planning-poker-fibonacci',
+    languages: {
+      en: 'https://www.corgiplanningpoker.com/blog/planning-poker-fibonacci',
+      th: 'https://www.corgiplanningpoker.com/blog/planning-poker-fibonacci?hl=th',
+    },
   },
 }
 
