@@ -1,16 +1,39 @@
 import { hasCookie, setCookie } from 'cookies-next'
-import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
 import { UID_KEY } from '@/constant/cookies'
 
+import { locales } from './i18n/request'
 import { SECONDS } from './utils/time'
 
 const CIRCUIT_COOLDOWN = 30 * SECONDS
 let backendFailedAt = 0
 
-export async function proxy(req: NextRequest) {
-  const res = NextResponse.next()
+export async function proxy(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const hl = searchParams.get('hl')
+
+  // Handle hl query parameter for SEO / multi-language indexing
+  if (hl && locales.includes(hl as any)) {
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set('x-locale', hl)
+
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+    response.cookies.set('locale', hl, { path: '/', maxAge: 60 * 60 * 24 * 365 })
+    
+    // Continue with proxy logic if needed
+    return handleProxy(request, response)
+  }
+
+  return handleProxy(request, NextResponse.next())
+}
+
+async function handleProxy(req: NextRequest, res: NextResponse) {
   const hasUID = hasCookie(UID_KEY, { res, req })
   if (!hasUID) {
     if (Date.now() - backendFailedAt < CIRCUIT_COOLDOWN) {
@@ -28,4 +51,8 @@ export async function proxy(req: NextRequest) {
     }
   }
   return res
+}
+
+export const config = {
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }
