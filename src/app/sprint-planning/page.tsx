@@ -9,6 +9,10 @@ export const metadata: Metadata = {
     'Use planning poker to run focused, time-boxed sprint planning sessions. Free online tool — no account needed. Works alongside Jira, Linear, GitHub Issues, or any backlog tracker.',
   alternates: {
     canonical: 'https://www.corgiplanningpoker.com/sprint-planning',
+    languages: {
+      en: 'https://www.corgiplanningpoker.com/sprint-planning',
+      th: 'https://www.corgiplanningpoker.com/sprint-planning?hl=th',
+    },
   },
 }
 

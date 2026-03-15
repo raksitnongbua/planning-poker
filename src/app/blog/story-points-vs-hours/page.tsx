@@ -246,6 +246,10 @@ export const metadata: Metadata = {
     'Story points vs hours for agile estimation — key differences, when each works best, and why most experienced scrum teams prefer story points for sprint planning.',
   alternates: {
     canonical: 'https://www.corgiplanningpoker.com/blog/story-points-vs-hours',
+    languages: {
+      en: 'https://www.corgiplanningpoker.com/blog/story-points-vs-hours',
+      th: 'https://www.corgiplanningpoker.com/blog/story-points-vs-hours?hl=th',
+    },
   },
 }
 

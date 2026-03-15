@@ -121,6 +121,10 @@ export const metadata: Metadata = {
     'Practical guides on planning poker, story points, sprint planning, and agile estimation. Written for scrum teams who want better estimation practices.',
   alternates: {
     canonical: 'https://www.corgiplanningpoker.com/blog',
+    languages: {
+      en: 'https://www.corgiplanningpoker.com/blog',
+      th: 'https://www.corgiplanningpoker.com/blog?hl=th',
+    },
   },
 }
 
@@ -128,8 +132,31 @@ export default async function BlogPage() {
   const locale = (await getLocale()) as 'en' | 'th'
   const t = translations[locale]
 
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: locale === 'th' ? 'หน้าหลัก' : 'Home',
+        item: 'https://www.corgiplanningpoker.com',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: locale === 'th' ? 'แหล่งเรียนรู้' : 'Blog',
+        item: 'https://www.corgiplanningpoker.com/blog',
+      },
+    ],
+  }
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <div className="mb-12">
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
           {t.resources}

@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   description: 'Run free scrum poker sessions online with your agile team. Real-time voting, Fibonacci cards, no registration required. Start in under 30 seconds.',
   alternates: {
     canonical: 'https://www.corgiplanningpoker.com/scrum-poker',
+    languages: {
+      en: 'https://www.corgiplanningpoker.com/scrum-poker',
+      th: 'https://www.corgiplanningpoker.com/scrum-poker?hl=th',
+    },
   },
   keywords: 'scrum poker, scrum poker online, planning poker, free scrum poker, online scrum poker, agile estimation',
 }

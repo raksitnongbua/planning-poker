@@ -9,6 +9,10 @@ export const metadata: Metadata = {
     'Free agile estimation tool for scrum teams. Real-time planning poker with Fibonacci, T-shirt sizes, and custom decks — no signup needed.',
   alternates: {
     canonical: 'https://www.corgiplanningpoker.com/agile-estimation',
+    languages: {
+      en: 'https://www.corgiplanningpoker.com/agile-estimation',
+      th: 'https://www.corgiplanningpoker.com/agile-estimation?hl=th',
+    },
   },
 }
 

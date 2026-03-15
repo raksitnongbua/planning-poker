@@ -9,6 +9,10 @@ export const metadata: Metadata = {
     'Estimate story points collaboratively in real-time. Free online story points estimator for scrum and agile teams.',
   alternates: {
     canonical: 'https://www.corgiplanningpoker.com/story-points-estimator',
+    languages: {
+      en: 'https://www.corgiplanningpoker.com/story-points-estimator',
+      th: 'https://www.corgiplanningpoker.com/story-points-estimator?hl=th',
+    },
   },
 }
 

@@ -58,6 +58,10 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://www.corgiplanningpoker.com'),
   alternates: {
     canonical: '/',
+    languages: {
+      en: 'https://www.corgiplanningpoker.com',
+      th: 'https://www.corgiplanningpoker.com?hl=th',
+    },
   },
   referrer: 'origin-when-cross-origin',
   creator: 'Raksit Nongbua',

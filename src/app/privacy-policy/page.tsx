@@ -6,13 +6,40 @@ export const metadata: Metadata = {
   description: 'Privacy Policy for Corgi Planning Poker — learn how we collect, use, and protect your data.',
   alternates: {
     canonical: 'https://www.corgiplanningpoker.com/privacy-policy',
+    languages: {
+      en: 'https://www.corgiplanningpoker.com/privacy-policy',
+      th: 'https://www.corgiplanningpoker.com/privacy-policy?hl=th',
+    },
   },
   robots: { index: true, follow: false },
 }
 
 const PrivacyPolicy = () => {
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://www.corgiplanningpoker.com',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Privacy Policy',
+        item: 'https://www.corgiplanningpoker.com/privacy-policy',
+      },
+    ],
+  }
+
   return (
     <div className="px-4 pb-5 sm:px-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <div className="mx-auto max-w-screen-lg [&>h1]:my-8 [&>h2]:my-4 [&>p]:my-4 [&h3]:my-3 [&h4]:my-3 [&h4]:text-xl">
         <h1 className="text-5xl">Privacy Policy</h1>
         <p>Last updated: February 03, 2024</p>

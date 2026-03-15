@@ -7,6 +7,10 @@ export const metadata: Metadata = {
     'Raksit Nongbua is the creator of Corgi Planning Poker and author of guides on agile estimation, planning poker, and scrum best practices.',
   alternates: {
     canonical: 'https://www.corgiplanningpoker.com/blog/author/raksit-nongbua',
+    languages: {
+      en: 'https://www.corgiplanningpoker.com/blog/author/raksit-nongbua',
+      th: 'https://www.corgiplanningpoker.com/blog/author/raksit-nongbua?hl=th',
+    },
   },
 }
 
