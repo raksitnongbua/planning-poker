@@ -39,6 +39,7 @@
     "lottie-react": "^2.4.0",
     "next": "16.1.6",
     "next-auth": "^4.24.13",
+    "next-intl": "^4.8.3",
     "react": "19.2.4",
     "react-card-flip": "^1.2.2",
     "react-dom": "19.2.4",

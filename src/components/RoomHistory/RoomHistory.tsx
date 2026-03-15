@@ -2,6 +2,7 @@
 import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { format } from 'date-fns'
+import { useTranslations } from 'next-intl'
 import React from 'react'
 
 import {
@@ -13,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+
 import { Button } from '../ui/button'
 
 export interface Room {
@@ -28,6 +30,7 @@ export interface RoomHistoryProps {
 }
 
 const RoomHistory: React.FC<RoomHistoryProps> = ({ onClickJoinRoom, rooms }) => {
+  const t = useTranslations('roomHistory')
   const handleClickJoinRoom = (id: string) => () => {
     onClickJoinRoom?.(id)
   }
@@ -37,7 +40,7 @@ const RoomHistory: React.FC<RoomHistoryProps> = ({ onClickJoinRoom, rooms }) => 
     <>
       <div className="flex w-full flex-col gap-2 md:hidden">
         {isNotFoundData ? (
-          <p className="py-8 text-center text-sm text-muted-foreground/50">Your recent rooms could not be found.</p>
+          <p className="py-8 text-center text-sm text-muted-foreground/50">{t('notFound')}</p>
         ) : (
           rooms.map((room, i) => (
             <div
@@ -48,7 +51,7 @@ const RoomHistory: React.FC<RoomHistoryProps> = ({ onClickJoinRoom, rooms }) => 
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{room.name}</p>
                 <p className="mt-0.5 text-[10px] text-muted-foreground/50">
-                  {room.totalMembers} player{room.totalMembers !== 1 ? 's' : ''} · {format(room.updatedAt, 'dd MMM yyyy')}
+                  {room.totalMembers} {room.totalMembers !== 1 ? t('players') : t('player')} · {format(room.updatedAt, 'dd MMM yyyy')}
                 </p>
               </div>
               <Button
@@ -59,7 +62,7 @@ const RoomHistory: React.FC<RoomHistoryProps> = ({ onClickJoinRoom, rooms }) => 
                 onClick={handleClickJoinRoom(room.id)}
               >
                 <FontAwesomeIcon icon={faRightFromBracket} className="size-3.5" />
-                Resume
+                {t('resume')}
               </Button>
             </div>
           ))
@@ -68,14 +71,14 @@ const RoomHistory: React.FC<RoomHistoryProps> = ({ onClickJoinRoom, rooms }) => 
 
       <div className="hidden w-full md:block">
         <Table>
-          {isNotFoundData && <TableCaption>Your recent rooms could not be found.</TableCaption>}
+          {isNotFoundData && <TableCaption>{t('notFound')}</TableCaption>}
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead className="text-center">Total Members</TableHead>
-              <TableHead className="text-right">Updated Date</TableHead>
-              <TableHead className="text-right">Created Date</TableHead>
-              <TableHead className="text-right">Action</TableHead>
+              <TableHead>{t('colName')}</TableHead>
+              <TableHead className="text-center">{t('colMembers')}</TableHead>
+              <TableHead className="text-right">{t('colUpdated')}</TableHead>
+              <TableHead className="text-right">{t('colCreated')}</TableHead>
+              <TableHead className="text-right">{t('colAction')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -99,7 +102,7 @@ const RoomHistory: React.FC<RoomHistoryProps> = ({ onClickJoinRoom, rooms }) => 
                       onClick={handleClickJoinRoom(room.id)}
                     >
                       <FontAwesomeIcon icon={faRightFromBracket} className="size-3.5" />
-                      Resume
+                      {t('resume')}
                     </Button>
                   </TableCell>
                 </TableRow>

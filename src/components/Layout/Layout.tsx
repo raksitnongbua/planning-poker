@@ -55,7 +55,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
 
 const Layout = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={new QueryClient()}>
-    <SessionProvider>
+    <SessionProvider refetchOnWindowFocus={true}>
       <AppShell>{children}</AppShell>
     </SessionProvider>
   </QueryClientProvider>

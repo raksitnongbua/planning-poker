@@ -1,5 +1,6 @@
 'use client'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import React from 'react'
 
 import {
@@ -19,15 +20,22 @@ interface DonateButtonProps {
 }
 
 const DonateButton: React.FC<DonateButtonProps> = ({ compact = false }) => {
+  const t = useTranslations('donate')
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {compact ? (
-          <button className="group relative overflow-hidden rounded-full border border-primary/40 bg-gradient-to-r from-primary/15 to-orange-400/10 px-3 py-1.5 text-xs font-semibold text-primary transition-all duration-200 hover:scale-105 hover:border-primary/70 hover:from-primary/25 hover:to-orange-400/20 hover:shadow-md hover:shadow-primary/20 active:scale-100">
-            <span className="animate-shine pointer-events-none absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+          <button
+            aria-label={t('support')}
+            className="group relative overflow-hidden rounded-lg border border-primary/60 bg-gradient-to-r from-orange-500/80 via-primary to-orange-400/80 px-2.5 py-1.5 text-xs font-semibold text-white shadow-md shadow-primary/30 transition-all duration-200 hover:scale-[1.05] hover:shadow-lg hover:shadow-primary/40 active:scale-100"
+          >
+            {/* shine sweep */}
+            <span className="animate-shine pointer-events-none absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            {/* pulse aura */}
+            <span className="absolute inset-[-3px] -z-10 animate-pulse rounded-lg bg-primary/40 blur-md" style={{ animationDuration: '2.5s' }} />
             <span className="relative flex items-center gap-1.5">
-              <span className="transition-transform duration-200 group-hover:-rotate-12">🦴</span>
-              <span className="hidden sm:inline">Support</span>
+              <span className="transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110">🦴</span>
+              <span className="hidden sm:inline">{t('support')}</span>
             </span>
           </button>
         ) : (
@@ -35,7 +43,7 @@ const DonateButton: React.FC<DonateButtonProps> = ({ compact = false }) => {
             <span className="animate-shine pointer-events-none absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
             <span className="relative flex items-center gap-2">
               <span className="transition-transform duration-200 group-hover:-rotate-12">🦴</span>
-              <span>Buy Corgi a Treat</span>
+              <span>{t('buyTreat')}</span>
             </span>
           </button>
         )}
@@ -43,7 +51,7 @@ const DonateButton: React.FC<DonateButtonProps> = ({ compact = false }) => {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span>🐾</span>
-          <span>Support this project</span>
+          <span>{t('supportProject')}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
@@ -58,7 +66,7 @@ const DonateButton: React.FC<DonateButtonProps> = ({ compact = false }) => {
             </span>
             <div className="flex flex-col">
               <span className="text-sm font-semibold">Ko-fi</span>
-              <span className="text-[10px] text-muted-foreground">One-time or monthly</span>
+              <span className="text-[10px] text-muted-foreground">{t('kofiSubtitle')}</span>
             </div>
           </a>
         </DropdownMenuItem>
@@ -74,7 +82,7 @@ const DonateButton: React.FC<DonateButtonProps> = ({ compact = false }) => {
             </span>
             <div className="flex flex-col">
               <span className="text-sm font-semibold">GitHub Sponsors</span>
-              <span className="text-[10px] text-muted-foreground">Recurring support</span>
+              <span className="text-[10px] text-muted-foreground">{t('githubSubtitle')}</span>
             </div>
           </a>
         </DropdownMenuItem>

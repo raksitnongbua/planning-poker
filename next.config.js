@@ -1,11 +1,12 @@
 /** @type {import('next').NextConfig} */
 
-// Injected content via Sentry wizard below
-
 const { withSentryConfig } = require('@sentry/nextjs')
+const createNextIntlPlugin = require('next-intl/plugin')
+
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
 module.exports = withSentryConfig(
-  {
+  withNextIntl({
     turbopack: {},
     devIndicators: false,
     images: {
@@ -44,7 +45,7 @@ module.exports = withSentryConfig(
         },
       ]
     },
-  },
+  }),
   {
     // Suppresses source map uploading logs during build
     silent: true,

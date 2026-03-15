@@ -3,7 +3,7 @@
 import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRouter } from 'next/navigation'
-import { signIn } from 'next-auth/react'
+import { useTranslations } from 'next-intl'
 import React, { useState } from 'react'
 
 import {
@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { useSignInPopup } from '@/hooks/useSignInPopup'
 
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -25,6 +26,8 @@ const JoinRoomDialog = ({ open, onClickConfirm, onClickSpectate, hasAvatar, defa
   const [isCheckedUseProfileAvatar, setIsCheckedUseProfileAvatar] = useState(hasAvatar)
   const isDisabled = name === ''
   const router = useRouter()
+  const t = useTranslations('joinRoom')
+  const { signInWithPopup } = useSignInPopup(() => window.location.reload())
 
   const showDivider = onClickSpectate || !signedIn
 
@@ -43,20 +46,18 @@ const JoinRoomDialog = ({ open, onClickConfirm, onClickSpectate, hasAvatar, defa
     >
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Join the Room</DialogTitle>
-          <DialogDescription>
-            Enter your display name to start estimating with your team.
-          </DialogDescription>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3 py-1">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="display-name">Display name</Label>
+            <Label htmlFor="display-name">{t('displayName')}</Label>
             <Input
               id="display-name"
               autoFocus
               maxLength={20}
-              placeholder="Your name"
+              placeholder={t('namePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value.trim())}
               onKeyDown={(e) =>
@@ -71,7 +72,7 @@ const JoinRoomDialog = ({ open, onClickConfirm, onClickSpectate, hasAvatar, defa
                 checked={isCheckedUseProfileAvatar}
                 onCheckedChange={setIsCheckedUseProfileAvatar}
               />
-              <Label htmlFor="use-profile-avatar">Use profile picture</Label>
+              <Label htmlFor="use-profile-avatar">{t('useProfilePicture')}</Label>
             </div>
           )}
         </div>
@@ -82,7 +83,7 @@ const JoinRoomDialog = ({ open, onClickConfirm, onClickSpectate, hasAvatar, defa
             disabled={isDisabled}
             onClick={() => onClickConfirm(name, isCheckedUseProfileAvatar)}
           >
-            Join Room
+            {t('joinRoom')}
           </Button>
 
           {showDivider && (
@@ -91,15 +92,15 @@ const JoinRoomDialog = ({ open, onClickConfirm, onClickSpectate, hasAvatar, defa
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-background px-2 text-xs text-muted-foreground">or</span>
+                <span className="bg-background px-2 text-xs text-muted-foreground">{t('or')}</span>
               </div>
             </div>
           )}
 
           {!signedIn && (
-            <Button variant="outline" className="w-full gap-2" onClick={() => signIn('google')}>
+            <Button variant="outline" className="w-full gap-2" onClick={signInWithPopup}>
               <FontAwesomeIcon icon={faGoogle} className="size-4" />
-              Sign in with Google
+              {t('signInWithGoogle')}
             </Button>
           )}
 
@@ -109,7 +110,7 @@ const JoinRoomDialog = ({ open, onClickConfirm, onClickSpectate, hasAvatar, defa
               className="w-full text-muted-foreground"
               onClick={onClickSpectate}
             >
-              Watch as spectator
+              {t('watchAsSpectator')}
             </Button>
           )}
         </div>

@@ -1,0 +1,200 @@
+{
+  "navbar": {
+    "blog": "Blog",
+    "signIn": "Sign In",
+    "signOut": "Sign Out"
+  },
+  "footer": {
+    "privacyPolicy": "Privacy Policy",
+    "contact": "Contact",
+    "github": "GitHub",
+    "openIssue": "Open Issue",
+    "contribute": "Contribute"
+  },
+  "home": {
+    "hero": {
+      "free": "Free",
+      "online": "Online",
+      "planningPoker": "Planning Poker",
+      "subtitle": "Frictionless story point estimation with a friendly Corgi twist. No registration, no paywalls, just effective (and fun!) planning.",
+      "createRoom": "Create a Room",
+      "resumeRoom": "Resume Session"
+    },
+    "whatIs": {
+      "heading": "What is Planning Poker?",
+      "p1": "Planning poker is a consensus-based agile estimation technique used by scrum teams during sprint planning. Each team member privately selects a card representing their estimate for a user story or task — typically using a Fibonacci-like sequence (1, 2, 3, 5, 8, 13…) or T-shirt sizes (XS, S, M, L, XL). Cards are revealed simultaneously to prevent anchoring bias, then the team discusses any large discrepancies before reaching a shared estimate.",
+      "p2": "The technique was introduced by James Grenning in 2002 and popularised by Mike Cohn in <book>Agile Estimating and Planning</book> (2005). It has since become the de-facto standard for story point estimation across scrum, kanban, and SAFe teams worldwide."
+    },
+    "howItWorks": {
+      "heading": "How It Works",
+      "step1Title": "Create a room",
+      "step1Desc": "Click \"Create Room\", give it a name, and choose your card deck. You get a shareable link instantly — no account needed.",
+      "step2Title": "Invite your team",
+      "step2Desc": "Share the room link with your colleagues. Anyone with the link can join from any browser or device.",
+      "step3Title": "Vote and reveal",
+      "step3Desc": "Each participant picks a card privately. Reveal all cards at once, discuss outliers, and lock in your estimate."
+    },
+    "why": {
+      "heading": "Why Use Corgi Planning Poker?",
+      "freeTitle": "Free forever",
+      "freeDesc": "No subscription, no trial, no credit card required.",
+      "noRegTitle": "No registration",
+      "noRegDesc": "Start estimating in under 30 seconds. Just create a room and share the link.",
+      "realtimeTitle": "Real-time sync",
+      "realtimeDesc": "All votes update live across every participant's screen without refreshing.",
+      "customTitle": "Custom card decks",
+      "customDesc": "Use the default Fibonacci deck, T-shirt sizes, or create your own custom values.",
+      "crossPlatformTitle": "Cross-platform sync",
+      "crossPlatformDesc": "Sign in with Google to link your identity across devices. Resume any room from your phone, tablet, or laptop — your history follows you.",
+      "spectatorTitle": "Spectator mode",
+      "spectatorDesc": "Join a room as a silent observer without casting votes. Sit down at any time when you're ready to participate.",
+      "openSourceTitle": "Open source",
+      "openSourceDesc": "The full source code is publicly available on GitHub. Found a bug? Open an issue. Want to improve the app? Submit a pull request.",
+      "viewOnGitHub": "View on GitHub",
+      "interactiveTitle": "Interactive & Fun",
+      "interactiveDesc": "Keep the energy high during long planning sessions! Throw emojis at your teammates to celebrate agreement or lighten the mood."
+    },
+    "story": {
+      "heading": "The Story Behind Corgi Planning Poker",
+      "p1": "Like many agile teams, I started out using whatever free planning poker tools I could find. They worked well... until they didn't. One by one, the features I relied on started moving behind paywalls: session limits, room caps, and even the ability to customize your own point values. For something that's supposed to be lightweight and collaborative, it felt like the wrong direction.",
+      "p2": "So, I decided to build my own. I wanted a tool that stays free forever, has no artificial limits, and gives teams full control over their card decks. The result is the app you're using right now.",
+      "p3": "The corgi theme is purely personal. I have a corgi at home named <kimi>Kimi</kimi>, and naming a side project after your favorite pup is basically a law of software engineering. Corgi Planning Poker started as a small tool for my own team and has just kept growing from there.",
+      "signature": "— Raksit, builder & corgi lover",
+      "support": "This app will always be free. But if it makes your planning sessions a little more joyful, I'd love it if you'd <link>{supportLink}</link> to reward the real boss (the corgi) behind the scenes!",
+      "supportLink": "buy Corgi a treat"
+    },
+    "faq": {
+      "heading": "Frequently Asked Questions",
+      "q1": "How many people can join a room?",
+      "a1": "There is no hard limit. Rooms work well for teams of 3 to 20 people. For very large groups, consider splitting into smaller estimation sub-teams.",
+      "q2": "Do I need to create an account?",
+      "a2": "No account is required. Every visitor is automatically assigned a unique guest ID so you can create and join rooms instantly. Signing in with Google links that ID to your Google account, which syncs your identity across browsers and devices — so you can resume any recent room from your phone, laptop, or any other device without losing your history. In our experience, removing this barrier is the single most impactful change for teams adopting a new estimation tool.",
+      "q3": "What card decks are available?",
+      "a3": "Four preset decks are built in: Fibonacci (1, 2, 3, 5, 8, 13, 21, 34), T-Shirt (XS, S, M, L, XL, XXL), Powers of 2 (1, 2, 4, 8, 16, 32, 64), and Hours (1, 2, 4, 8, 16, 24, 40). You can also create a fully custom deck by entering any comma-separated values. Mark any deck as a favourite and it will be auto-selected the next time you create a room.",
+      "q4": "Can I watch a session without voting?",
+      "a4": "Yes. When joining a room you can choose \"Watch as spectator\" to observe without casting a vote. You can sit down and join the voting at any point during the session.",
+      "q5": "How long does a room last?",
+      "a5": "Rooms are automatically removed after 30 days of inactivity. As long as your team uses a room at least once a month, it stays available.",
+      "q6": "Is Corgi Planning Poker free?",
+      "a6": "Yes, completely free — no paid plans, no advertisements, no data sold, ever. If it saves your team time each sprint, consider buying Corgi a treat via Ko-fi or GitHub Sponsors. It helps keep the project alive and the corgi fed.",
+      "q7": "What is the difference between story points and hours?",
+      "a7": "Story points measure relative effort and complexity rather than clock time. A 5-point story is roughly twice as complex as a 2-point story for your team, but the actual hours vary by person. Using story points removes pressure to commit to specific durations and focuses the conversation on scope and risk instead."
+    },
+    "openSource": {
+      "heading": "Free & Open Source",
+      "bugTitle": "Found a bug?",
+      "bugDesc": "Something not working as expected? Open an issue on GitHub and we'll look into it.",
+      "bugCta": "Open an Issue",
+      "contributeTitle": "Want to contribute?",
+      "contributeDesc": "The codebase is open on GitHub. Pull requests are welcome — check the repo for guidelines.",
+      "contributeCta": "Contribute via PR",
+      "supportTitle": "Enjoying the app?",
+      "supportDesc": "This will always be free. But if it saves your team time each sprint, buying Corgi a treat means a lot."
+    },
+    "exploreMore": "Explore More",
+    "exploreLinks": {
+      "scrumPokerTitle": "Scrum Poker Online",
+      "scrumPokerDesc": "Run real-time scrum poker sessions with your agile team.",
+      "agileToolTitle": "Agile Estimation Tool",
+      "agileToolDesc": "Estimate user stories collaboratively using proven agile techniques.",
+      "storyEstimatorTitle": "Story Points Estimator",
+      "storyEstimatorDesc": "Calculate story points as a team with simultaneous card reveal.",
+      "sprintPlanningTitle": "Sprint Planning Poker",
+      "sprintPlanningDesc": "Make sprint planning faster and more collaborative.",
+      "blogTitle": "Planning Poker Blog",
+      "blogDesc": "Guides on agile estimation, Fibonacci scales, and scrum best practices.",
+      "outliersTitle": "Advanced Techniques",
+      "outliersDesc": "Learn how to handle disagreement and break deadlocks like a pro.",
+      "effectivePointsTitle": "Effective Story Points",
+      "effectivePointsDesc": "Best practices for accurate and consistent agile estimation."
+    }
+  },
+  "newRoom": {
+    "title": "Create a Room",
+    "subtitle": "Set up your planning session in seconds",
+    "roomNameLabel": "Room name",
+    "roomNamePlaceholder": "e.g. Sprint 42 Planning",
+    "cardDeckLabel": "Card deck",
+    "createButton": "Create Room",
+    "creatingButton": "Creating…",
+    "noAccountRequired": "No account required · Free forever",
+    "continueRoom": "Continue a Room",
+    "noRecentRooms": "No recent rooms yet",
+    "viewAllRooms": "View all rooms"
+  },
+  "donate": {
+    "support": "Support",
+    "buyTreat": "Buy Corgi a Treat",
+    "supportProject": "Support this project",
+    "kofiSubtitle": "One-time or monthly",
+    "githubSubtitle": "Recurring support"
+  },
+  "room": {
+    "revealCards": "Reveal Cards",
+    "reset": "Reset",
+    "pickCard": "Pick a card",
+    "voted": "Voted",
+    "watchingAsSpectator": "Watching as spectator",
+    "sitDown": "Sit Down",
+    "connectionLost": "Connection lost",
+    "connectionLostDesc": "Oops! it seems like the connection was lost. Please refresh the page.",
+    "refresh": "Refresh",
+    "players": "Players",
+    "copied": "Copied!",
+    "invite": "Invite",
+    "votedCount": "{count} voted",
+    "waitingCount": "{count} waiting",
+    "wsConnected": "WS Connected",
+    "wsConnecting": "WS Connecting",
+    "wsClosing": "WS Closing",
+    "wsDisconnected": "WS Disconnected",
+    "wsOffline": "WS Offline"
+  },
+  "activity": {
+    "tabRoom": "Room",
+    "tabMembers": "Members",
+    "round": "Round {n}",
+    "live": "live",
+    "votingInProgress": "Voting in progress",
+    "noActivity": "No activity yet",
+    "average": "Average",
+    "joinedRoom": "joined the room",
+    "castVote": "cast a vote",
+    "activityJoined": "{actor} joined",
+    "activityVoted": "{actor} voted",
+    "activityRevealed": "{actor} revealed",
+    "activityNewRound": "{actor} new round",
+    "activityWatching": "{actor} watching",
+    "someone": "Someone"
+  },
+  "throwPanel": {
+    "throw": "Throw",
+    "armed": "Armed"
+  },
+  "joinRoom": {
+    "title": "Join the Room",
+    "description": "Enter your display name to start estimating with your team.",
+    "displayName": "Display name",
+    "namePlaceholder": "Your name",
+    "useProfilePicture": "Use profile picture",
+    "joinRoom": "Join Room",
+    "or": "or",
+    "signInWithGoogle": "Sign in with Google",
+    "watchAsSpectator": "Watch as spectator"
+  },
+  "roomHistory": {
+    "notFound": "Your recent rooms could not be found.",
+    "colName": "Name",
+    "colMembers": "Total Members",
+    "colUpdated": "Updated Date",
+    "colCreated": "Created Date",
+    "colAction": "Action",
+    "resume": "Resume",
+    "player": "player",
+    "players": "players"
+  },
+  "recentRooms": {
+    "title": "Recent Rooms",
+    "newRoom": "New Room"
+  }
+}

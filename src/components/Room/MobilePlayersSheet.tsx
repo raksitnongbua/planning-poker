@@ -2,6 +2,7 @@
 import { faCircle } from '@fortawesome/free-regular-svg-icons'
 import { faCircleCheck, faUserPlus, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useTranslations } from 'next-intl'
 
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Member, Status } from './types'
@@ -31,6 +32,7 @@ const MobilePlayersSheet = ({
   onClose,
   onCopy,
 }: MobilePlayersSheetProps) => {
+  const t = useTranslations('room')
   return (
     <div className="fixed inset-0 z-50 md:hidden">
       <div
@@ -56,7 +58,7 @@ const MobilePlayersSheet = ({
               }`}
             >
               <FontAwesomeIcon icon={isCopied ? faCircleCheck : faUserPlus} className="size-3" />
-              {isCopied ? 'Copied!' : 'Invite'}
+              {isCopied ? t('copied') : t('invite')}
             </button>
             <button
               onClick={onClose}
@@ -71,8 +73,8 @@ const MobilePlayersSheet = ({
           return (
             <div className="px-5 pb-3 space-y-1.5 flex-shrink-0">
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{votedCount} voted</span>
-                <span>{members.length - votedCount} waiting</span>
+                <span>{t('votedCount', { count: votedCount })}</span>
+                <span>{t('waitingCount', { count: members.length - votedCount })}</span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-muted/40">
                 <div

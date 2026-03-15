@@ -1,6 +1,7 @@
 'use client'
 import { faEye, faRotateRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useTranslations } from 'next-intl'
 import React, { useEffect, useMemo, useState } from 'react'
 import ReactCardFlip from 'react-card-flip'
 
@@ -24,6 +25,7 @@ const TABLE_W = 600
 const TABLE_H = 212
 
 const RoomTable: React.FC<RoomTableProps> = ({ result, maxPoint, members, roomName, status, isSpectator, onReveal, onReset }) => {
+  const t = useTranslations('room')
   const [tableScale, setTableScale] = useState(1)
 
   useEffect(() => {
@@ -158,7 +160,7 @@ const RoomTable: React.FC<RoomTableProps> = ({ result, maxPoint, members, roomNa
               onClick={onReveal}
             >
               <FontAwesomeIcon icon={faEye} className="size-4" />
-              Reveal Cards
+              {t('revealCards')}
             </Button>
           </div>
         </div>
