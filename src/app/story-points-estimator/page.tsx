@@ -4,7 +4,7 @@ import { getLocale } from 'next-intl/server'
 import React from 'react'
 
 export const metadata: Metadata = {
-  title: 'Story Points Estimator for Agile Teams — Corgi Planning Poker',
+  title: 'Story Points Estimator for Agile Teams',
   description:
     'Estimate story points collaboratively in real-time. Free online story points estimator for scrum and agile teams.',
   alternates: {

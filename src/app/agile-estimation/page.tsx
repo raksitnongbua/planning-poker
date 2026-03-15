@@ -4,7 +4,7 @@ import { getLocale } from 'next-intl/server'
 import React from 'react'
 
 export const metadata: Metadata = {
-  title: 'Free Agile Estimation Tool — Corgi Planning Poker',
+  title: 'Free Agile Estimation Tool',
   description:
     'Free agile estimation tool for scrum teams. Real-time planning poker with Fibonacci, T-shirt sizes, and custom decks — no signup needed.',
   alternates: {

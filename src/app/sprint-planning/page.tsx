@@ -4,7 +4,7 @@ import { getLocale } from 'next-intl/server'
 import React from 'react'
 
 export const metadata: Metadata = {
-  title: 'Sprint Planning Poker — Free Online Tool | Corgi Planning Poker',
+  title: 'Sprint Planning Poker — Free Online Tool',
   description:
     'Use planning poker to run focused, time-boxed sprint planning sessions. Free online tool — no account needed. Works alongside Jira, Linear, GitHub Issues, or any backlog tracker.',
   alternates: {

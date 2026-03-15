@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { getLocale } from 'next-intl/server'
 
 export const metadata: Metadata = {
-  title: 'Free Scrum Poker Online | Corgi Planning Poker',
+  title: 'Free Scrum Poker Online',
   description: 'Run free scrum poker sessions online with your agile team. Real-time voting, Fibonacci cards, no registration required. Start in under 30 seconds.',
   alternates: {
     canonical: 'https://www.corgiplanningpoker.com/scrum-poker',
