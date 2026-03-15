@@ -75,6 +75,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
     },
     {
+      url: 'https://www.corgiplanningpoker.com/blog/handling-outliers-in-planning-poker',
+      lastModified: '2026-03-14',
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    },
+    {
+      url: 'https://www.corgiplanningpoker.com/blog/how-to-make-story-points-effective',
+      lastModified: '2026-03-14',
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    },
+    {
       url: 'https://www.corgiplanningpoker.com/privacy-policy',
       lastModified: '2026-01-01',
       changeFrequency: 'yearly',
