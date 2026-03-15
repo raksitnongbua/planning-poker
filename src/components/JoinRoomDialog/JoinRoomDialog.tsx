@@ -3,7 +3,6 @@
 import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRouter } from 'next/navigation'
-import { signIn } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import React, { useState } from 'react'
 
@@ -14,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { useSignInPopup } from '@/hooks/useSignInPopup'
 
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -27,6 +27,7 @@ const JoinRoomDialog = ({ open, onClickConfirm, onClickSpectate, hasAvatar, defa
   const isDisabled = name === ''
   const router = useRouter()
   const t = useTranslations('joinRoom')
+  const { signInWithPopup } = useSignInPopup(() => window.location.reload())
 
   const showDivider = onClickSpectate || !signedIn
 
@@ -97,7 +98,7 @@ const JoinRoomDialog = ({ open, onClickConfirm, onClickSpectate, hasAvatar, defa
           )}
 
           {!signedIn && (
-            <Button variant="outline" className="w-full gap-2" onClick={() => signIn('google')}>
+            <Button variant="outline" className="w-full gap-2" onClick={signInWithPopup}>
               <FontAwesomeIcon icon={faGoogle} className="size-4" />
               {t('signInWithGoogle')}
             </Button>

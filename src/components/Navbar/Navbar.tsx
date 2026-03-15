@@ -1,9 +1,11 @@
 'use client'
 import Image from 'next/image'
 import Link from 'next/link'
-import { signIn, signOut, useSession } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import React from 'react'
+
+import { useSignInPopup } from '@/hooks/useSignInPopup'
 
 import { DonateButton } from '../DonateButton'
 import { LanguageSwitcher } from '../LanguageSwitcher'
@@ -13,6 +15,7 @@ import { Skeleton } from '../ui/skeleton'
 const Navbar = () => {
   const { data: session, status } = useSession()
   const t = useTranslations('navbar')
+  const { signInWithPopup } = useSignInPopup()
 
   return (
     <header>
@@ -46,7 +49,7 @@ const Navbar = () => {
             />
           ) : (
             <button
-              onClick={() => signIn('google')}
+              onClick={signInWithPopup}
               className="rounded-lg border border-border/50 bg-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all duration-150 hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
             >
               {t('signIn')}
