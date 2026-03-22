@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
   // Return only numeric custom fields likely to be story points
   const numericFields = fields.filter(
-    (f) => f.schema?.type === 'number' && f.id.startsWith('customfield_')
+    (f) => f.schema != null && f.schema.type === 'number' && f.id.startsWith('customfield_')
   )
 
   return NextResponse.json(numericFields.map((f) => ({ id: f.id, name: f.name })))

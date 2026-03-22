@@ -64,6 +64,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
     return DEFAULT_FIELD_ID
   })
   const [showFieldPicker, setShowFieldPicker] = useState(false)
+  const [fieldSearch, setFieldSearch] = useState('')
   const [fieldsLoading, setFieldsLoading] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -146,9 +147,13 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
     setSelectedFieldId(field.id)
     localStorage.setItem(FIELD_STORAGE_KEY, field.id)
     setShowFieldPicker(false)
+    setFieldSearch('')
   }
 
   const selectedField = fields.find((f) => f.id === selectedFieldId)
+  const filteredFields = fieldSearch.trim()
+    ? fields.filter((f) => f.name.toLowerCase().includes(fieldSearch.toLowerCase()))
+    : fields
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -235,33 +240,49 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
               </div>
               <button
                 className="text-xs text-primary hover:underline"
-                onClick={() => setShowFieldPicker((v) => !v)}
+                onClick={() => { setShowFieldPicker((v) => !v); setFieldSearch('') }}
               >
                 {showFieldPicker ? 'Cancel' : 'Change'}
               </button>
             </div>
 
             {showFieldPicker && (
-              <div className="max-h-40 overflow-y-auto rounded-lg border border-border/40 bg-muted/10">
-                {fieldsLoading && (
-                  <div className="flex flex-col gap-1.5 p-2">
-                    {[0, 1, 2].map((i) => <Skeleton key={i} className="h-8 w-full rounded" />)}
-                  </div>
-                )}
-                {!fieldsLoading && fields.length === 0 && (
-                  <p className="py-4 text-center text-xs text-muted-foreground">No numeric custom fields found</p>
-                )}
-                {!fieldsLoading && fields.map((field) => (
-                  <button
-                    key={field.id}
-                    className={`flex w-full items-center justify-between px-3 py-2 text-left transition-colors hover:bg-muted/40 ${
-                      field.id === selectedFieldId ? 'text-primary' : 'text-foreground'
-                    }`}
-                    onClick={() => selectField(field)}
-                  >
-                    <span className="text-sm">{field.name} <span className="font-mono text-[10px] text-muted-foreground/50">({field.id})</span></span>
-                  </button>
-                ))}
+              <div className="rounded-lg border border-border/40 bg-muted/10">
+                <div className="border-b border-border/40 p-1.5">
+                  <Input
+                    autoFocus
+                    placeholder="Search field..."
+                    value={fieldSearch}
+                    onChange={(e) => setFieldSearch(e.target.value)}
+                    className="h-7 border-border/40 bg-muted/20 text-xs"
+                  />
+                </div>
+                <div className="max-h-40 overflow-y-auto py-1">
+                  {fieldsLoading && (
+                    <div className="flex flex-col gap-1.5 p-2">
+                      {[0, 1, 2].map((i) => <Skeleton key={i} className="h-8 w-full rounded" />)}
+                    </div>
+                  )}
+                  {!fieldsLoading && filteredFields.length === 0 && (
+                    <p className="py-3 text-center text-xs text-muted-foreground">No fields found</p>
+                  )}
+                  {!fieldsLoading && filteredFields.map((field) => (
+                    <button
+                      key={field.id}
+                      className={`flex w-full items-center justify-between px-3 py-2 text-left transition-colors hover:bg-muted/40 ${
+                        field.id === selectedFieldId ? 'text-primary' : 'text-foreground'
+                      }`}
+                      onClick={() => selectField(field)}
+                    >
+                      <span className="text-sm">{field.name}</span>
+                      {field.id === selectedFieldId && (
+                        <svg className="size-3 shrink-0 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
