@@ -28,6 +28,7 @@
 *   **Flexible Card Decks** — Choose from Fibonacci, T-Shirt sizes, Powers of 2, or create a fully custom sequence tailored to your team's workflow.
 *   **Cross-Device Continuity** — Optional Google Sign-In to persist your identity and room history across browsers and devices.
 *   **Device-Tailored Experience** — Fully responsive design with specific optimizations for desktop productivity and mobile-first participation.
+*   **Jira Integration** — Connect a Jira issue directly to your room. View ticket details, sync estimation results back to a Jira field, and keep your backlog up to date without leaving the session.
 
 ---
 
