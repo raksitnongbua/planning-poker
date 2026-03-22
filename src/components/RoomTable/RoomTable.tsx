@@ -5,10 +5,13 @@ import { useTranslations } from 'next-intl'
 import React, { useEffect, useMemo, useState } from 'react'
 import ReactCardFlip from 'react-card-flip'
 
+import type { TicketEstimation } from '@/components/JiraIntegration'
+
 import CorgiFeeling from '../CorgiFeeling'
 import { Member, Status } from '../Room/types'
 import { Table } from '../Table'
 import { Button } from '../ui/button'
+import { TicketBar } from './TicketBar'
 
 export interface RoomTableProps {
   result: Map<string, number>
@@ -17,14 +20,31 @@ export interface RoomTableProps {
   roomName: string
   status: Status
   isSpectator: boolean
+  ticketEstimation?: TicketEstimation | null
+  isJiraConnected?: boolean
+  jiraSiteUrl?: string
+  cloudId?: string
+  roomId?: string
+  consensusValue?: string
   onReveal: () => void
   onReset: () => void
+  onSetTicket?: () => void
+  onRemoveTicket?: () => void
+  onSaveToJira?: (estimation: TicketEstimation, value: number, fieldId: string) => Promise<void>
+  onJiraConnected?: () => void
+  onJiraDisconnected?: () => void
 }
 
 const TABLE_W = 600
 const TABLE_H = 212
+const TABLE_PAD = 60
 
-const RoomTable: React.FC<RoomTableProps> = ({ result, maxPoint, members, roomName, status, isSpectator, onReveal, onReset }) => {
+const RoomTable: React.FC<RoomTableProps> = ({
+  result, maxPoint, members, roomName, status, isSpectator,
+  ticketEstimation, isJiraConnected = false, jiraSiteUrl = '', cloudId = '',
+  roomId = '', consensusValue, onReveal, onReset,
+  onSetTicket, onRemoveTicket, onSaveToJira, onJiraConnected, onJiraDisconnected,
+}) => {
   const t = useTranslations('room')
   const [tableScale, setTableScale] = useState(1)
 
@@ -33,7 +53,7 @@ const RoomTable: React.FC<RoomTableProps> = ({ result, maxPoint, members, roomNa
       if (window.innerWidth < 768) {
         // Scale against full container (TABLE_W + 140px avatar bleed) + 16px safe margin (8px each side)
         // Avatars bleed ~14px outside the container in natural coords; the margin prevents overflow-x-hidden clipping
-        setTableScale(Math.min(1, (window.innerWidth - 48) / (TABLE_W + 140)))
+        setTableScale(Math.min(1, (window.innerWidth - 32) / (TABLE_W + TABLE_PAD * 2)))
       } else {
         setTableScale(1)
       }
@@ -179,39 +199,68 @@ const RoomTable: React.FC<RoomTableProps> = ({ result, maxPoint, members, roomNa
   )
 
   return (
-    <div data-section="room-table" className="flex flex-col items-center gap-4 w-full md:flex-row md:items-center md:justify-center md:gap-16">
+    <div data-section="room-table" className="flex flex-col items-center gap-3 w-full">
 
-      {/* ── Mobile: card + action buttons above the table ── */}
-      <div className="flex flex-col items-center gap-2 md:hidden">
-        <ReactCardFlip isFlipped={isRevealed} flipDirection="horizontal" containerStyle={{ width: '90px', height: '135px' }}>
-          {jumboCardBack(90, 135)}
-          {jumboCardFront(90, 135)}
-        </ReactCardFlip>
-        <div className="flex h-10 items-center justify-center">{actionButtons}</div>
-      </div>
+      {/* ── Card + Table row ── */}
+      <div className="flex flex-col items-center gap-4 w-full md:flex-row md:items-center md:justify-center md:gap-12">
 
-      {/* ── Desktop: card + action buttons to the left of the table ── */}
-      <div className="hidden md:flex flex-col items-center gap-4 flex-shrink-0">
-        <div className="w-[158px] h-[238px] transition-transform duration-1000 hover:scale-110 animate-card-idle">
-          <ReactCardFlip isFlipped={isRevealed} flipDirection="horizontal" containerStyle={{ width: '158px', height: '238px' }}>
-            {jumboCardBack(158, 238)}
-            {jumboCardFront(158, 238)}
+        {/* Mobile: card + action buttons above the table */}
+        <div className="flex flex-col items-center gap-2 md:hidden">
+          <ReactCardFlip isFlipped={isRevealed} flipDirection="horizontal" containerStyle={{ width: '90px', height: '135px' }}>
+            {jumboCardBack(90, 135)}
+            {jumboCardFront(90, 135)}
           </ReactCardFlip>
+          <div className="flex h-10 items-center justify-center">{actionButtons}</div>
         </div>
-        <div className="flex h-10 w-full items-center justify-center">{actionButtons}</div>
-      </div>
 
-      {/* ── Table: scaled on mobile, natural size on desktop ── */}
-      {/* AVATAR_BLEED=70 > Table.tsx OFFSET=60 so seated avatars are never clipped */}
-      <div
-        className="flex-shrink-0"
-        style={{
-          width: Math.round(tableScale * (TABLE_W + 140)),
-          height: Math.round(tableScale * (TABLE_H + 140)),
-        }}
-      >
-        <div style={{ transform: `scale(${tableScale})`, transformOrigin: 'top left', width: TABLE_W + 140, height: TABLE_H + 140, paddingLeft: 70, paddingTop: 70 }}>
-          <Table name={roomName} members={members} isRevealed={isRevealed} />
+        {/* Desktop: card + action buttons to the left of the table */}
+        <div className="hidden md:flex flex-col items-center gap-2 flex-shrink-0">
+          {roomName && (
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">
+              {roomName}
+            </p>
+          )}
+          <div className="w-[158px] h-[238px] transition-transform duration-1000 hover:scale-110 animate-card-idle">
+            <ReactCardFlip isFlipped={isRevealed} flipDirection="horizontal" containerStyle={{ width: '158px', height: '238px' }}>
+              {jumboCardBack(158, 238)}
+              {jumboCardFront(158, 238)}
+            </ReactCardFlip>
+          </div>
+          <div className="mt-2 flex h-10 w-full items-center justify-center">{actionButtons}</div>
+        </div>
+
+        {/* Table: scaled on mobile, natural size on desktop */}
+        <div
+          className="flex-shrink-0"
+          style={{
+            width: Math.round(tableScale * (TABLE_W + TABLE_PAD * 2)),
+            minHeight: Math.round(tableScale * (TABLE_H + TABLE_PAD * 2)),
+          }}
+        >
+          <div style={{ transform: `scale(${tableScale})`, transformOrigin: 'top left', width: TABLE_W + TABLE_PAD * 2, minHeight: TABLE_H + TABLE_PAD * 2, paddingLeft: TABLE_PAD, paddingTop: TABLE_PAD }}>
+            <Table
+              name={roomName}
+              members={members}
+              isRevealed={isRevealed}
+              ticketEstimation={ticketEstimation}
+              bottomSlot={onSetTicket && onRemoveTicket && onSaveToJira && onJiraConnected && onJiraDisconnected ? (
+                <TicketBar
+                  estimation={ticketEstimation ?? null}
+                  isJiraConnected={isJiraConnected}
+                  jiraSiteUrl={jiraSiteUrl}
+                  cloudId={cloudId}
+                  roomId={roomId}
+                  roomStatus={status === Status.RevealedCards ? 'REVEALED_CARDS' : 'VOTING'}
+                  consensusValue={consensusValue}
+                  onSet={onSetTicket}
+                  onRemove={onRemoveTicket}
+                  onSaveToJira={onSaveToJira}
+                  onJiraConnected={onJiraConnected}
+                  onJiraDisconnected={onJiraDisconnected}
+                />
+              ) : undefined}
+            />
+          </div>
         </div>
       </div>
 

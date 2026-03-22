@@ -8,6 +8,7 @@ import {
   faEye,
   faInfinity,
   faLayerGroup,
+  faLink,
   faSyncAlt,
   faUnlockKeyhole,
 } from '@fortawesome/free-solid-svg-icons'
@@ -39,6 +40,7 @@ const Home = () => {
     { icon: faSyncAlt, title: t('why.crossPlatformTitle'), description: t('why.crossPlatformDesc') },
     { icon: faEye, title: t('why.spectatorTitle'), description: t('why.spectatorDesc') },
     { icon: faBolt, title: t('why.interactiveTitle'), description: t('why.interactiveDesc') },
+    { icon: faLink, title: t('why.jiraTitle'), description: t('why.jiraDesc') },
     {
       icon: faCode,
       title: t('why.openSourceTitle'),
@@ -192,6 +194,100 @@ const Home = () => {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+
+        {/* Jira Integration */}
+        <div className="space-y-8">
+          <div className="space-y-3">
+            <h2 className="flex items-center gap-2 text-2xl font-semibold">
+              <span className="inline-block size-2 animate-pulse rounded-full bg-primary" />
+              {t('jira.heading')}
+            </h2>
+            <p className="max-w-2xl leading-relaxed text-muted-foreground">
+              {t('jira.subtitle')}
+            </p>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
+            {/* 3-step flow */}
+            <div className="space-y-5">
+              {[
+                { n: '1', title: t('jira.step1Title'), desc: t('jira.step1Desc') },
+                { n: '2', title: t('jira.step2Title'), desc: t('jira.step2Desc') },
+                { n: '3', title: t('jira.step3Title'), desc: t('jira.step3Desc') },
+              ].map(({ n, title, desc }) => (
+                <div key={n} className="flex gap-4">
+                  <div className="relative flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    <span className="absolute inline-flex size-full animate-aura rounded-full bg-primary" />
+                    <span className="relative">{n}</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold">{title}</p>
+                    <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Mock room center — matches actual TicketBar in the room */}
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-border/40 bg-muted/20 p-6">
+              {/* Revealed card */}
+              <div className="flex size-16 items-center justify-center rounded-xl border-2 border-primary/40 bg-primary/10">
+                <span className="font-mono text-2xl font-bold text-primary">{t('jira.mockValue')}</span>
+              </div>
+
+              {/* Ticket info row */}
+              <div className="flex w-full items-center gap-1.5 rounded-lg border border-border/40 bg-background/60 px-2.5 py-1.5">
+                <svg className="size-3 shrink-0 text-blue-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M11.53 2c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.95 4.34 4.34 4.35V2.84a.84.84 0 0 0-.84-.84zM6.77 6.8c0 2.4 1.96 4.34 4.35 4.34h1.78v1.71c0 2.4 1.95 4.34 4.35 4.35V7.63a.84.84 0 0 0-.84-.83zM2 11.6c0 2.4 1.95 4.34 4.35 4.34h1.78v1.71A4.35 4.35 0 0 0 12.48 22v-9.57a.84.84 0 0 0-.84-.83z" />
+                </svg>
+                <span className="shrink-0 font-mono text-[10px] font-bold text-primary/80">{t('jira.mockKey')}</span>
+                <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">{t('jira.mockTitle')}</span>
+                <div className="ml-auto flex shrink-0 items-center gap-1">
+                  {/* info icon */}
+                  <div className="flex size-5 items-center justify-center rounded text-muted-foreground/40">
+                    <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  {/* edit icon */}
+                  <div className="flex size-5 items-center justify-center rounded text-muted-foreground/40">
+                    <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Save row */}
+              <div className="flex w-full items-center gap-2 rounded-lg border border-border/40 bg-muted/10 px-2.5 py-1.5">
+                <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground/60">
+                  <span className="max-w-[100px] truncate">{t('jira.mockField')}</span>
+                  <svg className="size-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                <span className="h-3 w-px bg-border/40" />
+                <div className="flex items-center gap-1">
+                  <span className="font-mono text-[10px] text-muted-foreground/50">5</span>
+                  <span className="text-[9px] text-muted-foreground/30">→</span>
+                  <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-primary">{t('jira.mockValue')}</span>
+                </div>
+                <span className="h-3 w-px bg-border/40" />
+                <div className="ml-auto flex h-5 items-center rounded bg-primary px-2 text-[10px] font-semibold text-primary-foreground">
+                  {t('jira.savedLabel')}
+                </div>
+              </div>
+
+              {/* Jira connected badge */}
+              <div className="flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1">
+                <span className="size-1.5 animate-heartbeat rounded-full bg-green-400" />
+                <span className="text-[11px] font-medium text-green-400">Jira connected</span>
+                <span className="text-muted-foreground/30">·</span>
+                <span className="text-[10px] text-muted-foreground">Disconnect</span>
+              </div>
+            </div>
           </div>
         </div>
 

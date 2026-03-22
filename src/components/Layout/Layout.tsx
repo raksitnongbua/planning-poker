@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { getCookie } from 'cookies-next'
 import dynamic from 'next/dynamic'
+import { usePathname } from 'next/navigation'
 import { SessionProvider } from 'next-auth/react'
 import React, { ReactNode, useEffect } from 'react'
 
@@ -20,16 +21,22 @@ import Loading from '../Loading'
 import Navbar from '../Navbar'
 import ServiceStatus from '../ServiceStatus'
 
+// Routes that render bare — no navbar, footer, or status overlay
+const BARE_ROUTES = ['/jira/callback', '/auth/callback']
+
 const AppShell = ({ children }: { children: ReactNode }) => {
   const { open: isLoadingOpen } = useLoadingStore()
   const { setUid, uid } = useUserInfoStore()
   const cookieUID = String(getCookie(UID_KEY))
+  const pathname = usePathname()
+  const isBare = BARE_ROUTES.some((r) => pathname.startsWith(r))
 
   const { isSuccess, isFetched } = useQuery({
     queryKey: ['health-check'],
     queryFn: async () => httpClient('/health'),
     refetchInterval: 20 * SECONDS,
     retry: false,
+    enabled: !isBare,
   })
   const status = !isFetched ? 'connecting' : isSuccess ? 'available' : 'unavailable'
 
@@ -38,6 +45,10 @@ const AppShell = ({ children }: { children: ReactNode }) => {
       setUid(cookieUID)
     }
   }, [cookieUID, setUid, uid])
+
+  if (isBare) {
+    return <>{children}</>
+  }
 
   return (
     <>

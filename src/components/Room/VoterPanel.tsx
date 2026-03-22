@@ -44,6 +44,7 @@ interface VoterPanelProps {
   onSetHoveredCardCenter: (center: { x: number; y: number } | null) => void
   onFireAt: (x: number, y: number, memberId: string, context: 'panel') => void
   myCardRef: React.RefObject<HTMLDivElement | null>
+  jiraConnectSlot?: React.ReactNode
 }
 
 const VoterPanel = ({
@@ -71,6 +72,7 @@ const VoterPanel = ({
   onSetHoveredCardCenter,
   onFireAt,
   myCardRef,
+  jiraConnectSlot,
 }: VoterPanelProps) => {
   const t = useTranslations('room')
   return (
@@ -242,7 +244,7 @@ const VoterPanel = ({
           })()}
 
           {/* Player list — scrollable */}
-          <div className={`flex flex-col overflow-y-auto flex-1 min-h-0 ${isCompact ? 'gap-1 pr-0.5' : 'gap-1.5 pr-1'}`}>
+          <div className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${isCompact ? 'gap-1 pr-0.5' : 'gap-1.5 pr-1'}`}>
             {sortedMembers.map((member) => {
               const picked = member.estimatedValue !== ''
               const msDiff = now - member.lastActiveAt.getTime()
@@ -312,6 +314,12 @@ const VoterPanel = ({
               )
             })}
           </div>
+
+          {jiraConnectSlot && (
+            <div className="flex-shrink-0 border-t border-border/40 pt-3">
+              {jiraConnectSlot}
+            </div>
+          )}
         </div>
         )
       })()}
