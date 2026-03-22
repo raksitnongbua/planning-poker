@@ -3,9 +3,11 @@ import { faChair, faEye, faUserPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import useWebSocket, { ReadyState } from 'react-use-websocket'
 
+import type { JiraIssue } from '@/components/JiraIntegration'
+import { JiraConnectButton, JiraIssuePanel, JiraIssuePicker } from '@/components/JiraIntegration'
 import { useToast } from '@/components/ui/use-toast'
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 
@@ -92,6 +94,11 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const prevRoomStatusRef = React.useRef<Status>(Status.None)
   const pendingActionActorRef = React.useRef<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
+  const [jiraIssue, setJiraIssue] = useState<JiraIssue | null>(null)
+  const [isJiraConnected, setIsJiraConnected] = useState(false)
+  const [cloudId, setCloudId] = useState('')
+  const [jiraSiteUrl, setJiraSiteUrl] = useState('')
+  const [isJiraPickerOpen, setIsJiraPickerOpen] = useState(false)
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30_000)
@@ -116,6 +123,19 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
     Closed: { dot: 'bg-red-500', pulse: 'bg-red-500/40', text: 'text-red-400', label: t('wsDisconnected') },
     Uninstantiated: { dot: 'bg-neutral-500', pulse: 'bg-neutral-500/40', text: 'text-neutral-400', label: t('wsOffline') },
   }
+
+  useEffect(() => {
+    fetch('/api/jira/status')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.connected) {
+          setIsJiraConnected(true)
+          setCloudId(data.cloudId ?? '')
+          setJiraSiteUrl(data.siteUrl ?? '')
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const handleClickJoinRoom = (name: string, isCheckedUseAvatar: boolean) => {
     const canUseAvatar = isCheckedUseAvatar && Boolean(avatar)
@@ -273,6 +293,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
           })
           setResult(newResult)
         }
+        setJiraIssue(payload.current_jira_issue ?? null)
 
         {
           const prevMembers = prevMembersRef.current
@@ -333,8 +354,46 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSpectator, lastMessage, lastMessage?.data, roomStatus, router, toast, uid])
 
+  const handleJiraConnected = useCallback(() => {
+    fetch('/api/jira/status')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.connected) {
+          setIsJiraConnected(true)
+          setCloudId(data.cloudId ?? '')
+          setJiraSiteUrl(data.siteUrl ?? '')
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const handleJiraDisconnected = useCallback(() => {
+    setIsJiraConnected(false)
+    setCloudId('')
+    sendJsonMessage({ action: 'SET_JIRA_ISSUE', payload: { jiraIssue: null } })
+  }, [sendJsonMessage])
+
+  const handleIssueSelect = useCallback((issue: JiraIssue) => {
+    setJiraIssue(issue)
+    sendJsonMessage({ action: 'SET_JIRA_ISSUE', payload: { jiraIssue: issue } })
+  }, [sendJsonMessage])
+
+  async function handleSaveToJira(issue: JiraIssue, value: number, fieldId: string) {
+    const res = await fetch(`/api/jira/issues/${issue.key}/estimate`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cloudId: issue.cloudId, value, storyPointsField: fieldId }),
+    })
+    if (!res.ok) throw new Error('save failed')
+  }
+
   const inviteLink = process.env.NEXT_PUBLIC_ORIGIN_URL + pathname
   const isRevealed = roomStatus === Status.RevealedCards
+
+  const consensusValue =
+    roomStatus === Status.RevealedCards && result.size > 0
+      ? [...result.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
+      : undefined
 
   const handleSendChat = () => {
     const text = chatInput.trim()
@@ -436,6 +495,21 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
             )}
           </div>
 
+          {/* Jira issue panel — show to all voters when issue is linked or user is connected */}
+          {roomStatus !== Status.None && (isJiraConnected || jiraIssue !== null) && (
+            <div className="mx-auto w-full max-w-2xl px-4 pb-3">
+              <JiraIssuePanel
+                issue={jiraIssue}
+                siteUrl={jiraSiteUrl}
+                roomStatus={roomStatus === Status.RevealedCards ? 'REVEALED_CARDS' : 'VOTING'}
+                consensusValue={consensusValue}
+                canEdit={isJiraConnected}
+                onPickIssue={() => setIsJiraPickerOpen(true)}
+                onSaveToJira={handleSaveToJira}
+              />
+            </div>
+          )}
+
           {/* Sticky bottom — cards bar */}
           {roomStatus !== Status.None && (
             <div className="sticky bottom-0 z-20">
@@ -528,6 +602,14 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         onSetHoveredCardCenter={launcher.setHoveredCardCenter}
         onFireAt={(x, y, memberId, context) => launcher.handleFire(x, y, memberId, context)}
         myCardRef={myCardRef}
+        jiraConnectSlot={
+          <JiraConnectButton
+            isConnected={isJiraConnected}
+            roomId={roomId ?? ''}
+            onConnected={handleJiraConnected}
+            onDisconnected={handleJiraDisconnected}
+          />
+        }
       />
 
       {/* Mobile players toggle button */}
@@ -579,6 +661,16 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         onToggle={() => { setIsChatOpen((o) => !o); setUnreadCount(0) }}
         onInputChange={setChatInput}
         onSend={handleSendChat}
+      />
+
+      <JiraIssuePicker
+        open={isJiraPickerOpen}
+        onOpenChange={setIsJiraPickerOpen}
+        cloudId={cloudId}
+        onSelect={(issue) => {
+          handleIssueSelect(issue)
+          setIsJiraPickerOpen(false)
+        }}
       />
 
       <JoinRoomDialog

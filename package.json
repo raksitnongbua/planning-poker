@@ -43,6 +43,7 @@
     "react": "19.2.4",
     "react-card-flip": "^1.2.2",
     "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
     "react-use-websocket": "^4.8.1",
     "sharp": "^0.33.2",
     "tailwind-merge": "^2.2.1",
