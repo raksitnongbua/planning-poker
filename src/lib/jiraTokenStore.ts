@@ -1,24 +1,20 @@
-// Server-side in-memory store for Jira tokens.
-// Avoids storing large JWT tokens in cookies (which causes 431 errors).
-// Note: tokens are cleared on server restart — acceptable for demo/dev use.
+// Jira session stored in an httpOnly cookie as base64url-encoded JSON.
+// Security boundary is the httpOnly + secure + sameSite flags — no server-side state needed.
 
-interface JiraTokenEntry {
+export interface JiraTokenEntry {
   accessToken: string
-  refreshToken: string
   cloudId: string
   siteUrl: string
 }
 
-const store = new Map<string, JiraTokenEntry>()
-
-export function setJiraTokens(sessionId: string, entry: JiraTokenEntry) {
-  store.set(sessionId, entry)
+export function encodeJiraSession(entry: JiraTokenEntry): string {
+  return Buffer.from(JSON.stringify(entry)).toString('base64url')
 }
 
-export function getJiraTokens(sessionId: string): JiraTokenEntry | undefined {
-  return store.get(sessionId)
-}
-
-export function deleteJiraTokens(sessionId: string) {
-  store.delete(sessionId)
+export function decodeJiraSession(token: string): JiraTokenEntry | null {
+  try {
+    return JSON.parse(Buffer.from(token, 'base64url').toString('utf8')) as JiraTokenEntry
+  } catch {
+    return null
+  }
 }

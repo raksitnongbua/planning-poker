@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { JIRA_SESSION_COOKIE } from '@/constant/jira'
-import { getJiraTokens } from '@/lib/jiraTokenStore'
+import { decodeJiraSession } from '@/lib/jiraTokenStore'
 
 export interface JiraField {
   id: string
@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
   }
 
   const cookieStore = await cookies()
-  const sessionId = cookieStore.get(JIRA_SESSION_COOKIE)?.value
-  const entry = sessionId ? getJiraTokens(sessionId) : undefined
+  const token = cookieStore.get(JIRA_SESSION_COOKIE)?.value
+  const entry = token ? decodeJiraSession(token) : null
 
   if (!entry) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
@@ -27,12 +27,7 @@ export async function GET(request: NextRequest) {
 
   const res = await fetch(
     `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/field`,
-    {
-      headers: {
-        Authorization: `Bearer ${entry.accessToken}`,
-        Accept: 'application/json',
-      },
-    }
+    { headers: { Authorization: `Bearer ${entry.accessToken}`, Accept: 'application/json' } }
   )
 
   if (!res.ok) {
@@ -41,7 +36,6 @@ export async function GET(request: NextRequest) {
 
   const fields: { id: string; name: string; schema?: { type: string } }[] = await res.json()
 
-  // Return only numeric custom fields likely to be story points
   const numericFields = fields.filter(
     (f) => f.schema != null && f.schema.type === 'number' && f.id.startsWith('customfield_')
   )

@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { JIRA_SESSION_COOKIE } from '@/constant/jira'
-import { getJiraTokens, setJiraTokens } from '@/lib/jiraTokenStore'
+import { decodeJiraSession } from '@/lib/jiraTokenStore'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -14,39 +14,18 @@ export async function GET(request: NextRequest) {
   }
 
   const cookieStore = await cookies()
-  const sessionId = cookieStore.get(JIRA_SESSION_COOKIE)?.value
-  const entry = sessionId ? getJiraTokens(sessionId) : undefined
+  const token = cookieStore.get(JIRA_SESSION_COOKIE)?.value
+  const entry = token ? decodeJiraSession(token) : null
 
   if (!entry) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
-  // Back-fill siteUrl for sessions created before this field was added
-  if (!entry.siteUrl && sessionId) {
-    const resourcesRes = await fetch('https://api.atlassian.com/oauth/token/accessible-resources', {
-      headers: { Authorization: `Bearer ${entry.accessToken}`, Accept: 'application/json' },
-    })
-    if (resourcesRes.ok) {
-      const resources = await resourcesRes.json()
-      const siteUrl = resources[0]?.url ?? ''
-      setJiraTokens(sessionId, { ...entry, siteUrl })
-      entry.siteUrl = siteUrl
-    }
-  }
-
-  const params = new URLSearchParams({
-    query: q,
-    currentJQL: 'order by updated DESC',
-  })
+  const params = new URLSearchParams({ query: q, currentJQL: 'order by updated DESC' })
 
   const res = await fetch(
     `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/issue/picker?${params.toString()}`,
-    {
-      headers: {
-        Authorization: `Bearer ${entry.accessToken}`,
-        Accept: 'application/json',
-      },
-    }
+    { headers: { Authorization: `Bearer ${entry.accessToken}`, Accept: 'application/json' } }
   )
 
   if (!res.ok) {
