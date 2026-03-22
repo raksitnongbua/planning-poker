@@ -397,7 +397,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
 
   const consensusValue =
     roomStatus === Status.RevealedCards && result.size > 0
-      ? [...result.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
+      ? Array.from(result.entries()).sort((a, b) => b[1] - a[1])[0]?.[0]
       : undefined
 
   const handleSendChat = () => {
