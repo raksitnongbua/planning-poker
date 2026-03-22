@@ -6,8 +6,8 @@ import { useTranslations } from 'next-intl'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import useWebSocket, { ReadyState } from 'react-use-websocket'
 
-import type { JiraIssue } from '@/components/JiraIntegration'
-import { JiraConnectButton, JiraIssuePanel, JiraIssuePicker } from '@/components/JiraIntegration'
+import type { TicketEstimation } from '@/components/JiraIntegration'
+import { TicketEstimationPicker } from '@/components/JiraIntegration'
 import { useToast } from '@/components/ui/use-toast'
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 
@@ -94,7 +94,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const prevRoomStatusRef = React.useRef<Status>(Status.None)
   const pendingActionActorRef = React.useRef<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
-  const [jiraIssue, setJiraIssue] = useState<JiraIssue | null>(null)
+  const [ticketEstimation, setTicketEstimation] = useState<TicketEstimation | null>(null)
   const [isJiraConnected, setIsJiraConnected] = useState(false)
   const [cloudId, setCloudId] = useState('')
   const [jiraSiteUrl, setJiraSiteUrl] = useState('')
@@ -293,7 +293,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
           })
           setResult(newResult)
         }
-        setJiraIssue(payload.current_jira_issue ?? null)
+        setTicketEstimation(payload.ticket_estimation ?? null)
 
         {
           const prevMembers = prevMembersRef.current
@@ -370,19 +370,24 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const handleJiraDisconnected = useCallback(() => {
     setIsJiraConnected(false)
     setCloudId('')
-    sendJsonMessage({ action: 'SET_JIRA_ISSUE', payload: { jiraIssue: null } })
+    // Ticket stays visible for all — disconnect only clears local Jira connection
+  }, [])
+
+  const handleRemoveTicket = useCallback(() => {
+    setTicketEstimation(null)
+    sendJsonMessage({ action: 'SET_TICKET_ESTIMATION', payload: { ticketEstimation: null } })
   }, [sendJsonMessage])
 
-  const handleIssueSelect = useCallback((issue: JiraIssue) => {
-    setJiraIssue(issue)
-    sendJsonMessage({ action: 'SET_JIRA_ISSUE', payload: { jiraIssue: issue } })
+  const handleTicketSelect = useCallback((estimation: TicketEstimation) => {
+    setTicketEstimation(estimation)
+    sendJsonMessage({ action: 'SET_TICKET_ESTIMATION', payload: { ticketEstimation: estimation } })
   }, [sendJsonMessage])
 
-  async function handleSaveToJira(issue: JiraIssue, value: number, fieldId: string) {
-    const res = await fetch(`/api/jira/issues/${issue.key}/estimate`, {
+  async function handleSaveToJira(estimation: TicketEstimation, value: number, fieldId: string) {
+    const res = await fetch(`/api/jira/issues/${estimation.jiraKey}/estimate`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cloudId: issue.cloudId, value, storyPointsField: fieldId }),
+      body: JSON.stringify({ cloudId: estimation.jiraCloudId, value, storyPointsField: fieldId }),
     })
     if (!res.ok) throw new Error('save failed')
   }
@@ -449,7 +454,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
 
           {/* Table centered in main space */}
           <div
-            className="relative flex flex-1 flex-col items-center justify-center py-8 w-full overflow-hidden"
+            className="relative flex flex-1 flex-col items-center justify-center py-4 w-full overflow-hidden"
             style={launcher.armedEmoji ? { cursor: ARMED_CURSOR } : undefined}
             onClick={(e) => {
               if (!launcher.armedEmoji) return
@@ -470,6 +475,12 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                 roomName={roomName}
                 status={roomStatus}
                 isSpectator={isSpectator}
+                ticketEstimation={ticketEstimation}
+                isJiraConnected={isJiraConnected}
+                jiraSiteUrl={jiraSiteUrl}
+                cloudId={cloudId}
+                roomId={roomId ?? ''}
+                consensusValue={consensusValue}
                 onReveal={() => {
                   pendingActionActorRef.current = members.find((m) => m.id === id)?.name ?? null
                   sendJsonMessage({ action: 'REVEAL_CARDS' })
@@ -478,6 +489,11 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                   pendingActionActorRef.current = members.find((m) => m.id === id)?.name ?? null
                   sendJsonMessage({ action: 'RESET_ROOM' })
                 }}
+                onSetTicket={() => setIsJiraPickerOpen(true)}
+                onRemoveTicket={handleRemoveTicket}
+                onSaveToJira={handleSaveToJira}
+                onJiraConnected={handleJiraConnected}
+                onJiraDisconnected={handleJiraDisconnected}
               />
             )}
 
@@ -494,21 +510,6 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
               />
             )}
           </div>
-
-          {/* Jira issue panel — show to all voters when issue is linked or user is connected */}
-          {roomStatus !== Status.None && (isJiraConnected || jiraIssue !== null) && (
-            <div className="mx-auto w-full max-w-2xl px-4 pb-3">
-              <JiraIssuePanel
-                issue={jiraIssue}
-                siteUrl={jiraSiteUrl}
-                roomStatus={roomStatus === Status.RevealedCards ? 'REVEALED_CARDS' : 'VOTING'}
-                consensusValue={consensusValue}
-                canEdit={isJiraConnected}
-                onPickIssue={() => setIsJiraPickerOpen(true)}
-                onSaveToJira={handleSaveToJira}
-              />
-            </div>
-          )}
 
           {/* Sticky bottom — cards bar */}
           {roomStatus !== Status.None && (
@@ -602,14 +603,6 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         onSetHoveredCardCenter={launcher.setHoveredCardCenter}
         onFireAt={(x, y, memberId, context) => launcher.handleFire(x, y, memberId, context)}
         myCardRef={myCardRef}
-        jiraConnectSlot={
-          <JiraConnectButton
-            isConnected={isJiraConnected}
-            roomId={roomId ?? ''}
-            onConnected={handleJiraConnected}
-            onDisconnected={handleJiraDisconnected}
-          />
-        }
       />
 
       {/* Mobile players toggle button */}
@@ -663,12 +656,13 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         onSend={handleSendChat}
       />
 
-      <JiraIssuePicker
+      <TicketEstimationPicker
         open={isJiraPickerOpen}
         onOpenChange={setIsJiraPickerOpen}
+        isJiraConnected={isJiraConnected}
         cloudId={cloudId}
-        onSelect={(issue) => {
-          handleIssueSelect(issue)
+        onSelect={(estimation) => {
+          handleTicketSelect(estimation)
           setIsJiraPickerOpen(false)
         }}
       />
