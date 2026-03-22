@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import {
   Dialog,
@@ -29,6 +30,7 @@ const DEFAULT_FIELD_ID = 'customfield_10016'
 const FIELD_STORAGE_KEY = 'jira_story_points_field'
 
 export function JiraIssuePicker({ open, onOpenChange, cloudId, onSelect }: Props) {
+  const t = useTranslations('room.jira')
   const [query, setQuery] = useState('')
   const [issues, setIssues] = useState<JiraIssue[]>([])
   const [loading, setLoading] = useState(false)
@@ -113,14 +115,14 @@ export function JiraIssuePicker({ open, onOpenChange, cloudId, onSelect }: Props
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="border-border/40 bg-background sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-base">Search Jira Issues</DialogTitle>
+          <DialogTitle className="text-base">{t('searchDialogTitle')}</DialogTitle>
         </DialogHeader>
 
         {/* Story points field selector */}
         <div className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/20 px-3 py-2">
           <div className="flex flex-col gap-0.5">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-              Story Points Field
+              {t('storyPointsField')}
             </span>
             <span className="text-xs text-foreground">
               {selectedField?.name ?? selectedFieldId}
@@ -133,7 +135,7 @@ export function JiraIssuePicker({ open, onOpenChange, cloudId, onSelect }: Props
             className="text-xs text-primary hover:underline"
             onClick={() => setShowFieldPicker((v) => !v)}
           >
-            {showFieldPicker ? 'Cancel' : 'Change'}
+            {showFieldPicker ? t('cancel') : t('change')}
           </button>
         </div>
 
@@ -147,7 +149,7 @@ export function JiraIssuePicker({ open, onOpenChange, cloudId, onSelect }: Props
             )}
             {!fieldsLoading && fields.length === 0 && (
               <p className="py-4 text-center text-xs text-muted-foreground">
-                No numeric custom fields found
+                {t('noNumericFields')}
               </p>
             )}
             {!fieldsLoading && fields.map((field) => (
@@ -166,7 +168,7 @@ export function JiraIssuePicker({ open, onOpenChange, cloudId, onSelect }: Props
 
         <Input
           autoFocus
-          placeholder="Search by key or title..."
+          placeholder={t('searchPlaceholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="border-border/40 bg-muted/20"
@@ -183,13 +185,13 @@ export function JiraIssuePicker({ open, onOpenChange, cloudId, onSelect }: Props
 
           {!loading && !query.trim() && (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              Type to search issues
+              {t('typeToSearch')}
             </p>
           )}
 
           {!loading && query.trim() && issues.length === 0 && (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              No issues found
+              {t('noIssuesFound')}
             </p>
           )}
 

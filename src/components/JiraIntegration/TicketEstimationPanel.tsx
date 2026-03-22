@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import ReactMarkdown from 'react-markdown'
 
 import { Button } from '@/components/ui/button'
@@ -59,6 +60,7 @@ export function TicketEstimationPanel({
   onPickIssue,
   onSaveToJira,
 }: Props) {
+  const t = useTranslations('room.jira')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState(false)
@@ -168,11 +170,11 @@ export function TicketEstimationPanel({
           <GenericTicketIcon className="size-5 text-muted-foreground/60" />
         </div>
         <div>
-          <p className="text-sm font-medium text-foreground">No ticket linked</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Set a ticket to track estimation</p>
+          <p className="text-sm font-medium text-foreground">{t('noTicketLinked')}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{t('noTicketLinkedDesc')}</p>
         </div>
         <Button size="sm" variant="outline" className="border-border/40" onClick={onPickIssue}>
-          Set Ticket
+          {t('setTicketButton')}
         </Button>
       </div>
     )
@@ -218,7 +220,7 @@ export function TicketEstimationPanel({
                 className="mt-1.5 text-xs text-primary/70 transition-colors duration-150 hover:text-primary"
                 onClick={handleReadMore}
               >
-                Read more
+                {t('readMore')}
               </button>
             )}
           </div>
@@ -229,7 +231,7 @@ export function TicketEstimationPanel({
           className="shrink-0 text-xs text-muted-foreground hover:text-foreground"
           onClick={onPickIssue}
         >
-          Change
+          {t('change')}
         </Button>
       </div>
 
@@ -241,7 +243,7 @@ export function TicketEstimationPanel({
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-0.5">
               <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-                Updating field
+                {t('updatingField')}
               </span>
               <span className="text-xs text-foreground">
                 {selectedField?.name ?? selectedFieldId}
@@ -254,7 +256,7 @@ export function TicketEstimationPanel({
               className="text-xs text-primary hover:underline"
               onClick={() => setShowFieldPicker((v) => !v)}
             >
-              {showFieldPicker ? 'Cancel' : 'Change field'}
+              {showFieldPicker ? t('cancel') : t('changeField')}
             </button>
           </div>
 
@@ -269,7 +271,7 @@ export function TicketEstimationPanel({
                 </div>
               )}
               {!fieldsLoading && fields.length === 0 && (
-                <p className="py-3 text-center text-xs text-muted-foreground">No numeric fields found</p>
+                <p className="py-3 text-center text-xs text-muted-foreground">{t('noNumericFieldsShort')}</p>
               )}
               {!fieldsLoading && fields.map((field) => (
                 <button
@@ -288,7 +290,7 @@ export function TicketEstimationPanel({
           {/* Estimate + save button */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Estimate:</span>
+              <span className="text-xs text-muted-foreground">{t('estimate')}</span>
               <span className="rounded-md bg-primary/10 px-2 py-0.5 font-mono text-sm font-bold text-primary ring-1 ring-inset ring-primary/30">
                 {consensusValue}
               </span>
@@ -299,17 +301,17 @@ export function TicketEstimationPanel({
                 <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                Saved to Jira!
+                {t('savedToJira')}
               </div>
             ) : (
               <Button size="sm" onClick={handleSave} disabled={saving}>
-                {saving ? 'Saving...' : 'Save to Jira'}
+                {saving ? t('saving') : t('saveToJira')}
               </Button>
             )}
           </div>
 
           {saveError && (
-            <p className="mt-1 text-[11px] text-red-400">Failed to save. Check Jira permissions.</p>
+            <p className="mt-1 text-[11px] text-red-400">{t('saveFailed')}</p>
           )}
         </div>
       )}
@@ -356,7 +358,7 @@ export function TicketEstimationPanel({
                     {fullDescription}
                   </ReactMarkdown>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No description available.</p>
+                  <p className="text-sm text-muted-foreground">{t('noDescription')}</p>
                 )
               )}
             </div>

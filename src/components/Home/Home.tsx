@@ -8,6 +8,7 @@ import {
   faEye,
   faInfinity,
   faLayerGroup,
+  faLink,
   faSyncAlt,
   faUnlockKeyhole,
 } from '@fortawesome/free-solid-svg-icons'
@@ -39,6 +40,7 @@ const Home = () => {
     { icon: faSyncAlt, title: t('why.crossPlatformTitle'), description: t('why.crossPlatformDesc') },
     { icon: faEye, title: t('why.spectatorTitle'), description: t('why.spectatorDesc') },
     { icon: faBolt, title: t('why.interactiveTitle'), description: t('why.interactiveDesc') },
+    { icon: faLink, title: t('why.jiraTitle'), description: t('why.jiraDesc') },
     {
       icon: faCode,
       title: t('why.openSourceTitle'),
@@ -192,6 +194,81 @@ const Home = () => {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+
+        {/* Jira Integration */}
+        <div className="space-y-8">
+          <div className="space-y-3">
+            <h2 className="flex items-center gap-2 text-2xl font-semibold">
+              <span className="inline-block size-2 animate-pulse rounded-full bg-primary" />
+              {t('jira.heading')}
+            </h2>
+            <p className="max-w-2xl leading-relaxed text-muted-foreground">
+              {t('jira.subtitle')}
+            </p>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
+            {/* 3-step flow */}
+            <div className="space-y-5">
+              {[
+                { n: '1', title: t('jira.step1Title'), desc: t('jira.step1Desc') },
+                { n: '2', title: t('jira.step2Title'), desc: t('jira.step2Desc') },
+                { n: '3', title: t('jira.step3Title'), desc: t('jira.step3Desc') },
+              ].map(({ n, title, desc }) => (
+                <div key={n} className="flex gap-4">
+                  <div className="relative flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    <span className="absolute inline-flex size-full animate-aura rounded-full bg-primary" />
+                    <span className="relative">{n}</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold">{title}</p>
+                    <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Mock ticket panel — static visual */}
+            <div className="rounded-xl border border-border/40 bg-muted/20 p-5">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded bg-blue-500/10">
+                  <svg className="size-3.5 text-blue-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M11.53 2c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.95 4.34 4.34 4.35V2.84a.84.84 0 0 0-.84-.84zM6.77 6.8c0 2.4 1.96 4.34 4.35 4.34h1.78v1.71c0 2.4 1.95 4.34 4.35 4.35V7.63a.84.84 0 0 0-.84-.83zM2 11.6c0 2.4 1.95 4.34 4.35 4.34h1.78v1.71A4.35 4.35 0 0 0 12.48 22v-9.57a.84.84 0 0 0-.84-.83z" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="font-mono text-sm font-bold text-primary">{t('jira.mockKey')}</span>
+                  <p className="mt-1 line-clamp-2 text-sm text-foreground">{t('jira.mockTitle')}</p>
+                </div>
+              </div>
+
+              <div className="my-4 border-t border-border/40" />
+
+              <div className="space-y-3">
+                <div>
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                    Updating field
+                  </span>
+                  <p className="text-xs text-foreground">{t('jira.mockField')}</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Estimate:</span>
+                    <span className="rounded-md bg-primary/10 px-2 py-0.5 font-mono text-sm font-bold text-primary ring-1 ring-inset ring-primary/30">
+                      {t('jira.mockValue')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-md bg-green-500/10 px-2.5 py-1 text-xs font-medium text-green-400">
+                    <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    {t('jira.savedLabel')}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

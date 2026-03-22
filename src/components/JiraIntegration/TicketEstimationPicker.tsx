@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -49,6 +50,7 @@ function JiraIcon({ className }: { className?: string }) {
 }
 
 export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cloudId, onSelect }: Props) {
+  const t = useTranslations('room.jira')
   const [activeTab, setActiveTab] = useState<Tab>('text')
   const [freeText, setFreeText] = useState('')
 
@@ -159,7 +161,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="border-border/40 bg-background sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-base">Set Ticket</DialogTitle>
+          <DialogTitle className="text-base">{t('setTicketTitle')}</DialogTitle>
         </DialogHeader>
 
         {/* Tab switcher — only shown when Jira is connected */}
@@ -174,7 +176,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
               onClick={() => setActiveTab('jira')}
             >
               <JiraIcon className="size-3.5 text-blue-400" />
-              Jira
+              {t('tabJira')}
             </button>
             <button
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium transition-colors ${
@@ -185,7 +187,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
               onClick={() => setActiveTab('text')}
             >
               <GenericTicketIcon className="size-3.5" />
-              Free text
+              {t('tabFreeText')}
             </button>
           </div>
         )}
@@ -195,12 +197,12 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
           <div className="flex flex-col gap-3">
             {!isJiraConnected && (
               <p className="text-xs text-muted-foreground">
-                Enter a ticket name to display on the table for all voters.
+                {t('freeTextHint')}
               </p>
             )}
             <Input
               autoFocus
-              placeholder="e.g. Fix login bug, PROJ-42, Sprint 5 API..."
+              placeholder={t('freeTextPlaceholder')}
               value={freeText}
               onChange={(e) => setFreeText(e.target.value)}
               className="border-border/40 bg-muted/20"
@@ -213,7 +215,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
               onClick={handleFreeTextSubmit}
               disabled={!freeText.trim()}
             >
-              Set Ticket
+              {t('setTicketButton')}
             </Button>
           </div>
         )}
@@ -225,7 +227,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
             <div className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/20 px-3 py-2">
               <div className="flex flex-col gap-0.5">
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-                  Story Points Field
+                  {t('storyPointsField')}
                 </span>
                 {fieldsLoading ? (
                   <Skeleton className="mt-0.5 h-4 w-32" />
@@ -242,7 +244,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                 className="text-xs text-primary hover:underline"
                 onClick={() => { setShowFieldPicker((v) => !v); setFieldSearch('') }}
               >
-                {showFieldPicker ? 'Cancel' : 'Change'}
+                {showFieldPicker ? t('cancel') : t('change')}
               </button>
             </div>
 
@@ -251,7 +253,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                 <div className="border-b border-border/40 p-1.5">
                   <Input
                     autoFocus
-                    placeholder="Search field..."
+                    placeholder={t('searchFieldPlaceholder')}
                     value={fieldSearch}
                     onChange={(e) => setFieldSearch(e.target.value)}
                     className="h-7 border-border/40 bg-muted/20 text-xs"
@@ -264,7 +266,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                     </div>
                   )}
                   {!fieldsLoading && filteredFields.length === 0 && (
-                    <p className="py-3 text-center text-xs text-muted-foreground">No fields found</p>
+                    <p className="py-3 text-center text-xs text-muted-foreground">{t('noFieldsFound')}</p>
                   )}
                   {!fieldsLoading && filteredFields.map((field) => (
                     <button
@@ -288,7 +290,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
 
             <Input
               autoFocus
-              placeholder="Search by key or title..."
+              placeholder={t('searchPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="border-border/40 bg-muted/20"
@@ -304,11 +306,11 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
               )}
 
               {!loading && !query.trim() && (
-                <p className="py-6 text-center text-sm text-muted-foreground">Type to search issues</p>
+                <p className="py-6 text-center text-sm text-muted-foreground">{t('typeToSearch')}</p>
               )}
 
               {!loading && query.trim() && issues.length === 0 && (
-                <p className="py-6 text-center text-sm text-muted-foreground">No issues found</p>
+                <p className="py-6 text-center text-sm text-muted-foreground">{t('noIssuesFound')}</p>
               )}
 
               {!loading && issues.length > 0 && (
