@@ -18,7 +18,7 @@ const appSchema = {
   description:
     'Free online planning poker tool for agile teams to estimate story points collaboratively in real-time. No registration required.',
   datePublished: '2024-01-01',
-  softwareVersion: '2.5.0',
+  softwareVersion: '2.6.1',
   screenshot: [
     {
       '@type': 'ImageObject',
@@ -39,6 +39,7 @@ const appSchema = {
     'Invite via room link',
     'Spectator mode',
     'Google Sign-In for cross-device sync',
+    'Jira integration — link issues and sync story point estimates',
     'Free forever',
   ],
   inLanguage: 'en-US',

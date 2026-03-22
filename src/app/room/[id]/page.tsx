@@ -27,7 +27,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     openGraph: {
       title: 'Corgi Planning Poker | Room',
       description:
-        'Join this planning poker room to estimate story points with your agile team in real-time.',
+        'Join this planning poker room to estimate story points with your agile team in real-time. Supports Jira integration.',
       locale: 'en_US',
       siteName: 'Corgi Planning Poker',
       type: 'website',
