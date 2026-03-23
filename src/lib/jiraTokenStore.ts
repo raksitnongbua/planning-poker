@@ -20,17 +20,14 @@ export function decodeJiraSession(token: string): JiraTokenEntry | null {
 }
 
 // --- Refresh token cookie helpers ---
+// Atlassian refresh tokens are JWTs (base64url-safe) — store raw, no extra encoding needed.
 
 export function encodeJiraRefresh(rt: string): string {
-  return Buffer.from(rt).toString('base64url')
+  return rt
 }
 
 export function decodeJiraRefresh(value: string): string | null {
-  try {
-    return Buffer.from(value, 'base64url').toString('utf8')
-  } catch {
-    return null
-  }
+  return value || null
 }
 
 // --- Token refresh helper ---
