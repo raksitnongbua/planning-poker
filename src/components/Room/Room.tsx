@@ -95,6 +95,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const pendingActionActorRef = React.useRef<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const [ticketEstimation, setTicketEstimation] = useState<TicketEstimation | null>(null)
+  const [finalStoryPoint, setFinalStoryPoint] = useState<string>('')
   const [isJiraConnected, setIsJiraConnected] = useState(false)
   const [cloudId, setCloudId] = useState('')
   const [jiraSiteUrl, setJiraSiteUrl] = useState('')
@@ -294,6 +295,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
           setResult(newResult)
         }
         setTicketEstimation(payload.ticket_estimation ?? null)
+        setFinalStoryPoint(payload.final_story_point ?? '')
 
         {
           const prevMembers = prevMembersRef.current
@@ -372,6 +374,10 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
     setCloudId('')
     // Ticket stays visible for all — disconnect only clears local Jira connection
   }, [])
+
+  const handleSetFinalStoryPoint = useCallback((value: string) => {
+    sendJsonMessage({ action: 'SET_FINAL_STORY_POINT', payload: { value } })
+  }, [sendJsonMessage])
 
   const handleRemoveTicket = useCallback(() => {
     setTicketEstimation(null)
@@ -481,6 +487,9 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                 cloudId={cloudId}
                 roomId={roomId ?? ''}
                 consensusValue={consensusValue}
+                finalStoryPoint={finalStoryPoint}
+                deckOptions={cardOptions}
+                onSetFinalStoryPoint={handleSetFinalStoryPoint}
                 onReveal={() => {
                   pendingActionActorRef.current = members.find((m) => m.id === id)?.name ?? null
                   sendJsonMessage({ action: 'REVEAL_CARDS' })

@@ -2,7 +2,7 @@
 import { faEye, faRotateRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useTranslations } from 'next-intl'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import ReactCardFlip from 'react-card-flip'
 
 import type { TicketEstimation } from '@/components/JiraIntegration'
@@ -26,6 +26,8 @@ export interface RoomTableProps {
   cloudId?: string
   roomId?: string
   consensusValue?: string
+  finalStoryPoint?: string
+  deckOptions?: string[]
   onReveal: () => void
   onReset: () => void
   onSetTicket?: () => void
@@ -33,6 +35,7 @@ export interface RoomTableProps {
   onSaveToJira?: (estimation: TicketEstimation, value: number, fieldId: string) => Promise<void>
   onJiraConnected?: () => void
   onJiraDisconnected?: () => void
+  onSetFinalStoryPoint?: (value: string) => void
 }
 
 const TABLE_W = 600
@@ -42,8 +45,9 @@ const TABLE_PAD = 60
 const RoomTable: React.FC<RoomTableProps> = ({
   result, maxPoint, members, roomName, status, isSpectator,
   ticketEstimation, isJiraConnected = false, jiraSiteUrl = '', cloudId = '',
-  roomId = '', consensusValue, onReveal, onReset,
-  onSetTicket, onRemoveTicket, onSaveToJira, onJiraConnected, onJiraDisconnected,
+  roomId = '', consensusValue, finalStoryPoint, deckOptions,
+  onReveal, onReset, onSetTicket, onRemoveTicket, onSaveToJira,
+  onJiraConnected, onJiraDisconnected, onSetFinalStoryPoint,
 }) => {
   const t = useTranslations('room')
   const [tableScale, setTableScale] = useState(1)
@@ -104,6 +108,40 @@ const RoomTable: React.FC<RoomTableProps> = ({
   }, [averagePoint, status])
 
   const isRevealed = status === Status.RevealedCards
+
+  // Story point picker state
+  const [customInput, setCustomInput] = useState('')
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const customInputRef = useRef<HTMLInputElement>(null)
+
+  const numericDeckOptions = useMemo(() => {
+    if (!deckOptions) return []
+    return deckOptions.map(Number).filter((v) => !isNaN(v) && isFinite(v)).sort((a, b) => a - b)
+  }, [deckOptions])
+
+  const showFinalPicker = isRevealed && deckOptions && deckOptions.length > 0
+
+  useEffect(() => {
+    if (!isRevealed) { setPickerOpen(false); return }
+    if (!deckOptions || numericDeckOptions.length === 0) return
+    const nearest = numericDeckOptions.reduce((prev, cur) =>
+      Math.abs(cur - averagePoint) < Math.abs(prev - averagePoint) ? cur : prev
+    )
+    const matched = deckOptions.find((opt) => Number(opt) === nearest)
+    if (matched) onSetFinalStoryPoint?.(matched)
+  }, [isRevealed, averagePoint]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handlePickFinalPoint(value: string) {
+    onSetFinalStoryPoint?.(value)
+    setCustomInput('')
+    setPickerOpen(false)
+  }
+
+  function handleCustomConfirm() {
+    const trimmed = customInput.trim()
+    if (!trimmed) return
+    handlePickFinalPoint(trimmed)
+  }
 
   // Frozen snapshot of the last revealed state — never resets during the flip-back animation
   const [frozenScore, setFrozenScore] = useState(0)
@@ -198,6 +236,73 @@ const RoomTable: React.FC<RoomTableProps> = ({
     </>
   )
 
+  // Final story point picker section
+  const finalPickerSection = showFinalPicker ? (
+    <div className="mt-2 w-full max-w-[200px]">
+      {/* Avg row */}
+      <div className="flex items-center justify-between rounded-t-lg border border-border/40 bg-muted/10 px-2.5 py-1.5">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Avg</span>
+        <span className="font-mono text-xs font-bold text-muted-foreground">{averagePoint.toFixed(1)}</span>
+      </div>
+      {/* Final row */}
+      <div className="flex flex-col gap-1.5 rounded-b-lg border-x border-b border-border/40 bg-muted/10 px-2.5 py-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Final</span>
+          {!pickerOpen && (
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-xs font-bold text-primary">{finalStoryPoint}</span>
+              <button
+                className="flex items-center justify-center rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-foreground"
+                onClick={() => setPickerOpen(true)}
+              >
+                <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6-6 3 3-6 6H9v-3z" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+        {pickerOpen && (
+          <div className="flex flex-wrap gap-1">
+            {deckOptions?.map((opt) => (
+              <button
+                key={opt}
+                className={`rounded-full border px-2 py-0.5 text-[10px] font-bold transition-colors ${
+                  finalStoryPoint === opt
+                    ? 'border-primary/40 bg-primary/20 text-primary'
+                    : 'border-border/40 bg-muted/20 text-muted-foreground hover:border-primary/30 hover:bg-primary/10 hover:text-primary'
+                }`}
+                onClick={() => handlePickFinalPoint(opt)}
+              >
+                {opt}
+              </button>
+            ))}
+            {/* Custom input */}
+            <div className="flex items-center gap-0.5">
+              <input
+                ref={customInputRef}
+                type="text"
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleCustomConfirm() }}
+                placeholder="…"
+                className="w-10 rounded-full border border-border/40 bg-muted/20 px-1.5 py-0.5 text-center text-[10px] text-foreground outline-none placeholder:text-muted-foreground/30 focus:border-primary/40 focus:bg-primary/5"
+              />
+              {customInput.trim() && (
+                <button
+                  className="text-[10px] text-primary hover:text-primary/80 transition-colors"
+                  onClick={handleCustomConfirm}
+                >
+                  ✓
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  ) : null
+
   return (
     <div data-section="room-table" className="flex flex-col items-center gap-3 w-full">
 
@@ -211,6 +316,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
             {jumboCardFront(90, 135)}
           </ReactCardFlip>
           <div className="flex h-10 items-center justify-center">{actionButtons}</div>
+          {finalPickerSection}
         </div>
 
         {/* Desktop: card + action buttons to the left of the table */}
@@ -227,6 +333,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
             </ReactCardFlip>
           </div>
           <div className="mt-2 flex h-10 w-full items-center justify-center">{actionButtons}</div>
+          {finalPickerSection}
         </div>
 
         {/* Table: scaled on mobile, natural size on desktop */}
@@ -252,6 +359,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
                   roomId={roomId}
                   roomStatus={status === Status.RevealedCards ? 'REVEALED_CARDS' : 'VOTING'}
                   consensusValue={consensusValue}
+                  finalStoryPoint={finalStoryPoint}
                   onSet={onSetTicket}
                   onRemove={onRemoveTicket}
                   onSaveToJira={onSaveToJira}
