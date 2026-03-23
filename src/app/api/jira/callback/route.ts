@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-import { JIRA_SESSION_COOKIE } from '@/constant/jira'
-import { encodeJiraSession } from '@/lib/jiraTokenStore'
+import { JIRA_RT_COOKIE, JIRA_SESSION_COOKIE } from '@/constant/jira'
+import { encodeJiraRefresh, encodeJiraSession } from '@/lib/jiraTokenStore'
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -58,6 +58,10 @@ export async function GET(request: NextRequest) {
   const redirectUrl = new URL('/jira/callback', request.url)
   const response = NextResponse.redirect(redirectUrl)
   response.cookies.set(JIRA_SESSION_COOKIE, encoded, COOKIE_OPTIONS)
+  response.cookies.set(JIRA_RT_COOKIE, encodeJiraRefresh(refresh_token), {
+    ...COOKIE_OPTIONS,
+    maxAge: 60 * 60 * 24 * 365,
+  })
 
   return response
 }
