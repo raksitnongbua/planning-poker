@@ -33,6 +33,7 @@ interface Props {
   roomId: string
   roomStatus: 'VOTING' | 'REVEALED_CARDS'
   consensusValue?: string
+  finalStoryPoint?: string
   onSet: () => void
   onRemove: () => void
   onSaveToJira: (estimation: TicketEstimation, value: number, fieldId: string) => Promise<void>
@@ -64,6 +65,7 @@ export function TicketBar({
   roomId,
   roomStatus,
   consensusValue,
+  finalStoryPoint,
   onSet,
   onRemove,
   onSaveToJira,
@@ -91,14 +93,17 @@ export function TicketBar({
 
   const prevKey = useRef('')
 
+  // Use finalStoryPoint when set, otherwise fall back to consensusValue
+  const saveValue = (finalStoryPoint && finalStoryPoint !== '') ? finalStoryPoint : consensusValue
+
   useEffect(() => {
-    const key = `${estimation?.name ?? ''}-${consensusValue ?? ''}`
+    const key = `${estimation?.name ?? ''}-${saveValue ?? ''}`
     if (key !== prevKey.current) {
       prevKey.current = key
       setSaved(false)
       setShowFieldPicker(false)
     }
-  }, [estimation?.name, consensusValue])
+  }, [estimation?.name, saveValue])
 
   useEffect(() => {
     setFields([])
@@ -118,13 +123,13 @@ export function TicketBar({
       .finally(() => setFieldsLoading(false))
   }, [isJiraConnected, estimation?.jiraCloudId, cloudId, fields.length])
 
-  const isNumericConsensus =
-    consensusValue !== undefined &&
-    !isNaN(Number(consensusValue)) &&
-    isFinite(Number(consensusValue))
+  const isNumericSaveValue =
+    saveValue !== undefined &&
+    !isNaN(Number(saveValue)) &&
+    isFinite(Number(saveValue))
 
   const isJira = estimation?.source === 'jira'
-  const canSave = isJira && isJiraConnected && roomStatus === 'REVEALED_CARDS' && isNumericConsensus
+  const canSave = isJira && isJiraConnected && roomStatus === 'REVEALED_CARDS' && isNumericSaveValue
 
   useEffect(() => {
     if (!canSave || !estimation?.jiraIssueId) {
@@ -167,13 +172,13 @@ export function TicketBar({
   }
 
   async function handleSave() {
-    if (!estimation || !consensusValue) return
+    if (!estimation || !saveValue) return
     setSaving(true)
     setSaveError(false)
     try {
-      await onSaveToJira(estimation, Number(consensusValue), selectedFieldId)
+      await onSaveToJira(estimation, Number(saveValue), selectedFieldId)
       setSaved(true)
-      setCurrentFieldValue(Number(consensusValue))
+      setCurrentFieldValue(Number(saveValue))
     } catch {
       setSaveError(true)
     } finally {
@@ -181,7 +186,7 @@ export function TicketBar({
     }
   }
 
-  const isSameValue = currentFieldValue != null && Number(consensusValue) === currentFieldValue
+  const isSameValue = currentFieldValue != null && Number(saveValue) === currentFieldValue
   const selectedField = fields.find((f) => f.id === selectedFieldId)
   const filteredFields = fieldSearch.trim()
     ? fields.filter((f) => f.name.toLowerCase().includes(fieldSearch.toLowerCase()))
@@ -361,7 +366,7 @@ export function TicketBar({
                 </>
               ) : null}
               <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-primary">
-                {consensusValue}
+                {saveValue}
               </span>
             </div>
 
