@@ -8,6 +8,22 @@ export interface JiraIssue {
   url: string
 }
 
+export interface JiraProject {
+  id: string
+  key: string
+  name: string
+  avatarUrl?: string
+}
+
+export interface JiraSprint {
+  id: number | null
+  name: string
+  state?: 'active' | 'future' | 'closed'
+  boardName?: string
+  isFavouriteBoard?: boolean
+  jqlValue: string
+}
+
 export interface TicketEstimation {
   name: string
   source: 'jira' | ''
@@ -17,4 +33,6 @@ export interface TicketEstimation {
   jiraUrl?: string
   jiraType?: string
   storyPointsField?: string
+  avgScore?: number
+  finalScore?: string
 }
