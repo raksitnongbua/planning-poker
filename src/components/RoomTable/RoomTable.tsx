@@ -2,7 +2,7 @@
 import { faEye, faRotateRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useTranslations } from 'next-intl'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import ReactCardFlip from 'react-card-flip'
 
 import type { TicketEstimation } from '@/components/JiraIntegration'
@@ -28,6 +28,7 @@ export interface RoomTableProps {
   consensusValue?: string
   finalStoryPoint?: string
   deckOptions?: string[]
+  ticketQueue?: TicketEstimation[]
   onReveal: () => void
   onReset: () => void
   onSetTicket?: () => void
@@ -36,54 +37,55 @@ export interface RoomTableProps {
   onJiraConnected?: () => void
   onJiraDisconnected?: () => void
   onSetFinalStoryPoint?: (value: string) => void
+  onTicketSelect?: (estimation: TicketEstimation) => void
 }
 
 const TABLE_W = 600
 const TABLE_H = 212
 const TABLE_PAD = 60
 
+function getScoreGradient(pct: number): string {
+  if (pct <= 20) return 'from-green-400 via-emerald-400 to-green-300'
+  if (pct <= 40) return 'from-lime-400 via-yellow-400 to-lime-300'
+  if (pct <= 60) return 'from-yellow-400 via-orange-400 to-yellow-300'
+  if (pct <= 80) return 'from-orange-500 via-primary to-orange-400'
+  return 'from-red-500 via-rose-500 to-red-400'
+}
+
+// Hoisted outside the component so it is stable across renders and
+// can be passed as a useState initializer without a deps-lint escape.
+function calcTableScale(): number {
+  return typeof window !== 'undefined' && window.innerWidth < 768
+    ? Math.min(1, (window.innerWidth - 32) / (TABLE_W + TABLE_PAD * 2))
+    : 1
+}
+
 const RoomTable: React.FC<RoomTableProps> = ({
   result, maxPoint, members, roomName, status, isSpectator,
   ticketEstimation, isJiraConnected = false, jiraSiteUrl = '', cloudId = '',
   roomId = '', consensusValue, finalStoryPoint, deckOptions,
-  onReveal, onReset, onSetTicket, onRemoveTicket, onSaveToJira,
-  onJiraConnected, onJiraDisconnected, onSetFinalStoryPoint,
+  ticketQueue = [], onReveal, onReset, onSetTicket, onRemoveTicket, onSaveToJira,
+  onJiraConnected, onJiraDisconnected, onSetFinalStoryPoint, onTicketSelect,
 }) => {
   const t = useTranslations('room')
-  const [tableScale, setTableScale] = useState(1)
+  const [tableScale, setTableScale] = useState(calcTableScale)
 
   useEffect(() => {
-    const updateScale = () => {
-      if (window.innerWidth < 768) {
-        // Scale against full container (TABLE_W + 140px avatar bleed) + 16px safe margin (8px each side)
-        // Avatars bleed ~14px outside the container in natural coords; the margin prevents overflow-x-hidden clipping
-        setTableScale(Math.min(1, (window.innerWidth - 32) / (TABLE_W + TABLE_PAD * 2)))
-      } else {
-        setTableScale(1)
-      }
-    }
-    updateScale()
+    const updateScale = () => setTableScale(calcTableScale())
     window.addEventListener('resize', updateScale)
     return () => window.removeEventListener('resize', updateScale)
   }, [])
-  const averagePoint = useMemo(() => {
-    let votingCount = 0
-    let summaryPoint = 0
-    result.forEach((value, key) => {
-      summaryPoint += Number(key) * value
-      votingCount += value
-    })
-    return summaryPoint / votingCount
-  }, [result])
+  let votingCount = 0
+  let summaryPoint = 0
+  result.forEach((value, key) => {
+    summaryPoint += Number(key) * value
+    votingCount += value
+  })
+  const averagePoint = summaryPoint / votingCount
 
   const badlyPercentage = (averagePoint / maxPoint) * 100
 
-  const scoreGradient =
-    badlyPercentage <= 20 ? 'from-green-400 via-emerald-400 to-green-300' :
-    badlyPercentage <= 40 ? 'from-lime-400 via-yellow-400 to-lime-300' :
-    badlyPercentage <= 60 ? 'from-yellow-400 via-orange-400 to-yellow-300' :
-    badlyPercentage <= 80 ? 'from-orange-500 via-primary to-orange-400' :
-                            'from-red-500 via-rose-500 to-red-400'
+  const scoreGradient = getScoreGradient(badlyPercentage)
 
   const [displayedScore, setDisplayedScore] = useState(0)
 
@@ -114,22 +116,24 @@ const RoomTable: React.FC<RoomTableProps> = ({
   const [pickerOpen, setPickerOpen] = useState(false)
   const customInputRef = useRef<HTMLInputElement>(null)
 
-  const numericDeckOptions = useMemo(() => {
-    if (!deckOptions) return []
-    return deckOptions.map(Number).filter((v) => !isNaN(v) && isFinite(v)).sort((a, b) => a - b)
-  }, [deckOptions])
-
   const showFinalPicker = isRevealed && deckOptions && deckOptions.length > 0
+  const prevIsRevealedRef = useRef(false)
 
   useEffect(() => {
+    const justRevealed = isRevealed && !prevIsRevealedRef.current
+    prevIsRevealedRef.current = isRevealed
+
     if (!isRevealed) { setPickerOpen(false); return }
-    if (!deckOptions || numericDeckOptions.length === 0) return
-    const nearest = numericDeckOptions.reduce((prev, cur) =>
+    if (!justRevealed) return
+    if (!deckOptions || deckOptions.length === 0) return
+    const numericOpts = deckOptions.map(Number).filter((v) => !isNaN(v) && isFinite(v)).sort((a, b) => a - b)
+    if (numericOpts.length === 0) return
+    const nearest = numericOpts.reduce((prev, cur) =>
       Math.abs(cur - averagePoint) < Math.abs(prev - averagePoint) ? cur : prev
     )
     const matched = deckOptions.find((opt) => Number(opt) === nearest)
     if (matched) onSetFinalStoryPoint?.(matched)
-  }, [isRevealed, averagePoint]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isRevealed, averagePoint, deckOptions, onSetFinalStoryPoint])
 
   function handlePickFinalPoint(value: string) {
     onSetFinalStoryPoint?.(value)
@@ -143,28 +147,27 @@ const RoomTable: React.FC<RoomTableProps> = ({
     handlePickFinalPoint(trimmed)
   }
 
-  // Frozen snapshot of the last revealed state — never resets during the flip-back animation
+  // Frozen snapshot of the last revealed state — never resets during the flip-back animation.
+  // Only captured once when the round is first revealed (not on every displayedScore animation tick).
   const [frozenScore, setFrozenScore] = useState(0)
   const [frozenBadlyPct, setFrozenBadlyPct] = useState(50)
   const [frozenResult, setFrozenResult] = useState(new Map<string, number>())
+  const prevIsRevealedForFreezeRef = useRef(false)
 
   useEffect(() => {
-    if (!isRevealed) return
-    setFrozenScore(displayedScore)
+    const justRevealed = isRevealed && !prevIsRevealedForFreezeRef.current
+    prevIsRevealedForFreezeRef.current = isRevealed
+    if (!justRevealed) return
+    setFrozenScore(averagePoint)
     setFrozenBadlyPct(badlyPercentage)
     setFrozenResult(new Map(result))
-  }, [isRevealed, displayedScore, badlyPercentage, result])
+  }, [isRevealed, averagePoint, badlyPercentage, result])
 
-  const frozenGradient =
-    frozenBadlyPct <= 20 ? 'from-green-400 via-emerald-400 to-green-300' :
-    frozenBadlyPct <= 40 ? 'from-lime-400 via-yellow-400 to-lime-300' :
-    frozenBadlyPct <= 60 ? 'from-yellow-400 via-orange-400 to-yellow-300' :
-    frozenBadlyPct <= 80 ? 'from-orange-500 via-primary to-orange-400' :
-                            'from-red-500 via-rose-500 to-red-400'
+  const frozenGradient = getScoreGradient(frozenBadlyPct)
 
   // Shared jumbo card JSX — rendered at different sizes for mobile vs desktop
   const jumboCardBack = (w: number, h: number) => (
-    <div className={`relative w-[${w}px] h-[${h}px] overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-muted/60 to-background shadow-2xl shadow-black/40 flex flex-col items-center justify-center`}
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-muted/60 to-background shadow-2xl shadow-black/40 flex flex-col items-center justify-center"
       style={{ width: w, height: h }}>
       <span className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shine" style={{ animationDuration: '4s' }} />
       <span className="absolute left-2.5 top-2.5 select-none text-[11px] leading-none text-muted-foreground/30">•</span>
@@ -174,7 +177,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
   )
 
   const jumboCardFront = (w: number, h: number) => (
-    <div className={`relative overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-muted/60 to-background shadow-2xl shadow-black/60 flex flex-col`}
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-muted/60 to-background shadow-2xl shadow-black/60 flex flex-col"
       style={{ width: w, height: h }}>
       <div className={`pointer-events-none absolute bottom-0 left-1/2 h-24 w-36 -translate-x-1/2 rounded-full opacity-30 blur-2xl bg-gradient-to-r ${frozenGradient}`} />
       <span className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-transparent via-white/8 to-transparent animate-shine" style={{ animationDuration: '4s' }} />
@@ -360,6 +363,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
                   roomStatus={status === Status.RevealedCards ? 'REVEALED_CARDS' : 'VOTING'}
                   consensusValue={consensusValue}
                   finalStoryPoint={finalStoryPoint}
+                  isSpectator={isSpectator}
                   onSet={onSetTicket}
                   onRemove={onRemoveTicket}
                   onSaveToJira={onSaveToJira}

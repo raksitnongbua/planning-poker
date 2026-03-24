@@ -5,17 +5,15 @@ import React from 'react'
 
 import { DonateButton } from '../DonateButton'
 
-export interface FooterProps {
-  // types...
-}
+const CURRENT_YEAR = new Date().getFullYear()
 
-const Footer: React.FC<FooterProps> = ({}) => {
+const Footer: React.FC = () => {
   const t = useTranslations('footer')
   return (
-    <footer className="mt-auto border-t border-border/40 px-4 py-5">
+    <footer className="sticky bottom-0 z-40 border-t border-border/40 bg-background/95 backdrop-blur-md px-4 py-5">
       <div className="container mx-auto flex flex-col-reverse items-center gap-4 sm:flex-row sm:justify-between">
         <span className="text-xs text-muted-foreground/50">
-          © {new Date().getFullYear()} Corgi Planning Poker
+          © {CURRENT_YEAR} Corgi Planning Poker
         </span>
         <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground/70">
           <Link href="/privacy-policy" className="transition-colors duration-150 hover:text-foreground">

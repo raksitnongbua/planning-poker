@@ -1,8 +1,7 @@
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
-import { JIRA_SESSION_COOKIE } from '@/constant/jira'
-import { decodeJiraSession } from '@/lib/jiraTokenStore'
+import { applyRefreshedCookies, getValidJiraSession } from '@/lib/jiraAuth'
 
 export async function GET(
   request: NextRequest,
@@ -18,8 +17,7 @@ export async function GET(
   }
 
   const cookieStore = await cookies()
-  const token = cookieStore.get(JIRA_SESSION_COOKIE)?.value
-  const entry = token ? decodeJiraSession(token) : null
+  const { entry, refreshed } = await getValidJiraSession(cookieStore)
 
   if (!entry) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
@@ -36,7 +34,9 @@ export async function GET(
 
   const data = await res.json()
   const value: number | null = data.fields?.[fieldId] ?? null
-  return NextResponse.json({ value })
+  const response = NextResponse.json({ value })
+  if (refreshed) applyRefreshedCookies(response, refreshed)
+  return response
 }
 
 export async function PATCH(
@@ -46,8 +46,7 @@ export async function PATCH(
   const { issueId } = await params
 
   const cookieStore = await cookies()
-  const token = cookieStore.get(JIRA_SESSION_COOKIE)?.value
-  const entry = token ? decodeJiraSession(token) : null
+  const { entry, refreshed: refreshedPatch } = await getValidJiraSession(cookieStore)
 
   if (!entry) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
@@ -78,5 +77,7 @@ export async function PATCH(
     return NextResponse.json({ ok: false, error }, { status: res.status })
   }
 
-  return NextResponse.json({ ok: true })
+  const response = NextResponse.json({ ok: true })
+  if (refreshedPatch) applyRefreshedCookies(response, refreshedPatch)
+  return response
 }

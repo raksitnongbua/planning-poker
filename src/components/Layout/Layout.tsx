@@ -4,14 +4,9 @@ import { getCookie } from 'cookies-next'
 import dynamic from 'next/dynamic'
 import { usePathname } from 'next/navigation'
 import { SessionProvider } from 'next-auth/react'
-import React, { ReactNode, useEffect } from 'react'
+import React, { ReactNode, useEffect, useState } from 'react'
 
 import { UID_KEY } from '@/constant/cookies'
-
-const ReactQueryDevtools =
-  process.env.NODE_ENV === 'development'
-    ? dynamic(() => import('@tanstack/react-query-devtools').then((m) => ({ default: m.ReactQueryDevtools })), { ssr: false })
-    : () => null
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 import { httpClient } from '@/utils/httpClient'
 import { SECONDS } from '@/utils/time'
@@ -20,6 +15,11 @@ import { Footer } from '../Footer'
 import Loading from '../Loading'
 import Navbar from '../Navbar'
 import ServiceStatus from '../ServiceStatus'
+
+const ReactQueryDevtools =
+  process.env.NODE_ENV === 'development'
+    ? dynamic(() => import('@tanstack/react-query-devtools').then((m) => ({ default: m.ReactQueryDevtools })), { ssr: false })
+    : () => null
 
 // Routes that render bare — no navbar, footer, or status overlay
 const BARE_ROUTES = ['/jira/callback', '/auth/callback']
@@ -30,6 +30,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
   const cookieUID = String(getCookie(UID_KEY))
   const pathname = usePathname()
   const isBare = BARE_ROUTES.some((r) => pathname.startsWith(r))
+  const isRoom = pathname.startsWith('/room/')
 
   const { isSuccess, isFetched } = useQuery({
     queryKey: ['health-check'],
@@ -41,7 +42,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
   const status = !isFetched ? 'connecting' : isSuccess ? 'available' : 'unavailable'
 
   useEffect(() => {
-    if (!uid && cookieUID || uid !== cookieUID) {
+    if (cookieUID && cookieUID !== uid) {
       setUid(cookieUID)
     }
   }, [cookieUID, setUid, uid])
@@ -54,8 +55,8 @@ const AppShell = ({ children }: { children: ReactNode }) => {
     <>
       <div className="flex min-h-dvh flex-col">
         <Navbar />
-        <main className="container mx-auto flex-1 px-4 sm:px-6 md:px-8">{children}</main>
-        <Footer />
+        <main className={isRoom ? 'flex flex-1 flex-col overflow-hidden' : 'container mx-auto flex-1 px-4 sm:px-6 md:px-8'}>{children}</main>
+        {!isRoom && <Footer />}
       </div>
       <Loading open={isLoadingOpen} />
       <ServiceStatus status={status} />
@@ -64,12 +65,15 @@ const AppShell = ({ children }: { children: ReactNode }) => {
   )
 }
 
-const Layout = ({ children }: { children: ReactNode }) => (
-  <QueryClientProvider client={new QueryClient()}>
-    <SessionProvider refetchOnWindowFocus={true}>
-      <AppShell>{children}</AppShell>
-    </SessionProvider>
-  </QueryClientProvider>
-)
+const Layout = ({ children }: { children: ReactNode }) => {
+  const [queryClient] = useState(() => new QueryClient())
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SessionProvider refetchOnWindowFocus={true}>
+        <AppShell>{children}</AppShell>
+      </SessionProvider>
+    </QueryClientProvider>
+  )
+}
 
 export default Layout

@@ -1,6 +1,6 @@
 import { hasCookie, setCookie } from 'cookies-next'
-import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 
 import { UID_KEY } from '@/constant/cookies'
 

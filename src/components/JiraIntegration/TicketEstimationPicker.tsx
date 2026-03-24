@@ -323,7 +323,6 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
       })
       .catch(() => {})
       .finally(() => setSprintsLoading(false))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, isJiraConnected, activeTab, cloudId, selectedProjectKey])
 
   function buildIssueUrl(pageToken: string | null = null, ps = pageSize) {
@@ -851,7 +850,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                                 onClick={() => selectProject(selectedProjectKey === project.key ? null : project.key)}
                                 icon={
                                   project.avatarUrl
-                                    ? <img src={project.avatarUrl} className="size-3.5 rounded-sm" alt="" />
+                                    ? <img src={project.avatarUrl} width={14} height={14} className="size-3.5 rounded-sm" alt="" />
                                     : <span className="flex size-3.5 shrink-0 items-center justify-center rounded-sm bg-primary/15"><JiraIcon className="size-2 text-primary" /></span>
                                 }
                                 label={project.name}

@@ -1,14 +1,12 @@
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
-import { JIRA_SESSION_COOKIE } from '@/constant/jira'
-import { decodeJiraSession } from '@/lib/jiraTokenStore'
+import { getValidJiraSession } from '@/lib/jiraAuth'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ issueId: string }> }) {
   const { issueId } = await params
   const cookieStore = await cookies()
-  const token = cookieStore.get(JIRA_SESSION_COOKIE)?.value
-  const entry = token ? decodeJiraSession(token) : null
+  const { entry } = await getValidJiraSession(cookieStore)
   if (!entry) return NextResponse.json({ description: '' }, { status: 401 })
 
   const cloudId = req.nextUrl.searchParams.get('cloudId')
@@ -16,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ issu
 
   const res = await fetch(
     `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/issue/${issueId}?fields=description,summary`,
-    { headers: { Authorization: `Bearer ${entry.accessToken}` } }
+    { headers: { Authorization: `Bearer ${entry.accessToken}`, Accept: 'application/json' } }
   )
   if (!res.ok) return NextResponse.json({ description: '' })
 

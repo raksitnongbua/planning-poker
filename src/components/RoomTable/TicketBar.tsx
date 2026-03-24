@@ -34,6 +34,7 @@ interface Props {
   roomStatus: 'VOTING' | 'REVEALED_CARDS'
   consensusValue?: string
   finalStoryPoint?: string
+  isSpectator?: boolean
   onSet: () => void
   onRemove: () => void
   onSaveToJira: (estimation: TicketEstimation, value: number, fieldId: string) => Promise<void>
@@ -66,6 +67,7 @@ export function TicketBar({
   roomStatus,
   consensusValue,
   finalStoryPoint,
+  isSpectator = false,
   onSet,
   onRemove,
   onSaveToJira,
@@ -199,7 +201,6 @@ export function TicketBar({
     : ''
 
   return (
-    // All content stacked vertically, centered — rendered in the table center area
     <>
       {/* Ticket info row */}
       <TooltipProvider delayDuration={500}>
@@ -234,7 +235,17 @@ export function TicketBar({
               </Tooltip>
             </div>
           ) : (
-            <span className="text-[11px] text-muted-foreground/40">No ticket linked</span>
+            !isSpectator && (
+              <button
+                onClick={onSet}
+                className="flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 px-2.5 py-1 text-[11px] font-medium text-primary/60 transition-all duration-200 hover:border-primary hover:bg-primary/10 hover:text-primary"
+              >
+                <svg className="size-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Add ticket
+              </button>
+            )
           )}
 
           {/* Action icons */}
@@ -256,23 +267,25 @@ export function TicketBar({
               </Tooltip>
             )}
 
-            {/* Change / Set */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  className="flex size-5 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-muted/40 hover:text-foreground"
-                  onClick={onSet}
-                >
-                  <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top">{estimation ? 'Change ticket' : 'Set ticket'}</TooltipContent>
-            </Tooltip>
+            {/* Change ticket — only shown when a ticket is already linked, hidden for spectators */}
+            {estimation && !isSpectator && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="flex size-5 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-muted/40 hover:text-foreground"
+                    onClick={onSet}
+                  >
+                    <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Change ticket</TooltipContent>
+              </Tooltip>
+            )}
 
-            {/* Remove */}
-            {estimation && (
+            {/* Remove — hidden for spectators */}
+            {estimation && !isSpectator && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -291,8 +304,8 @@ export function TicketBar({
         </div>
       </TooltipProvider>
 
-      {/* Save to Jira row — only after reveal with numeric consensus */}
-      {canSave && (
+      {/* Save to Jira row — only after reveal with numeric consensus, hidden for spectators */}
+      {canSave && !isSpectator && (
         <div className="flex flex-col items-center gap-1.5">
           <div className="flex items-center gap-2 rounded-lg border border-border/40 bg-muted/10 px-2.5 py-1.5">
             {/* Field selector — portal dropdown, won't be clipped */}

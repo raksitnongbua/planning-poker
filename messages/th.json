@@ -54,17 +54,17 @@
       "interactiveTitle": "สนุกสนานและมีสีสัน",
       "interactiveDesc": "เพิ่มสีสันให้กับการประชุมที่เคร่งเครียด! คุณสามารถปาอีโมจิใส่เพื่อนร่วมทีมเพื่อร่วมฉลองเมื่อประเมินตรงกัน หรือเพื่อสร้างบรรยากาศที่เป็นกันเอง",
       "jiraTitle": "เชื่อมต่อ Jira",
-      "jiraDesc": "เชื่อมต่อ Jira Workspace และดึง Ticket เข้ามาในห้องประเมินได้โดยตรง ค้นหา Issue เปิดดูชื่อและลิงก์ได้พร้อมกันทั้งทีม แล้วบันทึก Story Points กลับไปยัง Jira ได้ในคลิกเดียว"
+      "jiraDesc": "ค้นหา Issue ด้วยข้อความหรือ JQL สร้างคิว Ticket ที่ทั้งทีมเห็นร่วมกัน และบันทึกผลประเมินกลับไปยัง Jira Story Points Field ใดก็ได้หลังโหวตเสร็จ"
     },
     "jira": {
       "heading": "เชื่อมต่อ Jira",
-      "subtitle": "ดึง Jira Ticket เข้ามาในห้องประเมิน ทุกคนในทีมจะเห็นชื่อและลิงก์ Issue พร้อมกัน แล้วบันทึก Story Points ที่ตกลงกันกลับไปยัง Jira ได้ทันที",
-      "step1Title": "เชื่อมต่อ Workspace",
-      "step1Desc": "อนุมัติการเข้าถึงผ่าน Atlassian OAuth เพียงครั้งเดียว Token จะถูกเก็บไว้ฝั่ง Server และใช้ร่วมกันภายในห้อง",
-      "step2Title": "เลือก Ticket",
-      "step2Desc": "ค้นหา Jira Issue ด้วย Key หรือชื่อเรื่อง Ticket ที่เลือกจะซิงค์ไปยังผู้เข้าร่วมทุกคนแบบเรียลไทม์",
-      "step3Title": "บันทึก Story Points",
-      "step3Desc": "หลังจากเปิดการ์ดแล้ว กดปุ่มเดียวเพื่อบันทึกคะแนนที่ตกลงกันกลับไปยังฟิลด์ Story Points ใน Jira",
+      "subtitle": "นำ Backlog เข้ามาในห้องประเมิน ค้นหา Issue สร้างคิว Ticket ร่วมกัน และบันทึก Story Points กลับไปยัง Jira ได้โดยตรง — ไม่ต้องคัดลอก ไม่ต้องสลับหน้าจอ",
+      "step1Title": "ดึง Jira Issue เข้ามา",
+      "step1Desc": "ค้นหาด้วยข้อความ ใช้ JQL Query หรือกรองตาม Project แล้วเลือกหลาย Issue พร้อมกันเพื่อสร้างคิว — ทุกคนในทีมเห็นแบบเรียลไทม์",
+      "step2Title": "ทำงานผ่านคิวร่วมกัน",
+      "step2Desc": "ผู้ดำเนินการกดเลือก Ticket เพื่อทำให้มันใช้งานอยู่ ทุกคนในห้องจะเห็นชื่อและ Key ของ Issue ขณะโหวต",
+      "step3Title": "ซิงค์ผลประเมินกลับ Jira",
+      "step3Desc": "หลังเปิดการ์ด สามารถบันทึกผลที่ตกลงกันไปยัง Jira Field ตัวเลขใดก็ได้ — Story Points, story_points หรือ Custom Field ของทีม",
       "mockKey": "PROJ-123",
       "mockTitle": "ในฐานะผู้ใช้งาน ฉันต้องการรีเซ็ตรหัสผ่านเพื่อเข้าถึงบัญชีของฉันได้อีกครั้ง",
       "mockField": "Story Points",
@@ -202,7 +202,15 @@
       "tabJira": "Jira",
       "tabFreeText": "ข้อความอิสระ",
       "freeTextHint": "ระบุชื่อ Ticket เพื่อแสดงบนโต๊ะให้ทุกคนในห้องเห็น",
-      "freeTextPlaceholder": "เช่น แก้ไขบั๊กการล็อกอิน, PROJ-42, Sprint 5 API..."
+      "freeTextPlaceholder": "เช่น แก้ไขบั๊กการล็อกอิน, PROJ-42, Sprint 5 API...",
+      "searchModeText": "ข้อความ",
+      "searchModeJQL": "JQL",
+      "filterByProject": "กรอง",
+      "filterByProjectLabel": "กรองตาม Project",
+      "noProjectsFound": "ไม่พบ Project",
+      "jqlPlaceholder": "project = PROJ AND sprint in openSprints() ORDER BY updated DESC",
+      "addTicket": "เพิ่ม Ticket",
+      "clearFilter": "ล้างตัวกรอง"
     }
   },
   "activity": {

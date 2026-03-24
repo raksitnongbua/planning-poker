@@ -78,7 +78,7 @@ const VoterPanel = ({
   return (
     <div
       className={`hidden md:flex fixed right-0 top-[64px] z-20 flex-col border-l border-border/40 bg-background/95 backdrop-blur-md ${!isDraggingPanel ? 'transition-[width] duration-300' : ''} ${isPanelCollapsed ? 'w-10' : panelWidth === 200 ? 'w-[200px]' : ''}`}
-      style={{ bottom: '64px', ...(isPanelCollapsed || panelWidth === 200 ? {} : { width: panelWidth }) }}
+      style={{ bottom: '40px', ...(isPanelCollapsed || panelWidth === 200 ? {} : { width: panelWidth }) }}
     >
       {/* Drag-resize handle — visible grip on left edge when expanded */}
       {!isPanelCollapsed && (
@@ -183,7 +183,7 @@ const VoterPanel = ({
       {!isPanelCollapsed && (() => {
         const isCompact = panelWidth < 210
         return (
-        <div className={`flex flex-col overflow-hidden h-full ${isCompact ? 'gap-2 p-3' : 'gap-3 p-5'}`}>
+        <div className={`flex flex-col overflow-hidden h-full ${isCompact ? 'gap-2 px-3 pb-3 pt-4' : 'gap-3 px-5 pb-5 pt-[24px]'}`}>
 
           {/* Header */}
           <div className="flex items-center justify-between gap-1 flex-shrink-0">
@@ -237,7 +237,12 @@ const VoterPanel = ({
                   />
                 </div>
                 {isCompact && (
-                  <p className="text-[9px] text-muted-foreground/50 tabular-nums">{t('votedCount', { count: votedCount })}/{members.length}</p>
+                  <p className="text-[9px] text-muted-foreground/50 tabular-nums">
+                    <span className="text-primary/60 font-bold">{votedCount}</span>
+                    <span className="mx-0.5 text-muted-foreground/30">/</span>
+                    <span>{members.length}</span>
+                    <span className="ml-1">voted</span>
+                  </p>
                 )}
               </div>
             )
