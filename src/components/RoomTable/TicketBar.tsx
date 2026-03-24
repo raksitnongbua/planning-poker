@@ -2,17 +2,11 @@
 
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 import { useEffect, useRef, useState } from 'react'
-import ReactMarkdown from 'react-markdown'
 
 import type { TicketEstimation } from '@/components/JiraIntegration'
 import { JiraConnectButton } from '@/components/JiraIntegration'
+import { getIssueTypeIcon } from '@/components/JiraIntegration/jiraIssueTypeIcon'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -38,8 +32,7 @@ interface Props {
   onSet: () => void
   onRemove: () => void
   onSaveToJira: (estimation: TicketEstimation, value: number, fieldId: string) => Promise<void>
-  onJiraConnected: () => void
-  onJiraDisconnected: () => void
+  onOpenTicketInfo?: (ticket: TicketEstimation) => void
 }
 
 function JiraIcon({ className }: { className?: string }) {
@@ -58,6 +51,7 @@ function TicketIcon({ className }: { className?: string }) {
   )
 }
 
+
 export function TicketBar({
   estimation,
   isJiraConnected,
@@ -71,15 +65,11 @@ export function TicketBar({
   onSet,
   onRemove,
   onSaveToJira,
-  onJiraConnected,
-  onJiraDisconnected,
+  onOpenTicketInfo,
 }: Props) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState(false)
-  const [descDialogOpen, setDescDialogOpen] = useState(false)
-  const [descState, setDescState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
-  const [fullDescription, setFullDescription] = useState<string | null>(null)
   const [currentFieldValue, setCurrentFieldValue] = useState<number | null | undefined>(undefined)
   const [fetchingCurrentValue, setFetchingCurrentValue] = useState(false)
   const [showFieldPicker, setShowFieldPicker] = useState(false)
@@ -109,9 +99,6 @@ export function TicketBar({
 
   useEffect(() => {
     setFields([])
-    setDescState('idle')
-    setFullDescription(null)
-    setDescDialogOpen(false)
   }, [estimation?.name])
 
   useEffect(() => {
@@ -156,23 +143,6 @@ export function TicketBar({
     setCurrentFieldValue(undefined)
   }
 
-  async function handleReadMore() {
-    setDescDialogOpen(true)
-    if (descState === 'loaded' || descState === 'loading') return
-    setDescState('loading')
-    try {
-      const jiraCloudId = estimation?.jiraCloudId ?? cloudId
-      const res = await fetch(`/api/jira/issues/${estimation!.jiraKey}?cloudId=${jiraCloudId}`)
-      if (!res.ok) throw new Error()
-      const data = await res.json()
-      setFullDescription(data.description ?? null)
-      setDescState('loaded')
-    } catch {
-      setDescState('error')
-      setDescDialogOpen(false)
-    }
-  }
-
   async function handleSave() {
     if (!estimation || !saveValue) return
     setSaving(true)
@@ -204,30 +174,38 @@ export function TicketBar({
     <>
       {/* Ticket info row */}
       <TooltipProvider delayDuration={500}>
-        <div className="flex items-center gap-1.5">
-          {/* Source icon */}
-          {isJira
-            ? <JiraIcon className="size-3 shrink-0 text-blue-400" />
-            : <TicketIcon className="size-3 shrink-0 text-muted-foreground/40" />
-          }
-
+        <div className="flex items-start gap-1.5">
           {/* Ticket identity */}
           {estimation ? (
-            <div className="flex min-w-0 items-center gap-1 overflow-hidden">
-              {isJira && estimation.jiraKey && (
-                issueUrl ? (
-                  <a href={issueUrl} target="_blank" rel="noopener noreferrer"
-                    className="shrink-0 font-mono text-[10px] font-bold text-primary/80 hover:underline"
-                    onClick={(e) => e.stopPropagation()}>
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5 overflow-hidden">
+              {/* Row 1: icon + key */}
+              <div className="flex items-center gap-1">
+                {isJira
+                  ? getIssueTypeIcon(estimation.jiraType)
+                  : <TicketIcon className="size-4 shrink-0 text-muted-foreground/40" />
+                }
+                {isJira && estimation.jiraKey && (
+                  <button
+                    onClick={() => onOpenTicketInfo?.(estimation)}
+                    className="shrink-0 font-mono text-sm font-bold text-primary/80 transition-colors hover:text-primary"
+                  >
                     {estimation.jiraKey}
-                  </a>
-                ) : (
-                  <span className="shrink-0 font-mono text-[10px] font-bold text-primary/80">{estimation.jiraKey}</span>
-                )
-              )}
+                  </button>
+                )}
+              </div>
+              {/* Row 2: title */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="max-w-[160px] cursor-default truncate text-[11px] text-muted-foreground">{estimation.name}</span>
+                  {isJira ? (
+                    <button
+                      onClick={() => onOpenTicketInfo?.(estimation)}
+                      className="min-w-0 cursor-pointer text-left text-sm text-muted-foreground transition-colors line-clamp-2 hover:text-foreground"
+                    >
+                      {estimation.name}
+                    </button>
+                  ) : (
+                    <span className="min-w-0 cursor-default text-sm text-muted-foreground line-clamp-2">{estimation.name}</span>
+                  )}
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[280px] whitespace-normal break-words">
                   {estimation.name}
@@ -235,55 +213,24 @@ export function TicketBar({
               </Tooltip>
             </div>
           ) : (
-            !isSpectator && (
-              <button
-                onClick={onSet}
-                className="flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 px-2.5 py-1 text-[11px] font-medium text-primary/60 transition-all duration-200 hover:border-primary hover:bg-primary/10 hover:text-primary"
-              >
-                <svg className="size-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                Add ticket
-              </button>
-            )
+            <div className="flex items-center gap-1.5">
+              <TicketIcon className="size-4 shrink-0 text-muted-foreground/40" />
+              {!isSpectator && (
+                <button
+                  onClick={onSet}
+                  className="flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 px-2.5 py-1 text-[11px] font-medium text-primary/60 transition-all duration-200 hover:border-primary hover:bg-primary/10 hover:text-primary"
+                >
+                  <svg className="size-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add ticket
+                </button>
+              )}
+            </div>
           )}
 
           {/* Action icons */}
-          <div className="ml-auto flex shrink-0 items-center gap-1">
-            {/* Read more */}
-            {isJira && isJiraConnected && descState !== 'error' && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    className="flex size-5 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-muted/40 hover:text-foreground"
-                    onClick={handleReadMore}
-                  >
-                    <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top">Description</TooltipContent>
-              </Tooltip>
-            )}
-
-            {/* Change ticket — only shown when a ticket is already linked, hidden for spectators */}
-            {estimation && !isSpectator && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    className="flex size-5 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-muted/40 hover:text-foreground"
-                    onClick={onSet}
-                  >
-                    <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top">Change ticket</TooltipContent>
-              </Tooltip>
-            )}
-
+          <div className="flex shrink-0 items-center gap-1">
             {/* Remove — hidden for spectators */}
             {estimation && !isSpectator && (
               <Tooltip>
@@ -399,60 +346,6 @@ export function TicketBar({
         </div>
       )}
 
-      {/* Jira connect */}
-      <JiraConnectButton
-        isConnected={isJiraConnected}
-        roomId={roomId}
-        onConnected={onJiraConnected}
-        onDisconnected={onJiraDisconnected}
-      />
-
-      {/* Description dialog */}
-      {isJira && estimation && (
-        <Dialog open={descDialogOpen} onOpenChange={setDescDialogOpen}>
-          <DialogContent className="border-border/40 bg-background sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="font-mono text-sm text-primary">{estimation.jiraKey}</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm font-medium text-foreground">{estimation.name}</p>
-            <div className="max-h-96 overflow-y-auto pr-1">
-              {descState === 'loading' && (
-                <div className="flex flex-col gap-2 pt-1">
-                  {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-3.5 w-full rounded" />)}
-                </div>
-              )}
-              {descState === 'loaded' && (
-                fullDescription ? (
-                  <ReactMarkdown
-                    components={{
-                      p: ({ children }) => <p className="mb-2 text-sm leading-relaxed text-muted-foreground">{children}</p>,
-                      h1: ({ children }) => <h1 className="mb-2 text-base font-bold text-foreground">{children}</h1>,
-                      h2: ({ children }) => <h2 className="mb-2 text-sm font-bold text-foreground">{children}</h2>,
-                      h3: ({ children }) => <h3 className="mb-1 text-sm font-semibold text-foreground">{children}</h3>,
-                      ul: ({ children }) => <ul className="mb-2 list-disc pl-4 text-sm text-muted-foreground">{children}</ul>,
-                      ol: ({ children }) => <ol className="mb-2 list-decimal pl-4 text-sm text-muted-foreground">{children}</ol>,
-                      li: ({ children }) => <li className="mb-0.5">{children}</li>,
-                      code: ({ children, className }) =>
-                        className ? (
-                          <pre className="mb-2 overflow-x-auto rounded-md bg-muted/40 p-3 text-xs text-foreground"><code>{children}</code></pre>
-                        ) : (
-                          <code className="rounded bg-muted/40 px-1 py-0.5 font-mono text-xs text-foreground">{children}</code>
-                        ),
-                      blockquote: ({ children }) => <blockquote className="mb-2 border-l-2 border-border/60 pl-3 text-sm italic text-muted-foreground">{children}</blockquote>,
-                      a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">{children}</a>,
-                      hr: () => <hr className="my-3 border-border/40" />,
-                    }}
-                  >
-                    {fullDescription}
-                  </ReactMarkdown>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No description available.</p>
-                )
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
     </>
   )
 }
