@@ -862,6 +862,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         onAdd={() => setIsJiraPickerOpen(true)}
         onJiraConnected={handleJiraConnected}
         onJiraDisconnected={handleJiraDisconnected}
+        onSaveToJira={handleSaveToJira}
       />
 
       {!isSpectator && (

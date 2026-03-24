@@ -1,18 +1,16 @@
 'use client'
 
-import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
+import type { DragEndEvent } from '@dnd-kit/core'
 import {
   closestCenter,
   DndContext,
-  DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-import { snapCenterToCursor } from '@dnd-kit/modifiers'
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -37,6 +35,7 @@ interface Props {
   onAdd?: () => void
   onJiraConnected: () => void
   onJiraDisconnected: () => void
+  onSaveToJira?: (ticket: TicketEstimation, value: number, fieldId: string) => Promise<void>
 }
 
 function JiraIcon({ className }: { className?: string }) {
@@ -54,10 +53,14 @@ interface SortableItemProps {
   isActive: boolean
   isSpectator: boolean
   isOverlay?: boolean
+  canMoveUp: boolean
+  jiraCurrentPoint?: number | null
+  isSaving?: boolean
   onSelect: () => void
   onMoveUp: () => void
   onMoveDown: () => void
   onRemove: () => void
+  onSaveToJira?: () => void
 }
 
 function SortableTicketItem({
@@ -67,11 +70,22 @@ function SortableTicketItem({
   isActive,
   isSpectator,
   isOverlay = false,
+  canMoveUp,
+  jiraCurrentPoint,
+  isSaving,
   onSelect,
   onMoveUp,
   onMoveDown,
   onRemove,
+  onSaveToJira,
 }: SortableItemProps) {
+  const showSaveToJira =
+    !isSpectator &&
+    !isOverlay &&
+    !!ticket.finalScore &&
+    !!ticket.jiraKey &&
+    jiraCurrentPoint !== undefined &&
+    Number(ticket.finalScore) !== jiraCurrentPoint
   const isVoted = !!ticket.avgScore || !!ticket.finalScore
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
@@ -82,16 +96,16 @@ function SortableTicketItem({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
+      data-active={isActive && !isOverlay ? 'true' : undefined}
       className={cn(
         'group relative flex items-center gap-1.5 px-2.5 py-2 select-none',
-        isDragging && !isOverlay ? 'opacity-40 z-0' : '',
-        isOverlay
-          ? 'rounded-lg border border-primary/30 bg-background/95 shadow-lg shadow-black/40 backdrop-blur-md'
+        isDragging
+          ? 'rounded-lg border border-dashed border-border/40 bg-muted/10 [&>*]:invisible'
           : cn(
               'transition-colors',
               isActive ? 'bg-primary/10' : 'hover:bg-muted/30',
             ),
-        !isSpectator && !isOverlay && !isVoted ? 'cursor-grab active:cursor-grabbing' : '',
+        !isSpectator && !isVoted ? 'cursor-grab active:cursor-grabbing' : '',
       )}
       {...(!isSpectator ? { ...attributes, ...listeners } : {})}
     >
@@ -115,14 +129,21 @@ function SortableTicketItem({
 
       {/* Ticket text */}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className={cn('font-mono text-[10px] font-bold leading-none', isActive ? 'text-primary' : (!!ticket.avgScore || !!ticket.finalScore) ? 'text-green-400/60' : 'text-muted-foreground/50')}>
-          {ticket.jiraKey ?? `#${displayIdx + 1}`}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className={cn('font-mono text-[10px] font-bold leading-none', isActive ? 'text-primary' : (!!ticket.avgScore || !!ticket.finalScore) ? 'text-green-400/60' : 'text-muted-foreground/50')}>
+            {ticket.jiraKey ?? `#${displayIdx + 1}`}
+          </span>
+          {jiraCurrentPoint !== undefined && jiraCurrentPoint !== null && (
+            <span className="tabular-nums text-[8px] font-semibold text-muted-foreground/35">
+              {jiraCurrentPoint}sp
+            </span>
+          )}
+        </div>
         <span className={cn('line-clamp-2 text-[11px] leading-snug', isActive ? 'text-foreground' : (!!ticket.avgScore || !!ticket.finalScore) ? 'text-muted-foreground/50' : 'text-muted-foreground')}>
           {ticket.name}
         </span>
         {(!!ticket.avgScore || !!ticket.finalScore) && (
-          <div className="flex items-center gap-1.5 mt-0.5">
+          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
             <svg className="size-2.5 shrink-0 text-green-500/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
@@ -136,6 +157,19 @@ function SortableTicketItem({
                 final <span className="font-bold">{ticket.finalScore}</span>
               </span>
             )}
+            {showSaveToJira && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onSaveToJira?.() }}
+                disabled={isSaving}
+                className="flex items-center gap-0.5 rounded px-1 py-0.5 text-[8px] font-semibold text-amber-400/80 bg-amber-500/10 hover:bg-amber-500/20 hover:text-amber-300 transition-colors disabled:opacity-40"
+                title={jiraCurrentPoint === null ? `Jira: (none) → ${ticket.finalScore}` : `Jira: ${jiraCurrentPoint} → ${ticket.finalScore}`}
+              >
+                <svg className="size-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                {isSaving ? '…' : 'Save to Jira'}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -144,7 +178,7 @@ function SortableTicketItem({
       {!isSpectator && !isOverlay && (
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
           {/* Move up */}
-          {!isVoted && (
+          {canMoveUp && !isVoted && (
             <button
               onClick={(e) => { e.stopPropagation(); onMoveUp() }}
               className="flex size-5 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-muted/40 hover:text-foreground"
@@ -191,9 +225,54 @@ export function TicketQueuePanel({
   isJiraConnected = false, isSpectator = false, roomId,
   onCollapse, onWidthChange, onDragStart, onDragEnd,
   onSelectTicket, onQueueChange, onAdd, onJiraConnected, onJiraDisconnected,
+  onSaveToJira,
 }: Props) {
-  const [activeDragId, setActiveDragId] = useState<string | null>(null)
   const [hideVoted, setHideVoted] = useState(false)
+  const [jiraPoints, setJiraPoints] = useState<Map<string, number | null>>(new Map())
+  const [savingKey, setSavingKey] = useState<string | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  const jiraFetchKey = queue.filter(t => t.jiraKey).map(t => t.jiraKey).join(',')
+
+  useEffect(() => {
+    if (isCollapsed) return
+    const el = scrollContainerRef.current?.querySelector<HTMLElement>('[data-active="true"]')
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [activeKey, isCollapsed])
+
+  useEffect(() => {
+    if (!isJiraConnected || !jiraFetchKey) return
+    const fetchable = queue.filter(t => t.jiraKey && t.jiraCloudId && t.storyPointsField)
+    if (fetchable.length === 0) return
+    Promise.all(
+      fetchable.map(async t => {
+        try {
+          const res = await fetch(`/api/jira/issues/${t.jiraKey}/estimate?cloudId=${t.jiraCloudId}&fieldId=${t.storyPointsField}`)
+          if (!res.ok) return [t.jiraKey!, undefined] as const
+          const data = await res.json()
+          return [t.jiraKey!, data.value as number | null] as const
+        } catch {
+          return [t.jiraKey!, undefined] as const
+        }
+      })
+    ).then(results => {
+      setJiraPoints(new Map(results.filter(([, v]) => v !== undefined) as [string, number | null][]))
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isJiraConnected, jiraFetchKey])
+
+  async function saveToJira(ticket: TicketEstimation) {
+    const key = ticket.jiraKey!
+    setSavingKey(key)
+    try {
+      await onSaveToJira!(ticket, Number(ticket.finalScore), ticket.storyPointsField!)
+      setJiraPoints(prev => new Map(prev).set(key, Number(ticket.finalScore)))
+    } catch {
+      // leave button visible so user can retry
+    } finally {
+      setSavingKey(null)
+    }
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -209,13 +288,8 @@ export function TicketQueuePanel({
   const sortableIds = visibleIndices.map(({ idx }) => String(idx))
   const votedCount = queue.filter(isVotedTicket).length
 
-  function handleDragStart(event: DragStartEvent) {
-    setActiveDragId(String(event.active.id))
-  }
-
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
-    setActiveDragId(null)
     if (!over || active.id === over.id) return
     const oldIndex = parseInt(String(active.id))
     const newIndex = parseInt(String(over.id))
@@ -223,8 +297,6 @@ export function TicketQueuePanel({
     if (newIndex < oldIndex && queue.slice(newIndex, oldIndex).some(isVotedTicket)) return
     onQueueChange(arrayMove(queue, oldIndex, newIndex))
   }
-
-  const activeDragTicket = activeDragId !== null ? (queue[parseInt(activeDragId)] ?? null) : null
 
   function remove(idx: number) {
     onQueueChange(queue.filter((_, i) => i !== idx))
@@ -419,7 +491,7 @@ export function TicketQueuePanel({
           </div>
 
           {/* Queue list — scrollable */}
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto py-1">
+          <div ref={scrollContainerRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto py-1">
             {queue.length === 0 && (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-6 text-center">
                 <svg className="size-8 text-muted-foreground/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
@@ -453,12 +525,13 @@ export function TicketQueuePanel({
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
-                  onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}
                 >
                   <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
                     {visibleIndices.map(({ t, idx }) => {
                       const isActive = t.jiraKey ? t.jiraKey === activeKey : t.name === activeKey
+                      const canMoveUp = idx > 0 && !isVotedTicket(queue[idx - 1])
+                      const jiraCurrentPoint = t.jiraKey ? jiraPoints.get(t.jiraKey) : undefined
                       return (
                         <SortableTicketItem
                           key={`${t.jiraKey ?? t.name}-${idx}`}
@@ -467,34 +540,18 @@ export function TicketQueuePanel({
                           displayIdx={idx}
                           isActive={isActive}
                           isSpectator={isSpectator}
+                          canMoveUp={canMoveUp}
+                          jiraCurrentPoint={jiraCurrentPoint}
+                          isSaving={savingKey === (t.jiraKey ?? t.name)}
                           onSelect={() => onSelectTicket(t)}
                           onMoveUp={() => moveUp(idx)}
                           onMoveDown={() => moveDown(idx)}
                           onRemove={() => remove(idx)}
+                          onSaveToJira={onSaveToJira && t.jiraKey && t.storyPointsField ? () => saveToJira(t) : undefined}
                         />
                       )
                     })}
                   </SortableContext>
-                  <DragOverlay modifiers={[snapCenterToCursor]}>
-                    {activeDragTicket && activeDragId !== null && (
-                      <SortableTicketItem
-                        id="overlay"
-                        ticket={activeDragTicket}
-                        displayIdx={parseInt(activeDragId)}
-                        isActive={
-                          activeDragTicket.jiraKey
-                            ? activeDragTicket.jiraKey === activeKey
-                            : activeDragTicket.name === activeKey
-                        }
-                        isSpectator={isSpectator}
-                        isOverlay
-                        onSelect={() => {}}
-                        onMoveUp={() => {}}
-                        onMoveDown={() => {}}
-                        onRemove={() => {}}
-                      />
-                    )}
-                  </DragOverlay>
                 </DndContext>
                 {hideVoted && votedCount > 0 && (
                   <div className="px-3 py-1.5">
