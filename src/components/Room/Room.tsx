@@ -514,19 +514,19 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   }
 
   const handleQueueUpdate = (newQueue: TicketEstimation[]) => {
-    setTicketQueue(newQueue)
-    sendJsonMessage({ action: 'SET_TICKET_QUEUE', payload: { ticketQueue: newQueue } })
     if (roomStatus !== Status.RevealedCards) {
       const firstUnvoted = newQueue.find((t) => !t.avgScore && !t.finalScore)
-      if (firstUnvoted) {
-        const newKey = firstUnvoted.jiraKey ?? firstUnvoted.name
-        const currentKey = ticketEstimation?.jiraKey ?? ticketEstimation?.name
-        if (newKey !== currentKey) {
-          setTicketEstimation(firstUnvoted)
-          sendJsonMessage({ action: 'SET_TICKET_ESTIMATION', payload: { ticketEstimation: firstUnvoted } })
-        }
+      const newKey = firstUnvoted?.jiraKey ?? firstUnvoted?.name
+      const currentKey = ticketEstimation?.jiraKey ?? ticketEstimation?.name
+      if (firstUnvoted && newKey !== currentKey) {
+        setTicketQueue(newQueue)
+        setTicketEstimation(firstUnvoted)
+        sendJsonMessage({ action: 'SET_TICKET_QUEUE_WITH_ESTIMATION', payload: { ticketQueue: newQueue, ticketEstimation: firstUnvoted } })
+        return
       }
     }
+    setTicketQueue(newQueue)
+    sendJsonMessage({ action: 'SET_TICKET_QUEUE', payload: { ticketQueue: newQueue } })
   }
 
   async function handleSaveToJira(estimation: TicketEstimation, value: number, fieldId: string) {
