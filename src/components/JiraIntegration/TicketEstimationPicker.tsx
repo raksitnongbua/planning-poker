@@ -12,6 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
 import { JiraConnectButton } from './JiraConnectButton'
+import { getIssueTypeIcon } from './jiraIssueTypeIcon'
+import { DEFAULT_FIELD_ID, FIELD_STORAGE_KEY, MAX_QUEUE_SIZE, PROJECT_STORAGE_KEY } from './constants'
 import { JiraIssue, JiraProject, JiraSprint, TicketEstimation } from './types'
 
 interface JiraField {
@@ -25,79 +27,13 @@ interface Props {
   isJiraConnected: boolean
   cloudId: string
   roomId: string
+  currentQueueSize?: number
+  existingQueue?: TicketEstimation[]
   onSelect: (estimations: TicketEstimation[]) => void
   onJiraConnected: () => void
   onJiraDisconnected: () => void
 }
 
-const DEFAULT_FIELD_ID = 'customfield_10016'
-const FIELD_STORAGE_KEY = 'jira_story_points_field'
-const PROJECT_STORAGE_KEY = 'jira_recent_project'
-
-// Issue type definitions with colored icons
-const ISSUE_TYPES = [
-  {
-    name: 'Story',
-    icon: (
-      <svg className="size-3.5 shrink-0" viewBox="0 0 16 16" fill="none">
-        <rect width="16" height="16" rx="3" fill="#22A06B" />
-        <path d="M5 8.5l2 2 4-4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    name: 'Bug',
-    icon: (
-      <svg className="size-3.5 shrink-0" viewBox="0 0 16 16" fill="none">
-        <rect width="16" height="16" rx="3" fill="#E5493A" />
-        <circle cx="8" cy="8.5" r="2.5" stroke="#fff" strokeWidth="1.3" />
-        <path d="M8 6V4.5M6 7.5L4.5 7M10 7.5L11.5 7M6.5 10.5L5 11.5M9.5 10.5L11 11.5" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    name: 'Task',
-    icon: (
-      <svg className="size-3.5 shrink-0" viewBox="0 0 16 16" fill="none">
-        <rect width="16" height="16" rx="3" fill="#4BADE8" />
-        <path d="M4.5 8l2.5 2.5 4.5-5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    name: 'Epic',
-    icon: (
-      <svg className="size-3.5 shrink-0" viewBox="0 0 16 16" fill="none">
-        <rect width="16" height="16" rx="3" fill="#904EE2" />
-        <path d="M9 3.5L5.5 9H8L7 12.5L10.5 7H8L9 3.5Z" fill="#fff" />
-      </svg>
-    ),
-  },
-  {
-    name: 'Sub-task',
-    icon: (
-      <svg className="size-3.5 shrink-0" viewBox="0 0 16 16" fill="none">
-        <rect width="16" height="16" rx="3" fill="#4BADE8" />
-        <rect x="3.5" y="3.5" width="4" height="4" rx="0.5" stroke="#fff" strokeWidth="1.2" />
-        <path d="M5.5 7.5v2H9M9 9l-1-1M9 9l-1 1" stroke="#fff" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
-        <rect x="9" y="9" width="3.5" height="3.5" rx="0.5" stroke="#fff" strokeWidth="1.2" />
-      </svg>
-    ),
-  },
-]
-
-function getIssueTypeIcon(type: string) {
-  const found = ISSUE_TYPES.find((t) => t.name.toLowerCase() === type.toLowerCase())
-  if (found) return found.icon
-  return (
-    <svg className="size-3.5 shrink-0" viewBox="0 0 16 16" fill="none">
-      <rect width="16" height="16" rx="3" fill="#626F86" />
-      <rect x="4" y="4" width="8" height="1.5" rx="0.5" fill="#fff" />
-      <rect x="4" y="7.25" width="8" height="1.5" rx="0.5" fill="#fff" />
-      <rect x="4" y="10.5" width="5" height="1.5" rx="0.5" fill="#fff" />
-    </svg>
-  )
-}
 
 function FilterSection({
   label, expanded, onToggle, hasSelection, onClear, children,
@@ -189,7 +125,7 @@ function JiraIcon({ className }: { className?: string }) {
   )
 }
 
-export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cloudId, roomId, onSelect, onJiraConnected, onJiraDisconnected }: Props) {
+export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cloudId, roomId, currentQueueSize = 0, existingQueue = [], onSelect, onJiraConnected, onJiraDisconnected }: Props) {
   const t = useTranslations('room.jira')
   const [activeTab, setActiveTab] = useState<Tab>('text')
   const [freeText, setFreeText] = useState('')
@@ -500,15 +436,19 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
     })
   }
 
+  const queuedJiraKeys = new Set(existingQueue.map((t) => t.jiraKey).filter((k): k is string => Boolean(k)))
+
+  const toggleableIssues = issues.filter((i) => !queuedJiraKeys.has(i.key))
+
   const toggleSelectAll = () => {
-    if (issues.every((i) => selectedIssueIds.has(i.id))) {
+    if (toggleableIssues.every((i) => selectedIssueIds.has(i.id))) {
       setSelectedIssueIds(new Set())
     } else {
-      setSelectedIssueIds(new Set(issues.map((i) => i.id)))
+      setSelectedIssueIds(new Set(toggleableIssues.map((i) => i.id)))
     }
   }
 
-  const allOnPageSelected = issues.length > 0 && issues.every((i) => selectedIssueIds.has(i.id))
+  const allOnPageSelected = toggleableIssues.length > 0 && toggleableIssues.every((i) => selectedIssueIds.has(i.id))
 
   const selectedField = fields.find((f) => f.id === selectedFieldId)
   const filteredFields = fieldSearch.trim()
@@ -543,6 +483,9 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
         selectedProjectKey ? `Project: ${selectedProjectKey}` : null,
         selectedTypes.size > 0 ? `Type: ${[...selectedTypes].join(', ')}` : null,
       ].filter(Boolean).join(' · ') || 'No filters active'
+
+  const wouldExceedLimit = currentQueueSize + selectedIssueIds.size > MAX_QUEUE_SIZE
+  const remainingSlots = MAX_QUEUE_SIZE - currentQueueSize
 
   // Confirm button label
   const confirmLabel = selectedIssueIds.size === 0
@@ -923,12 +866,12 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                       onClear={() => setSelectedTypes(new Set())}
                     >
                       <div className="pb-1">
-                        {ISSUE_TYPES.map(({ name, icon }) => (
+                        {['Story', 'Bug', 'Task', 'Epic', 'Sub-task'].map((name) => (
                           <FilterRow
                             key={name}
                             selected={selectedTypes.has(name)}
                             onClick={() => setSelectedTypes((prev) => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n })}
-                            icon={icon}
+                            icon={getIssueTypeIcon(name)}
                             label={name}
                           />
                         ))}
@@ -1040,39 +983,49 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                       <div className="divide-y divide-border/20">
                         {issues.map((issue) => {
                           const isSelected = selectedIssueIds.has(issue.id)
+                          const isAlreadyQueued = queuedJiraKeys.has(issue.key)
                           return (
                             <label
                               key={issue.id}
                               className={cn(
-                                'flex cursor-pointer items-center gap-3 border-l-2 px-4 py-2.5 transition-all duration-100',
-                                isSelected
-                                  ? 'border-l-primary/80 bg-primary/10 hover:bg-primary/15'
-                                  : 'border-l-transparent hover:bg-muted/25'
+                                'flex items-center gap-3 border-l-2 px-4 py-2.5 transition-all duration-100',
+                                isAlreadyQueued
+                                  ? 'cursor-default border-l-green-500/40 bg-green-500/5 opacity-60 pointer-events-none'
+                                  : isSelected
+                                    ? 'cursor-pointer border-l-primary/80 bg-primary/10 hover:bg-primary/15'
+                                    : 'cursor-pointer border-l-transparent hover:bg-muted/25'
                               )}
                               role="option"
                               aria-selected={isSelected}
-                              onClick={() => toggleIssue(issue.id)}
+                              aria-disabled={isAlreadyQueued}
+                              onClick={isAlreadyQueued ? undefined : () => toggleIssue(issue.id)}
                             >
-                              <div
-                                className={cn(
-                                  'size-3.5 flex-shrink-0 rounded-sm border transition-all duration-100',
-                                  isSelected
-                                    ? 'border-primary bg-primary shadow-sm shadow-primary/30'
-                                    : 'border-border/50 bg-muted/30 hover:border-muted-foreground/70'
-                                )}
-                              >
-                                {isSelected && (
-                                  selectedIssueIds.size > 1 ? (
-                                    <span className="flex size-full items-center justify-center text-[9px] font-bold leading-none text-white">
-                                      {[...selectedIssueIds].indexOf(issue.id) + 1}
-                                    </span>
-                                  ) : (
-                                    <svg viewBox="0 0 10 8" className="size-full p-0.5 text-white" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                                      <path d="M1 4l2.5 2.5L9 1" />
-                                    </svg>
-                                  )
-                                )}
-                              </div>
+                              {isAlreadyQueued ? (
+                                <span className="flex shrink-0 items-center gap-0.5 rounded border border-green-500/25 bg-green-500/15 px-1 py-0.5 text-[8px] font-semibold text-green-400">
+                                  ✓ In queue
+                                </span>
+                              ) : (
+                                <div
+                                  className={cn(
+                                    'size-3.5 flex-shrink-0 rounded-sm border transition-all duration-100',
+                                    isSelected
+                                      ? 'border-primary bg-primary shadow-sm shadow-primary/30'
+                                      : 'border-border/50 bg-muted/30 hover:border-muted-foreground/70'
+                                  )}
+                                >
+                                  {isSelected && (
+                                    selectedIssueIds.size > 1 ? (
+                                      <span className="flex size-full items-center justify-center text-[9px] font-bold leading-none text-white">
+                                        {[...selectedIssueIds].indexOf(issue.id) + 1}
+                                      </span>
+                                    ) : (
+                                      <svg viewBox="0 0 10 8" className="size-full p-0.5 text-white" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M1 4l2.5 2.5L9 1" />
+                                      </svg>
+                                    )
+                                  )}
+                                </div>
+                              )}
                               <div className="shrink-0">{getIssueTypeIcon(issue.type)}</div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-baseline gap-2">
@@ -1240,6 +1193,13 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                 )}
               </div>
 
+              {/* Over-limit warning */}
+              {wouldExceedLimit && selectedIssueIds.size > 0 && (
+                <span className="text-[10px] font-medium text-amber-400">
+                  Adding {selectedIssueIds.size} would exceed the {MAX_QUEUE_SIZE}-ticket limit ({remainingSlots} slot{remainingSlots !== 1 ? 's' : ''} left)
+                </span>
+              )}
+
               {/* Right: page size + Cancel + Confirm */}
               <div className="flex items-center gap-2">
                 <select
@@ -1262,7 +1222,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                 </Button>
                 <Button
                   size="sm"
-                  disabled={selectedIssueIds.size === 0}
+                  disabled={selectedIssueIds.size === 0 || wouldExceedLimit}
                   onClick={handleConfirm}
                   className="h-8 gap-1.5 text-xs transition-transform duration-150 hover:scale-[1.02]"
                 >

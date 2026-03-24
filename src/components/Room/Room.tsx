@@ -8,10 +8,12 @@ import useWebSocket, { ReadyState } from 'react-use-websocket'
 
 import type { TicketEstimation } from '@/components/JiraIntegration'
 import { TicketEstimationPicker, TicketQueuePanel } from '@/components/JiraIntegration'
+import { TicketInfoDialog } from '@/components/JiraIntegration/TicketInfoDialog'
 import { useToast } from '@/components/ui/use-toast'
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
 
 import Dialog from '../common/Dialog'
+import { Footer } from '../Footer'
 import JoinRoomDialog from '../JoinRoomDialog'
 import RoomCards from '../RoomCards'
 import RoomTable from '../RoomTable'
@@ -110,10 +112,13 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const [ticketQueue, setTicketQueue] = useState<TicketEstimation[]>([])
   const [finalStoryPoint, setFinalStoryPoint] = useState<string>('')
   const [isJiraConnected, setIsJiraConnected] = useState(false)
+  const [jiraPointOverride, setJiraPointOverride] = useState<{ key: string; value: number } | null>(null)
   const [cloudId, setCloudId] = useState('')
   const [jiraSiteUrl, setJiraSiteUrl] = useState('')
   const [isJiraPickerOpen, setIsJiraPickerOpen] = useState(false)
   const [isRemoveTicketConfirmOpen, setIsRemoveTicketConfirmOpen] = useState(false)
+  const [ticketInfoOpen, setTicketInfoOpen] = useState(false)
+  const [ticketInfoTarget, setTicketInfoTarget] = useState<TicketEstimation | null>(null)
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30_000)
@@ -125,22 +130,6 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   }, [chatMessages])
 
 
-
-  const connectionStatus = {
-    [ReadyState.CONNECTING]: 'Connecting',
-    [ReadyState.OPEN]: 'Open',
-    [ReadyState.CLOSING]: 'Closing',
-    [ReadyState.CLOSED]: 'Closed',
-    [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
-  }[readyState]
-
-  const wsStatusConfig: Record<string, { dot: string; pulse: string; text: string; label: string }> = {
-    Open: { dot: 'bg-green-500', pulse: 'bg-green-500/40', text: 'text-green-400', label: t('wsConnected') },
-    Connecting: { dot: 'bg-yellow-400', pulse: 'bg-yellow-400/40', text: 'text-yellow-400', label: t('wsConnecting') },
-    Closing: { dot: 'bg-orange-400', pulse: 'bg-orange-400/40', text: 'text-orange-400', label: t('wsClosing') },
-    Closed: { dot: 'bg-red-500', pulse: 'bg-red-500/40', text: 'text-red-400', label: t('wsDisconnected') },
-    Uninstantiated: { dot: 'bg-neutral-500', pulse: 'bg-neutral-500/40', text: 'text-neutral-400', label: t('wsOffline') },
-  }
 
   useEffect(() => {
     const checkJiraStatus = () => {
@@ -529,6 +518,16 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
     sendJsonMessage({ action: 'SET_TICKET_QUEUE', payload: { ticketQueue: newQueue } })
   }
 
+  const handleRevote = (cleaned: TicketEstimation, cleanedQueue: TicketEstimation[]) => {
+    setTicketQueue(cleanedQueue)
+    setTicketEstimation(cleaned)
+    if (roomStatus === Status.RevealedCards) {
+      pendingActionActorRef.current = members.find((m) => m.id === id)?.name ?? null
+      sendJsonMessage({ action: 'RESET_ROOM' })
+    }
+    sendJsonMessage({ action: 'SET_TICKET_QUEUE_WITH_ESTIMATION', payload: { ticketQueue: cleanedQueue, ticketEstimation: cleaned } })
+  }
+
   async function handleSaveToJira(estimation: TicketEstimation, value: number, fieldId: string) {
     const res = await fetch(`/api/jira/issues/${estimation.jiraKey}/estimate`, {
       method: 'PATCH',
@@ -536,6 +535,12 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
       body: JSON.stringify({ cloudId: estimation.jiraCloudId, value, storyPointsField: fieldId }),
     })
     if (!res.ok) throw new Error('save failed')
+    if (estimation.jiraKey) setJiraPointOverride({ key: estimation.jiraKey, value })
+  }
+
+  function openTicketInfo(ticket: TicketEstimation) {
+    setTicketInfoTarget(ticket)
+    setTicketInfoOpen(true)
   }
 
   const inviteLink = process.env.NEXT_PUBLIC_ORIGIN_URL + pathname
@@ -635,6 +640,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                 consensusValue={consensusValue}
                 finalStoryPoint={finalStoryPoint}
                 deckOptions={cardOptions}
+                ticketQueue={ticketQueue}
                 onSetFinalStoryPoint={handleSetFinalStoryPoint}
                 onReveal={() => {
                   pendingActionActorRef.current = members.find((m) => m.id === id)?.name ?? null
@@ -647,8 +653,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                 onSetTicket={() => setIsJiraPickerOpen(true)}
                 onRemoveTicket={handleRemoveTicket}
                 onSaveToJira={handleSaveToJira}
-                onJiraConnected={handleJiraConnected}
-                onJiraDisconnected={handleJiraDisconnected}
+                onOpenTicketInfo={openTicketInfo}
               />
             )}
 
@@ -736,19 +741,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
           </div>
           )}
 
-          {/* ── Room bottom bar — replaces global footer on room page ── */}
-          <div className="flex-shrink-0 h-10 border-t border-border/20 bg-background/95 backdrop-blur-md flex items-center justify-between px-4">
-            <span className="text-[10px] text-muted-foreground/30">© 2025 Corgi Planning Poker</span>
-            <div className="flex items-center gap-1.5">
-              <span className="relative flex size-2">
-                <span className={`absolute inline-flex size-full animate-ping rounded-full ${wsStatusConfig[connectionStatus]?.pulse ?? 'bg-neutral-500/40'}`} />
-                <span className={`relative inline-flex size-2 rounded-full animate-heartbeat ${wsStatusConfig[connectionStatus]?.dot ?? 'bg-neutral-500'}`} />
-              </span>
-              <span className={`text-xs font-medium ${wsStatusConfig[connectionStatus]?.text ?? 'text-neutral-400'}`}>
-                {wsStatusConfig[connectionStatus]?.label ?? connectionStatus}
-              </span>
-            </div>
-          </div>
+          <Footer status={readyState === ReadyState.OPEN ? 'available' : readyState === ReadyState.CONNECTING ? 'connecting' : 'unavailable'} />
 
         </div>
 
@@ -827,6 +820,8 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         isJiraConnected={isJiraConnected}
         cloudId={cloudId}
         roomId={roomId ?? ''}
+        currentQueueSize={ticketQueue.length}
+        existingQueue={ticketQueue}
         onSelect={handleTicketQueueSelect}
         onJiraConnected={handleJiraConnected}
         onJiraDisconnected={handleJiraDisconnected}
@@ -859,10 +854,13 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         onDragEnd={() => setIsDraggingQueuePanel(false)}
         onSelectTicket={handleTicketSelect}
         onQueueChange={handleQueueUpdate}
+        onRevoteTicket={handleRevote}
         onAdd={() => setIsJiraPickerOpen(true)}
         onJiraConnected={handleJiraConnected}
         onJiraDisconnected={handleJiraDisconnected}
         onSaveToJira={handleSaveToJira}
+        jiraPointOverride={jiraPointOverride}
+        onOpenTicketInfo={openTicketInfo}
       />
 
       {!isSpectator && (
@@ -893,6 +891,13 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
             <Button variant="destructive" onClick={handleConfirmRemoveTicket}>Remove</Button>
           </>
         }
+      />
+
+      <TicketInfoDialog
+        ticket={ticketInfoTarget}
+        open={ticketInfoOpen}
+        onOpenChange={setTicketInfoOpen}
+        cloudId={cloudId}
       />
 
       <Dialog

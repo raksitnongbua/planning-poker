@@ -17,6 +17,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils'
 
 import { JiraConnectButton } from './JiraConnectButton'
+import { MAX_QUEUE_SIZE } from './constants'
+import { getIssueTypeIcon } from './jiraIssueTypeIcon'
 import type { TicketEstimation } from './types'
 
 interface Props {
@@ -34,6 +36,7 @@ interface Props {
   onDragEnd: () => void
   onSelectTicket: (t: TicketEstimation) => void
   onQueueChange: (queue: TicketEstimation[]) => void
+  onRevoteTicket?: (cleaned: TicketEstimation, cleanedQueue: TicketEstimation[]) => void
   onAdd?: () => void
   onJiraConnected: () => void
   onJiraDisconnected: () => void
@@ -65,6 +68,7 @@ interface SortableItemProps {
   onMoveUp: () => void
   onMoveDown: () => void
   onRemove: () => void
+  onRevote?: () => void
   onSaveToJira?: () => void
   onOpenInfo?: () => void
 }
@@ -84,6 +88,7 @@ function SortableTicketItem({
   onMoveUp,
   onMoveDown,
   onRemove,
+  onRevote,
   onSaveToJira,
   onOpenInfo,
 }: SortableItemProps) {
@@ -141,8 +146,9 @@ function SortableTicketItem({
       <div className="flex min-w-0 flex-1 flex-col justify-between gap-0.5 overflow-hidden py-2">
         {/* Row 1: key + Jira badge + top-right controls */}
         <div className="flex items-center justify-between gap-1">
-          {/* Left: key + inline Jira badge */}
-          <div className="flex min-w-0 shrink items-center gap-1.5 overflow-hidden">
+          {/* Left: type icon + key + inline Jira badge */}
+          <div className="flex min-w-0 shrink items-center gap-1 overflow-hidden">
+          {ticket.jiraKey && <span className="[&>svg]:size-3 shrink-0">{getIssueTypeIcon(ticket.jiraType)}</span>}
           {onOpenInfo ? (
             <button
               onClick={(e) => { e.stopPropagation(); onOpenInfo() }}
@@ -246,18 +252,30 @@ function SortableTicketItem({
               </>
             )}
 
-            {/* Voted ticket: remove button inline in top-right */}
+            {/* Voted ticket: re-vote + remove buttons */}
             {!isSpectator && !isOverlay && isVoted && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onRemove() }}
-                className="flex size-5 items-center justify-center rounded text-muted-foreground/30 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100"
-                aria-label="Remove ticket"
-                title="Remove"
-              >
-                <svg className="size-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onRevote?.() }}
+                  className="flex size-5 items-center justify-center rounded text-muted-foreground/30 opacity-0 transition-all hover:bg-muted/40 hover:text-foreground group-hover:opacity-100"
+                  aria-label="Re-vote"
+                  title="Re-vote"
+                >
+                  <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onRemove() }}
+                  className="flex size-5 items-center justify-center rounded text-muted-foreground/30 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100"
+                  aria-label="Remove ticket"
+                  title="Remove"
+                >
+                  <svg className="size-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -280,18 +298,21 @@ function SortableTicketItem({
 
         {/* Row 3: voted scores or more-detail button */}
         {isVoted ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <svg className="size-2 shrink-0 text-green-500/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
             {ticket.avgScore !== undefined && (
-              <span className="text-[9px] text-muted-foreground/40">
-                avg <span className="font-bold text-muted-foreground/60">{ticket.avgScore}</span>
+              <span className="rounded bg-muted/40 px-1 py-0.5 text-[9px] font-semibold tabular-nums text-muted-foreground/50">
+                avg {ticket.avgScore}
               </span>
             )}
+            {ticket.avgScore !== undefined && ticket.finalScore && (
+              <span className="text-[9px] text-muted-foreground/30">·</span>
+            )}
             {ticket.finalScore && (
-              <span className="text-[9px] text-green-400/70">
-                final <span className="font-bold">{ticket.finalScore}</span>
+              <span className="rounded border border-green-500/25 bg-green-500/15 px-1.5 py-0.5 text-[9px] font-bold tabular-nums text-green-400">
+                {ticket.finalScore}
               </span>
             )}
           </div>
@@ -306,7 +327,7 @@ export function TicketQueuePanel({
   queue, activeKey, panelWidth, isCollapsed, isDragging,
   isJiraConnected = false, isSpectator = false, roomId,
   onCollapse, onWidthChange, onDragStart, onDragEnd,
-  onSelectTicket, onQueueChange, onAdd, onJiraConnected, onJiraDisconnected,
+  onSelectTicket, onQueueChange, onRevoteTicket, onAdd, onJiraConnected, onJiraDisconnected,
   onSaveToJira, jiraPointOverride, onOpenTicketInfo,
 }: Props) {
   const [hideVoted, setHideVoted] = useState(false)
@@ -415,6 +436,22 @@ export function TicketQueuePanel({
     onQueueChange(next)
   }
 
+  function revote(idx: number) {
+    const ticket = queue[idx]
+    const cleaned = { ...ticket, avgScore: undefined, finalScore: undefined }
+    const withoutTicket = queue.filter((_, i) => i !== idx)
+    const firstUnvotedIdx = withoutTicket.findIndex(t => !isVotedTicket(t))
+    const insertAt = firstUnvotedIdx === -1 ? 0 : firstUnvotedIdx
+    const next = [...withoutTicket]
+    next.splice(insertAt, 0, cleaned)
+    if (onRevoteTicket) {
+      onRevoteTicket(cleaned, next)
+    } else {
+      onQueueChange(next)
+      onSelectTicket(cleaned)
+    }
+  }
+
   return (
     <div
       className={cn(
@@ -521,8 +558,11 @@ export function TicketQueuePanel({
                 </div>
                 <div className="flex min-w-0 items-baseline gap-1.5">
                   <span className="text-[11px] font-semibold tracking-wide text-foreground/80">To Estimate</span>
-                  <span className="tabular-nums text-[10px] font-bold text-primary/70">
-                    {queue.length}
+                  <span className={cn(
+                    'tabular-nums text-[10px] font-bold',
+                    queue.length >= MAX_QUEUE_SIZE ? 'text-red-400' : queue.length >= 180 ? 'text-amber-400' : 'text-primary/70',
+                  )}>
+                    {queue.length >= 180 ? `${queue.length}/${MAX_QUEUE_SIZE}` : queue.length}
                   </span>
                 </div>
               </div>
@@ -552,16 +592,32 @@ export function TicketQueuePanel({
                   </button>
                 )}
                 {!isSpectator && onAdd && (
-                  <button
-                    onClick={onAdd}
-                    className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/40 transition-colors hover:bg-primary/10 hover:text-primary"
-                    aria-label="Add tickets"
-                    title="Add tickets"
-                  >
-                    <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                  </button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <button
+                            onClick={queue.length < MAX_QUEUE_SIZE ? onAdd : undefined}
+                            disabled={queue.length >= MAX_QUEUE_SIZE}
+                            className={cn(
+                              'flex size-6 shrink-0 items-center justify-center rounded-md transition-colors',
+                              queue.length >= MAX_QUEUE_SIZE
+                                ? 'cursor-not-allowed text-muted-foreground/20'
+                                : 'text-muted-foreground/40 hover:bg-primary/10 hover:text-primary',
+                            )}
+                            aria-label="Add tickets"
+                          >
+                            <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                          </button>
+                        </span>
+                      </TooltipTrigger>
+                      {queue.length >= MAX_QUEUE_SIZE && (
+                        <TooltipContent>Queue full ({MAX_QUEUE_SIZE}/{MAX_QUEUE_SIZE}) — remove tickets first</TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
                 {!isSpectator && (
                   <button
@@ -671,6 +727,7 @@ export function TicketQueuePanel({
                           onMoveUp={() => moveUp(idx)}
                           onMoveDown={() => moveDown(idx)}
                           onRemove={() => remove(idx)}
+                          onRevote={isVotedTicket(t) && !isSpectator ? () => revote(idx) : undefined}
                           onSaveToJira={onSaveToJira && t.jiraKey && t.storyPointsField ? () => saveToJira(t) : undefined}
                           onOpenInfo={t.jiraKey ? () => onOpenTicketInfo?.(t) : undefined}
                         />
