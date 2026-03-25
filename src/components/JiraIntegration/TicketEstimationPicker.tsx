@@ -1,7 +1,7 @@
 'use client'
 
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { ChevronDown, Filter, Search } from 'lucide-react'
+import { Bookmark, ChevronDown, Filter, Search } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import React, { useEffect, useRef, useState } from 'react'
 
@@ -13,12 +13,18 @@ import { cn } from '@/lib/utils'
 
 import { JiraConnectButton } from './JiraConnectButton'
 import { getIssueTypeIcon } from './jiraIssueTypeIcon'
-import { DEFAULT_FIELD_ID, FIELD_STORAGE_KEY, MAX_QUEUE_SIZE, PROJECT_STORAGE_KEY } from './constants'
+import { DEFAULT_FIELD_ID, FIELD_STORAGE_KEY, JQL_MODE_STORAGE_KEY, JQL_QUERY_STORAGE_KEY, JQL_SAVED_FILTERS_KEY, MAX_QUEUE_SIZE, MAX_SAVED_JQL_FILTERS, PROJECT_STORAGE_KEY } from './constants'
 import { JiraIssue, JiraProject, JiraSprint, TicketEstimation } from './types'
 
 interface JiraField {
   id: string
   name: string
+}
+
+interface SavedJqlFilter {
+  id: string
+  name: string
+  jql: string
 }
 
 interface Props {
@@ -71,14 +77,18 @@ function FilterSection({
   )
 }
 
+// Special sentinel value meaning "sprint is EMPTY" (no sprint assigned)
+const UNSET_SPRINT_JQL = '__UNSET_SPRINT__'
+
 function FilterRow({
-  selected, onClick, icon, label, badge,
+  selected, onClick, icon, label, badge, variant = 'checkbox',
 }: {
   selected: boolean
   onClick: () => void
   icon: React.ReactNode
   label: React.ReactNode
   badge?: React.ReactNode
+  variant?: 'checkbox' | 'radio'
 }) {
   return (
     <button
@@ -90,16 +100,25 @@ function FilterRow({
           : 'border-l-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground'
       )}
     >
-      <div className={cn(
-        'flex size-3.5 shrink-0 items-center justify-center rounded-sm border transition-colors',
-        selected ? 'border-primary bg-primary' : 'border-border/50 bg-transparent'
-      )}>
-        {selected && (
-          <svg viewBox="0 0 10 8" className="size-full p-0.5 text-white" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M1 4l2.5 2.5L9 1" />
-          </svg>
-        )}
-      </div>
+      {variant === 'radio' ? (
+        <div className={cn(
+          'flex size-3.5 shrink-0 items-center justify-center rounded-full border transition-colors',
+          selected ? 'border-primary bg-primary' : 'border-border/50 bg-transparent'
+        )}>
+          {selected && <div className="size-1.5 rounded-full bg-white" />}
+        </div>
+      ) : (
+        <div className={cn(
+          'flex size-3.5 shrink-0 items-center justify-center rounded-sm border transition-colors',
+          selected ? 'border-primary bg-primary' : 'border-border/50 bg-transparent'
+        )}>
+          {selected && (
+            <svg viewBox="0 0 10 8" className="size-full p-0.5 text-white" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 4l2.5 2.5L9 1" />
+            </svg>
+          )}
+        </div>
+      )}
       {icon}
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {badge}
@@ -129,11 +148,22 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
   const t = useTranslations('room.jira')
   const [activeTab, setActiveTab] = useState<Tab>('text')
   const [freeText, setFreeText] = useState('')
+  const [freeTextAdded, setFreeTextAdded] = useState(false)
 
   // Jira search state
-  const [searchMode, setSearchMode] = useState<'text' | 'jql'>('text')
+  const [searchMode, setSearchMode] = useState<'text' | 'jql'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem(JQL_MODE_STORAGE_KEY) as 'text' | 'jql') ?? 'text'
+    }
+    return 'text'
+  })
   const [query, setQuery] = useState('')
-  const [jqlQuery, setJqlQuery] = useState('')
+  const [jqlQuery, setJqlQuery] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(JQL_QUERY_STORAGE_KEY) ?? ''
+    }
+    return ''
+  })
   const [issues, setIssues] = useState<JiraIssue[]>([])
   const [startAt, setStartAt] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -162,10 +192,13 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
   // Collapsible filter sections
   const [projectExpanded, setProjectExpanded] = useState(true)
   const [sprintExpanded, setSprintExpanded] = useState(true)
-  const [typeExpanded, setTypeExpanded] = useState(true)
+  const [typeExpanded, setTypeExpanded] = useState(false)
 
   // Multi-select state
   const [selectedIssueIds, setSelectedIssueIds] = useState<Set<string>>(new Set())
+  // Preserves the full JiraIssue object for every selected id across page navigations,
+  // so handleConfirm doesn't silently drop issues that are no longer on the current page.
+  const [allSelectedIssues, setAllSelectedIssues] = useState<Map<string, JiraIssue>>(new Map())
 
   // Field selector state
   const [fields, setFields] = useState<JiraField[]>([])
@@ -179,6 +212,15 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
   const [fieldSearch, setFieldSearch] = useState('')
   const [fieldsLoading, setFieldsLoading] = useState(false)
 
+  // JQL saved filters
+  const [savedFilters, setSavedFilters] = useState<SavedJqlFilter[]>(() => {
+    if (typeof window === 'undefined') return []
+    try { return JSON.parse(localStorage.getItem(JQL_SAVED_FILTERS_KEY) ?? '[]') } catch { return [] }
+  })
+  const [isSavingFilter, setIsSavingFilter] = useState(false)
+  const [saveFilterName, setSaveFilterName] = useState('')
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false)
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -186,8 +228,8 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
   useEffect(() => {
     if (!open) {
       setFreeText('')
+      setFreeTextAdded(false)
       setQuery('')
-      setJqlQuery('')
       setIssues([])
       setHasMore(false)
       setStartAt(0)
@@ -195,9 +237,13 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
       setPageTokens([null])
       setIsError(false)
       setShowFieldPicker(false)
-      setSearchMode('text')
+      setIsSavingFilter(false)
+      setSaveFilterName('')
+      setIsFilterDropdownOpen(false)
+      // jqlQuery and searchMode intentionally kept — restored from localStorage on next open
       // selectedProjectKey intentionally kept — restored from localStorage on next open
       setSelectedIssueIds(new Set())
+      setAllSelectedIssues(new Map())
       setProjects([])
       setProjectSearch('')
       setSprintSearch('')
@@ -209,6 +255,19 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
       setActiveTab(isJiraConnected ? 'jira' : 'text')
     }
   }, [open, isJiraConnected])
+
+  // Persist JQL query and mode to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(JQL_QUERY_STORAGE_KEY, jqlQuery)
+  }, [jqlQuery])
+
+  useEffect(() => {
+    localStorage.setItem(JQL_MODE_STORAGE_KEY, searchMode)
+  }, [searchMode])
+
+  useEffect(() => {
+    localStorage.setItem(JQL_SAVED_FILTERS_KEY, JSON.stringify(savedFilters))
+  }, [savedFilters])
 
   // Load fields when Jira tab is active
   useEffect(() => {
@@ -261,18 +320,24 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
       .finally(() => setSprintsLoading(false))
   }, [open, isJiraConnected, activeTab, cloudId, selectedProjectKey])
 
+  function buildJqlFromCurrentFilters(): string {
+    const clauses: string[] = []
+    if (selectedProjectKey) clauses.push(`project = "${selectedProjectKey}"`)
+    if (selectedSprintJql === UNSET_SPRINT_JQL) clauses.push('sprint is EMPTY')
+    else if (selectedSprintJql) clauses.push(`sprint = ${selectedSprintJql}`)
+    if (selectedTypes.size > 0) clauses.push(`issuetype in (${[...selectedTypes].map((t) => `"${t}"`).join(',')})`)
+    if (query.trim()) clauses.push(`text ~ "${query.trim()}"`)
+    if (clauses.length === 0) return ''
+    return clauses.join(' AND ') + ' ORDER BY updated DESC'
+  }
+
   function buildIssueUrl(pageToken: string | null = null, ps = pageSize) {
     const tokenSuffix = pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''
     if (searchMode === 'jql') {
       return `/api/jira/issues?jql=${encodeURIComponent(jqlQuery)}&cloudId=${cloudId}&pageSize=${ps}${tokenSuffix}`
     }
     if (selectedSprintJql !== null || selectedTypes.size > 0 || selectedProjectKey !== null) {
-      const clauses: string[] = []
-      if (selectedProjectKey) clauses.push(`project = "${selectedProjectKey}"`)
-      if (selectedSprintJql) clauses.push(`sprint = ${selectedSprintJql}`)
-      if (selectedTypes.size > 0) clauses.push(`issuetype in (${[...selectedTypes].map((t) => `"${t}"`).join(',')})`)
-      if (query.trim()) clauses.push(`text ~ "${query.trim()}"`)
-      const jql = clauses.join(' AND ') + ' ORDER BY updated DESC'
+      const jql = buildJqlFromCurrentFilters()
       return `/api/jira/issues?jql=${encodeURIComponent(jql)}&cloudId=${cloudId}&pageSize=${ps}${tokenSuffix}`
     }
     return `/api/jira/issues?q=${encodeURIComponent(query)}&cloudId=${cloudId}`
@@ -387,16 +452,43 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
     }
   }
 
+  const isCurrentJqlSaved = savedFilters.some((f) => f.jql === jqlQuery.trim())
+  const canSaveMoreFilters = savedFilters.length < MAX_SAVED_JQL_FILTERS
+
+  function handleOpenSaveFilter() {
+    setSaveFilterName(jqlQuery.slice(0, 40))
+    setIsSavingFilter(true)
+  }
+
+  function handleSaveFilter() {
+    const trimmedName = saveFilterName.trim()
+    if (!trimmedName || !jqlQuery.trim()) return
+    const newFilter: SavedJqlFilter = { id: Date.now().toString(), name: trimmedName, jql: jqlQuery.trim() }
+    setSavedFilters((prev) => [newFilter, ...prev.slice(0, MAX_SAVED_JQL_FILTERS - 1)])
+    setIsSavingFilter(false)
+    setSaveFilterName('')
+  }
+
+  function handleDeleteSavedFilter(id: string) {
+    setSavedFilters((prev) => prev.filter((f) => f.id !== id))
+  }
+
+  function handleApplySavedFilter(filter: SavedJqlFilter) {
+    setJqlQuery(filter.jql)
+  }
+
   function handleFreeTextSubmit() {
     const name = freeText.trim()
     if (!name) return
     onSelect([{ name, source: '' }])
-    onOpenChange(false)
+    setFreeText('')
+    setFreeTextAdded(true)
+    setTimeout(() => setFreeTextAdded(false), 2000)
   }
 
   function handleConfirm() {
     const selectedIssues = [...selectedIssueIds]
-      .map((id) => issues.find((i) => i.id === id))
+      .map((id) => allSelectedIssues.get(id))
       .filter((i): i is JiraIssue => i !== undefined)
     const estimations: TicketEstimation[] = selectedIssues.map((issue) => ({
       name: issue.summary,
@@ -416,8 +508,12 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
     setSprints([])
     setSelectedSprintJql(null)
     setSprintSearch('')
-    if (key) localStorage.setItem(PROJECT_STORAGE_KEY, key)
-    else localStorage.removeItem(PROJECT_STORAGE_KEY)
+    if (key) {
+      localStorage.setItem(PROJECT_STORAGE_KEY, key)
+      setSprintExpanded(true)
+    } else {
+      localStorage.removeItem(PROJECT_STORAGE_KEY)
+    }
   }
 
   function selectField(field: JiraField) {
@@ -428,10 +524,17 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
   }
 
   function toggleIssue(id: string) {
+    const issue = issues.find((i) => i.id === id)
     setSelectedIssueIds((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
+      return next
+    })
+    setAllSelectedIssues((prev) => {
+      const next = new Map(prev)
+      if (next.has(id)) next.delete(id)
+      else if (issue) next.set(id, issue)
       return next
     })
   }
@@ -441,10 +544,29 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
   const toggleableIssues = issues.filter((i) => !queuedJiraKeys.has(i.key))
 
   const toggleSelectAll = () => {
-    if (toggleableIssues.every((i) => selectedIssueIds.has(i.id))) {
-      setSelectedIssueIds(new Set())
+    const allSelected = toggleableIssues.every((i) => selectedIssueIds.has(i.id))
+    if (allSelected) {
+      setSelectedIssueIds((prev) => {
+        const next = new Set(prev)
+        toggleableIssues.forEach((i) => next.delete(i.id))
+        return next
+      })
+      setAllSelectedIssues((prev) => {
+        const next = new Map(prev)
+        toggleableIssues.forEach((i) => next.delete(i.id))
+        return next
+      })
     } else {
-      setSelectedIssueIds(new Set(toggleableIssues.map((i) => i.id)))
+      setSelectedIssueIds((prev) => {
+        const next = new Set(prev)
+        toggleableIssues.forEach((i) => next.add(i.id))
+        return next
+      })
+      setAllSelectedIssues((prev) => {
+        const next = new Map(prev)
+        toggleableIssues.forEach((i) => next.set(i.id, i))
+        return next
+      })
     }
   }
 
@@ -475,7 +597,9 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
   const hasQuery = activeQuery.trim().length > 0 || selectedSprintJql !== null || selectedTypes.size > 0 || selectedProjectKey !== null
 
   // Filter label text
-  const selectedSprint = sprints.find((s) => s.jqlValue === selectedSprintJql)
+  const selectedSprint = selectedSprintJql === UNSET_SPRINT_JQL
+    ? { name: 'Unset sprint', state: undefined, jqlValue: UNSET_SPRINT_JQL, boardName: undefined, isFavouriteBoard: undefined }
+    : sprints.find((s) => s.jqlValue === selectedSprintJql)
   const filterLabelText = searchMode === 'jql'
     ? 'JQL mode active — results driven by your query'
     : [
@@ -507,44 +631,37 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
             {t('setTicketTitle')}
           </DialogTitle>
 
-          {isJiraConnected && (
-            <div className="flex rounded-lg border border-border/40 bg-muted/20 p-0.5">
-              <button
-                role="tab"
-                aria-selected={activeTab === 'jira'}
-                className={cn(
-                  'relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150',
-                  activeTab === 'jira'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-                onClick={() => setActiveTab('jira')}
-              >
-                <JiraIcon className="size-3 text-blue-400" />
-                {t('tabJira')}
-                {activeTab === 'jira' && (
-                  <span className="absolute -bottom-[5px] left-1/2 size-1 -translate-x-1/2 rounded-full bg-primary" />
-                )}
-              </button>
-              <button
-                role="tab"
-                aria-selected={activeTab === 'text'}
-                className={cn(
-                  'relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150',
-                  activeTab === 'text'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-                onClick={() => setActiveTab('text')}
-              >
-                <GenericTicketIcon className="size-3" />
-                {t('tabFreeText')}
-                {activeTab === 'text' && (
-                  <span className="absolute -bottom-[5px] left-1/2 size-1 -translate-x-1/2 rounded-full bg-primary" />
-                )}
-              </button>
-            </div>
-          )}
+          <div role="tablist" aria-label="Add ticket source" className="flex rounded-lg border border-border/40 bg-muted/20 p-0.5">
+            <button
+              role="tab"
+              aria-selected={activeTab === 'jira'}
+              className={cn(
+                'relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150',
+                activeTab === 'jira'
+                  ? 'bg-muted/40 text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground',
+                !isJiraConnected && activeTab !== 'jira' && 'opacity-60'
+              )}
+              onClick={() => setActiveTab('jira')}
+            >
+              <JiraIcon className="size-3 text-blue-400" />
+              {t('tabJira')}
+            </button>
+            <button
+              role="tab"
+              aria-selected={activeTab === 'text'}
+              className={cn(
+                'relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150',
+                activeTab === 'text'
+                  ? 'bg-muted/40 text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+              onClick={() => setActiveTab('text')}
+            >
+              <GenericTicketIcon className="size-3" />
+              {t('tabFreeText')}
+            </button>
+          </div>
 
           {/* Close button */}
           <DialogPrimitive.Close className="flex size-7 items-center justify-center rounded-lg border border-border/40 bg-muted/20 text-muted-foreground transition-colors hover:border-border/60 hover:bg-muted/40 hover:text-foreground">
@@ -555,25 +672,28 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
           </DialogPrimitive.Close>
         </div>
 
+        {/* ── Jira connect prompt (Jira tab selected but not connected) ── */}
+        {activeTab === 'jira' && !isJiraConnected && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-8 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-blue-500/10">
+              <JiraIcon className="size-6 text-blue-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Connect Jira to search issues</p>
+              <p className="mt-1 text-xs text-muted-foreground">Search your backlog, filter by project and sprint, and add multiple issues at once.</p>
+            </div>
+            <JiraConnectButton
+              isConnected={false}
+              roomId={roomId}
+              onConnected={onJiraConnected}
+              onDisconnected={onJiraDisconnected}
+            />
+          </div>
+        )}
+
         {/* ── Free text panel ── */}
         {activeTab === 'text' && (
           <div className="flex flex-1 flex-col gap-3 px-5 py-4">
-            {!isJiraConnected && (
-              <div className="flex items-center justify-between gap-3 rounded-lg border border-border/40 bg-muted/20 px-3 py-2.5">
-                <div className="flex items-center gap-2">
-                  <svg className="size-3.5 shrink-0 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M11.53 2c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.95 4.34 4.34 4.35V2.84a.84.84 0 0 0-.84-.84zM6.77 6.8c0 2.4 1.96 4.34 4.35 4.34h1.78v1.71c0 2.4 1.95 4.34 4.35 4.35V7.63a.84.84 0 0 0-.84-.83zM2 11.6c0 2.4 1.95 4.34 4.35 4.34h1.78v1.71A4.35 4.35 0 0 0 12.48 22v-9.57a.84.84 0 0 0-.84-.83z" />
-                  </svg>
-                  <span className="text-xs text-muted-foreground">Connect Jira to search &amp; link issues</span>
-                </div>
-                <JiraConnectButton
-                  isConnected={false}
-                  roomId={roomId}
-                  onConnected={onJiraConnected}
-                  onDisconnected={onJiraDisconnected}
-                />
-              </div>
-            )}
             <Input
               autoFocus
               placeholder={t('freeTextPlaceholder')}
@@ -582,7 +702,23 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
               onKeyDown={(e) => { if (e.key === 'Enter') handleFreeTextSubmit() }}
               className="border-border/40 bg-[hsl(20,6%,12%)] focus-visible:border-primary/40 focus-visible:ring-primary/30"
             />
-            <div className="flex justify-end">
+            {freeTextAdded && (
+              <div className="animate-in fade-in flex items-center gap-1.5 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 duration-200">
+                <svg className="size-3 shrink-0 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-xs text-green-400">Added to queue — keep adding or close when done</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onOpenChange(false)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                {t('cancel')}
+              </Button>
               <Button
                 size="sm"
                 disabled={!freeText.trim()}
@@ -596,7 +732,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
         )}
 
         {/* ── Jira search panel ── */}
-        {activeTab === 'jira' && (
+        {activeTab === 'jira' && isJiraConnected && (
           <>
             {/* Search row */}
             <div className="flex items-center gap-2 border-b border-border/50 px-4 py-3">
@@ -630,21 +766,108 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                 )}
               </div>
 
-              {/* Filter by project toggle */}
-              <button
-                aria-label={t('filterByProject')}
-                aria-pressed={isFilterOpen}
-                disabled={searchMode === 'jql'}
-                onClick={() => setIsFilterOpen((v) => !v)}
-                className={cn(
-                  'flex size-8 items-center justify-center rounded-md border transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40',
-                  isFilterOpen
-                    ? 'border-primary/50 bg-primary/15 text-primary'
-                    : 'border-border/40 bg-muted/20 text-muted-foreground hover:border-border/60 hover:text-foreground'
-                )}
-              >
-                <Filter className="size-3.5" />
-              </button>
+              {/* Filter by project toggle — hidden in JQL mode */}
+              {searchMode !== 'jql' && (
+                <button
+                  aria-label={t('filterByProject')}
+                  aria-pressed={isFilterOpen}
+                  onClick={() => setIsFilterOpen((v) => !v)}
+                  className={cn(
+                    'flex size-8 items-center justify-center rounded-md border transition-all duration-150',
+                    isFilterOpen
+                      ? 'border-primary/50 bg-primary/15 text-primary'
+                      : 'border-border/40 bg-muted/20 text-muted-foreground hover:border-border/60 hover:text-foreground'
+                  )}
+                >
+                  <Filter className="size-3.5" />
+                </button>
+              )}
+
+              {/* Saved filters dropdown — visible in JQL mode or whenever there are saved filters */}
+              {(searchMode === 'jql' || savedFilters.length > 0) && (
+                <div className="relative">
+                  <button
+                    aria-label="Saved filters"
+                    aria-expanded={isFilterDropdownOpen}
+                    onClick={() => setIsFilterDropdownOpen((v) => !v)}
+                    className={cn(
+                      'flex size-8 items-center justify-center rounded-md border transition-all duration-150',
+                      isFilterDropdownOpen
+                        ? 'border-amber-500/50 bg-amber-500/15 text-amber-400'
+                        : savedFilters.length > 0
+                          ? 'border-amber-500/40 bg-amber-500/10 text-amber-400 hover:border-amber-500/60 hover:bg-amber-500/15'
+                          : 'border-border/40 bg-muted/20 text-muted-foreground hover:border-border/60 hover:bg-muted/40 hover:text-foreground'
+                    )}
+                  >
+                    <Bookmark className={cn('size-3.5', savedFilters.length > 0 && 'fill-current')} />
+                  </button>
+
+                  {isFilterDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setIsFilterDropdownOpen(false)} />
+                      <div className="absolute right-0 top-full z-50 mt-1 w-64 rounded-lg border border-border/60 bg-[hsl(20,8%,9%)] shadow-xl shadow-black/50">
+                        <div className="flex items-center justify-between border-b border-border/40 px-3 py-2">
+                          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">Saved filters</span>
+                          {searchMode === 'jql' && jqlQuery.trim() && !isCurrentJqlSaved && canSaveMoreFilters && (
+                            <button
+                              onClick={() => { setIsFilterDropdownOpen(false); handleOpenSaveFilter() }}
+                              className="flex items-center gap-1 text-[10px] font-semibold text-amber-400 transition-colors hover:text-amber-300"
+                            >
+                              <Bookmark className="size-2.5" />
+                              Save current
+                            </button>
+                          )}
+                        </div>
+
+                        {savedFilters.length === 0 ? (
+                          <p className="py-6 text-center text-xs text-muted-foreground/50">No saved filters yet</p>
+                        ) : (
+                          <div className="max-h-48 overflow-y-auto py-1">
+                            {savedFilters.map((filter) => {
+                              const isActive = filter.jql === jqlQuery.trim() && searchMode === 'jql'
+                              return (
+                                <div
+                                  key={filter.id}
+                                  className={cn(
+                                    'flex items-center gap-2 px-3 py-2 transition-colors',
+                                    isActive ? 'bg-primary/10' : 'hover:bg-muted/30'
+                                  )}
+                                >
+                                  <button
+                                    onClick={() => {
+                                      handleApplySavedFilter(filter)
+                                      if (searchMode !== 'jql') {
+                                        setSearchMode('jql')
+                                        setQuery('')
+                                        setIsFilterOpen(false)
+                                      }
+                                      setIsFilterDropdownOpen(false)
+                                    }}
+                                    aria-label={`Apply saved filter: ${filter.name}`}
+                                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                                  >
+                                    <Bookmark className={cn('size-3 shrink-0', isActive ? 'fill-current text-primary' : 'text-amber-400/70')} />
+                                    <span className={cn('min-w-0 flex-1 truncate text-xs', isActive ? 'font-semibold text-primary' : 'text-foreground/80')}>{filter.name}</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteSavedFilter(filter.id)}
+                                    aria-label={`Remove saved filter: ${filter.name}`}
+                                    className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground/30 transition-colors hover:bg-muted/40 hover:text-foreground"
+                                  >
+                                    <svg viewBox="0 0 10 10" className="size-2.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                                      <path d="M2 2l6 6M8 2l-6 6" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* JQL mode toggle */}
               <button
@@ -653,9 +876,13 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                 onClick={() => {
                   if (searchMode === 'jql') {
                     setSearchMode('text')
-                    setJqlQuery('')
                     setIssues([])
+                    setIsSavingFilter(false)
+                    setIsFilterDropdownOpen(false)
+                    setIsFilterOpen(true)
                   } else {
+                    const converted = buildJqlFromCurrentFilters()
+                    if (converted) setJqlQuery(converted)
                     setSearchMode('jql')
                     setQuery('')
                     setIssues([])
@@ -676,72 +903,94 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
               </button>
             </div>
 
-            {/* Active filter chips row */}
-            <div className="flex min-h-[32px] items-center gap-2 border-b border-border/40 px-4 py-2">
-              {searchMode === 'jql' ? (
-                <span className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary/90">
-                  <svg className="size-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-                  JQL mode
-                </span>
-              ) : (
-                <>
-                  {selectedSprint && (
-                    <span className="flex items-center gap-1.5 rounded-full border border-blue-500/30 bg-blue-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-blue-300">
-                      <span className="size-1.5 rounded-full bg-blue-400" />
-                      {selectedSprint.name}
-                      <button
-                        onClick={() => setSelectedSprintJql(null)}
-                        className="ml-0.5 flex size-3 items-center justify-center rounded-full text-blue-300/60 transition-colors hover:bg-blue-400/20 hover:text-blue-200"
-                        aria-label="Remove sprint filter"
-                      >
-                        <svg viewBox="0 0 10 10" className="size-2" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-                          <path d="M2 2l6 6M8 2l-6 6" />
-                        </svg>
-                      </button>
-                    </span>
-                  )}
-                  {selectedProjectKey && (
-                    <span className="flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-violet-300">
-                      <JiraIcon className="size-2.5 text-violet-400" />
-                      {selectedProjectKey}
-                      <button
-                        onClick={() => selectProject(null)}
-                        className="ml-0.5 flex size-3 items-center justify-center rounded-full text-violet-300/60 transition-colors hover:bg-violet-400/20 hover:text-violet-200"
-                        aria-label="Remove project filter"
-                      >
-                        <svg viewBox="0 0 10 10" className="size-2" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-                          <path d="M2 2l6 6M8 2l-6 6" />
-                        </svg>
-                      </button>
-                    </span>
-                  )}
-                  {selectedTypes.size > 0 && (
-                    <span className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-amber-300">
-                      <span className="size-1.5 rounded-full bg-amber-400" />
-                      {selectedTypes.size} type{selectedTypes.size > 1 ? 's' : ''}
-                      <button
-                        onClick={() => setSelectedTypes(new Set())}
-                        className="ml-0.5 flex size-3 items-center justify-center rounded-full text-amber-300/60 transition-colors hover:bg-amber-400/20 hover:text-amber-200"
-                        aria-label="Remove type filter"
-                      >
-                        <svg viewBox="0 0 10 10" className="size-2" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-                          <path d="M2 2l6 6M8 2l-6 6" />
-                        </svg>
-                      </button>
-                    </span>
-                  )}
-                  {!selectedSprint && !selectedProjectKey && selectedTypes.size === 0 && (
-                    <span className="text-[11px] text-muted-foreground/40">No filters active</span>
-                  )}
-                </>
-              )}
-            </div>
+            {/* Inline save filter form */}
+            {isSavingFilter && searchMode === 'jql' && (
+              <div className="flex items-center gap-2 border-b border-border/40 bg-[hsl(20,6%,7%)] px-4 py-2">
+                <Bookmark className="size-3.5 shrink-0 text-amber-400" />
+                <Input
+                  autoFocus
+                  placeholder="Filter name…"
+                  value={saveFilterName}
+                  onChange={(e) => setSaveFilterName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveFilter()
+                    if (e.key === 'Escape') setIsSavingFilter(false)
+                  }}
+                  maxLength={40}
+                  className="h-7 flex-1 border-border/40 bg-[hsl(20,6%,12%)] text-xs focus-visible:ring-amber-500/30"
+                />
+                <button
+                  onClick={handleSaveFilter}
+                  disabled={!saveFilterName.trim()}
+                  className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/15 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsSavingFilter(false)}
+                  className="rounded-md border border-border/40 bg-muted/20 px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {/* Active filter chips row — text mode only, shown when any filter is active */}
+            {searchMode !== 'jql' && (selectedSprint || selectedProjectKey || selectedTypes.size > 0) && (
+              <div className="flex flex-wrap items-center gap-2 border-b border-border/40 px-4 py-2">
+                {selectedSprint && (
+                  <span className="flex items-center gap-1.5 rounded-full border border-blue-500/30 bg-blue-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-blue-300">
+                    <span className="size-1.5 rounded-full bg-blue-400" />
+                    {selectedSprint.name}
+                    <button
+                      onClick={() => setSelectedSprintJql(null)}
+                      className="ml-0.5 flex size-3 items-center justify-center rounded-full text-blue-300/60 transition-colors hover:bg-blue-400/20 hover:text-blue-200"
+                      aria-label="Remove sprint filter"
+                    >
+                      <svg viewBox="0 0 10 10" className="size-2" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                        <path d="M2 2l6 6M8 2l-6 6" />
+                      </svg>
+                    </button>
+                  </span>
+                )}
+                {selectedProjectKey && (
+                  <span className="flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-violet-300">
+                    <JiraIcon className="size-2.5 text-violet-400" />
+                    {selectedProjectKey}
+                    <button
+                      onClick={() => selectProject(null)}
+                      className="ml-0.5 flex size-3 items-center justify-center rounded-full text-violet-300/60 transition-colors hover:bg-violet-400/20 hover:text-violet-200"
+                      aria-label="Remove project filter"
+                    >
+                      <svg viewBox="0 0 10 10" className="size-2" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                        <path d="M2 2l6 6M8 2l-6 6" />
+                      </svg>
+                    </button>
+                  </span>
+                )}
+                {selectedTypes.size > 0 && (
+                  <span className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-amber-300">
+                    <span className="size-1.5 rounded-full bg-amber-400" />
+                    {selectedTypes.size} type{selectedTypes.size > 1 ? 's' : ''}
+                    <button
+                      onClick={() => setSelectedTypes(new Set())}
+                      className="ml-0.5 flex size-3 items-center justify-center rounded-full text-amber-300/60 transition-colors hover:bg-amber-400/20 hover:text-amber-200"
+                      aria-label="Remove type filter"
+                    >
+                      <svg viewBox="0 0 10 10" className="size-2" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                        <path d="M2 2l6 6M8 2l-6 6" />
+                      </svg>
+                    </button>
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Body: filter panel + issue list */}
             <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
 
-              {/* Filter panel — always rendered, width collapses */}
-              <div
+              {/* Filter panel — not rendered in JQL mode */}
+              {searchMode !== 'jql' && <div
                 className={cn(
                   'relative flex shrink-0 flex-col overflow-hidden border-b border-border/40 transition-[width] duration-300 sm:border-b-0 sm:border-r sm:border-border/40',
                   isFilterOpen ? 'sm:w-[200px] w-full' : 'sm:w-7 w-0'
@@ -749,19 +998,21 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                 role="region"
                 aria-label="Filters"
               >
-                {/* Collapse handle — right edge */}
-                <button
-                  onClick={() => setIsFilterOpen((v) => !v)}
-                  aria-label={isFilterOpen ? 'Collapse filters' : 'Expand filters'}
-                  className="absolute right-0 top-1/2 z-10 -translate-y-1/2 hidden h-12 w-6 items-center justify-center rounded-l border border-r-0 border-border/30 bg-[hsl(20,6%,7%)] text-muted-foreground/40 transition-colors hover:bg-muted/40 hover:text-foreground sm:flex"
-                >
-                  <svg
-                    className={cn('size-3 transition-transform duration-200', isFilterOpen ? 'rotate-0' : 'rotate-180')}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                {/* Collapse handle — right edge (hidden in JQL mode since filter is always closed) */}
+                {searchMode !== 'jql' && (
+                  <button
+                    onClick={() => setIsFilterOpen((v) => !v)}
+                    aria-label={isFilterOpen ? 'Collapse filters' : 'Expand filters'}
+                    className="absolute right-0 top-1/2 z-10 -translate-y-1/2 hidden h-12 w-6 items-center justify-center rounded-l border border-r-0 border-border/30 bg-[hsl(20,6%,7%)] text-muted-foreground/40 transition-colors hover:bg-muted/40 hover:text-foreground sm:flex"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
+                    <svg
+                      className={cn('size-3 transition-transform duration-200', isFilterOpen ? 'rotate-0' : 'rotate-180')}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                )}
 
                 {/* Panel content — hidden when collapsed */}
                 {isFilterOpen && (
@@ -815,44 +1066,66 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                         <p className="px-3 py-3 text-center text-xs text-muted-foreground/40">Select a project first</p>
                       ) : (
                       <>
-                      {!sprintsLoading && sprints.length > 0 && (
-                        <div className="px-2 pb-1">
-                          <Input
-                            placeholder="Search sprints or board…"
-                            value={sprintSearch}
-                            onChange={(e) => setSprintSearch(e.target.value)}
-                            className="h-7 border-muted-foreground/25 bg-muted/20 text-xs focus-visible:ring-primary/30"
+                        {/* Sprint search input */}
+                        {!sprintsLoading && sprints.length > 0 && (
+                          <div className="px-2 pb-1 pt-1">
+                            <Input
+                              placeholder="Search sprints or board…"
+                              value={sprintSearch}
+                              onChange={(e) => setSprintSearch(e.target.value)}
+                              className="h-7 border-muted-foreground/25 bg-muted/20 text-xs focus-visible:ring-primary/30"
+                            />
+                          </div>
+                        )}
+
+                        {/* Sprint list */}
+                        <div className="max-h-36 overflow-y-auto">
+                          {sprintsLoading
+                            ? [0, 1, 2].map((i) => <Skeleton key={i} className="mx-2 my-0.5 h-6 rounded" />)
+                            : filteredSprints.length === 0
+                              ? <p className="px-3 py-3 text-center text-xs text-muted-foreground/50">{sprints.length === 0 ? 'No sprints found' : 'No matches'}</p>
+                              : filteredSprints.map((sprint) => (
+                                <FilterRow
+                                  key={sprint.jqlValue}
+                                  variant="radio"
+                                  selected={selectedSprintJql === sprint.jqlValue}
+                                  onClick={() => setSelectedSprintJql(sprint.jqlValue)}
+                                  icon={<span className={cn('size-1.5 shrink-0 rounded-full', sprint.state === 'active' ? 'bg-green-400' : sprint.state === 'future' ? 'bg-blue-400' : 'bg-muted-foreground/30')} />}
+                                  label={
+                                    <span className="flex min-w-0 flex-1 flex-col">
+                                      <span className="truncate">{sprint.name}</span>
+                                      {sprint.boardName && (
+                                        <span className="truncate text-[9px] text-muted-foreground/50">{sprint.boardName}</span>
+                                      )}
+                                    </span>
+                                  }
+                                  badge={sprint.state && (
+                                    <span className={cn('shrink-0 text-[9px] font-semibold uppercase tracking-wide', sprint.state === 'active' ? 'text-green-400' : sprint.state === 'future' ? 'text-blue-400' : 'text-muted-foreground/40')}>
+                                      {sprint.state}
+                                    </span>
+                                  )}
+                                />
+                              ))
+                          }
+                        </div>
+
+                        {/* Fixed options: All sprints + Unset sprint */}
+                        <div className="border-t border-border/20 pb-0.5 pt-0.5">
+                          <FilterRow
+                            variant="radio"
+                            selected={selectedSprintJql === null}
+                            onClick={() => setSelectedSprintJql(null)}
+                            icon={<span className="size-1.5 shrink-0 rounded-full bg-muted-foreground/30" />}
+                            label={<span className="font-semibold uppercase tracking-wider text-[10px]">All sprints</span>}
+                          />
+                          <FilterRow
+                            variant="radio"
+                            selected={selectedSprintJql === UNSET_SPRINT_JQL}
+                            onClick={() => setSelectedSprintJql(UNSET_SPRINT_JQL)}
+                            icon={<span className="size-1.5 shrink-0 rounded-full ring-1 ring-muted-foreground/40" />}
+                            label={<span className="font-semibold uppercase tracking-wider text-[10px]">Unset sprint</span>}
                           />
                         </div>
-                      )}
-                      <div className="max-h-36 overflow-y-auto">
-                        {sprintsLoading
-                          ? [0, 1, 2].map((i) => <Skeleton key={i} className="mx-2 my-0.5 h-6 rounded" />)
-                          : filteredSprints.length === 0
-                            ? <p className="px-3 py-3 text-center text-xs text-muted-foreground/50">{sprints.length === 0 ? 'No sprints found' : 'No matches'}</p>
-                            : filteredSprints.map((sprint) => (
-                              <FilterRow
-                                key={sprint.jqlValue}
-                                selected={selectedSprintJql === sprint.jqlValue}
-                                onClick={() => setSelectedSprintJql(selectedSprintJql === sprint.jqlValue ? null : sprint.jqlValue)}
-                                icon={<span className={cn('size-1.5 shrink-0 rounded-full', sprint.state === 'active' ? 'bg-green-400' : sprint.state === 'future' ? 'bg-blue-400' : 'bg-muted-foreground/30')} />}
-                                label={
-                                  <span className="flex min-w-0 flex-1 flex-col">
-                                    <span className="truncate">{sprint.name}</span>
-                                    {sprint.boardName && (
-                                      <span className="truncate text-[9px] text-muted-foreground/50">{sprint.boardName}</span>
-                                    )}
-                                  </span>
-                                }
-                                badge={sprint.state && (
-                                  <span className={cn('shrink-0 text-[9px] font-semibold uppercase tracking-wide', sprint.state === 'active' ? 'text-green-400' : sprint.state === 'future' ? 'text-blue-400' : 'text-muted-foreground/40')}>
-                                    {sprint.state}
-                                  </span>
-                                )}
-                              />
-                            ))
-                        }
-                      </div>
                       </>
                       )}
                     </FilterSection>
@@ -879,7 +1152,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                     </FilterSection>
                   </div>
                 )}
-              </div>
+              </div>}
 
               {/* Issue list */}
               <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -931,8 +1204,19 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                     </div>
                   )}
 
+                  {/* Empty — project selected but sprints still loading (auto-load pending) */}
+                  {!loading && !isError && !hasQuery && selectedProjectKey && sprintsLoading && (
+                    <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 py-12 text-center">
+                      <svg className="size-6 animate-spin text-muted-foreground/30" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                      </svg>
+                      <p className="text-sm text-muted-foreground/60">Loading sprints…</p>
+                    </div>
+                  )}
+
                   {/* Empty — no query */}
-                  {!loading && !isError && !hasQuery && (
+                  {!loading && !isError && !hasQuery && !(selectedProjectKey && sprintsLoading) && (
                     <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 py-12 text-center">
                       <div className="animate-pulse">
                         <Search className="size-8 text-muted-foreground/25" />
@@ -953,7 +1237,13 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                   {!loading && !isError && issues.length > 0 && (
                     <div className="flex flex-col py-1">
                       {/* Select all row */}
-                      <label className="flex cursor-pointer items-center gap-2.5 border-b border-border/40 bg-muted/10 px-4 py-2 transition-colors hover:bg-muted/20">
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={toggleSelectAll}
+                        onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleSelectAll() } }}
+                        className="flex cursor-pointer items-center gap-2.5 border-b border-border/40 bg-muted/20 px-4 py-2 transition-colors hover:bg-muted/30"
+                      >
                         <div
                           className={cn(
                             'size-4 flex-shrink-0 rounded-sm border transition-all duration-100',
@@ -961,7 +1251,6 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                               ? 'border-primary bg-primary shadow-sm shadow-primary/30'
                               : 'border-muted-foreground/40 bg-muted/40'
                           )}
-                          onClick={toggleSelectAll}
                         >
                           {allOnPageSelected && (
                             <svg viewBox="0 0 10 8" className="size-full p-0.5 text-primary-foreground" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
@@ -969,15 +1258,12 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                             </svg>
                           )}
                         </div>
-                        <span
-                          className="text-xs font-semibold text-muted-foreground"
-                          onClick={toggleSelectAll}
-                        >
+                        <span className="text-xs font-semibold text-muted-foreground">
                           {!hasMore
                             ? `Select all ${issues.length} issues`
                             : `Select these ${issues.length} issues`}
                         </span>
-                      </label>
+                      </div>
 
                       {/* Issue rows */}
                       <div className="divide-y divide-border/20">
@@ -1001,8 +1287,8 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                               onClick={isAlreadyQueued ? undefined : () => toggleIssue(issue.id)}
                             >
                               {isAlreadyQueued ? (
-                                <span className="flex shrink-0 items-center gap-0.5 rounded border border-green-500/25 bg-green-500/15 px-1 py-0.5 text-[8px] font-semibold text-green-400">
-                                  ✓ In queue
+                                <span className="flex shrink-0 items-center rounded border border-border/40 bg-muted/30 px-1.5 py-0.5 text-[8px] font-semibold text-muted-foreground/60">
+                                  Already added
                                 </span>
                               ) : (
                                 <div
@@ -1029,7 +1315,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                               <div className="shrink-0">{getIssueTypeIcon(issue.type)}</div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-baseline gap-2">
-                                  <span className="shrink-0 font-mono text-[10px] font-bold text-primary">{issue.key}</span>
+                                  <span className="min-w-[68px] shrink-0 font-mono text-[10px] font-bold text-primary">{issue.key}</span>
                                   <p className="truncate text-xs leading-snug text-foreground/80">{issue.summary}</p>
                                 </div>
                               </div>
@@ -1063,13 +1349,9 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
             {!loading && !isError && issues.length > 0 && (
               <div className="flex shrink-0 items-center justify-between border-t border-border/40 bg-[hsl(20,6%,7%)] px-4 py-1.5">
                 <span className="text-[11px] tabular-nums text-muted-foreground/60">
-                  <span className="rounded-md bg-muted/30 px-2 py-0.5 text-xs text-muted-foreground/70">
-                    p.{currentPage + 1}
-                  </span>
-                  {' '}
                   {startAt + 1}–{startAt + issues.length}{hasMore ? <span className="text-blue-400/70">+</span> : ''}
                 </span>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
                   <button
                     disabled={currentPage === 0 || paginating}
                     onClick={goToPrev}
@@ -1110,12 +1392,22 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                       </>
                     )}
                   </button>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value) as 25 | 50 | 100)}
+                    className="h-7 rounded-md border border-border/40 bg-muted/20 px-1.5 text-[11px] text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                    title="Items per page"
+                  >
+                    <option value={25}>25 / page</option>
+                    <option value={50}>50 / page</option>
+                    <option value={100}>100 / page</option>
+                  </select>
                 </div>
               </div>
             )}
 
             {/* ── Footer bar ── */}
-            <div className="relative flex items-center justify-between border-t-2 border-border/60 bg-[hsl(20,6%,7%)] px-4 py-3.5">
+            <div className="relative flex items-center justify-between border-t border-border/60 bg-[hsl(20,6%,7%)] px-4 py-3">
 
               {/* Click-outside overlay for SP field picker */}
               {showFieldPicker && (
@@ -1200,18 +1492,8 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                 </span>
               )}
 
-              {/* Right: page size + Cancel + Confirm */}
+              {/* Right: Cancel + Confirm */}
               <div className="flex items-center gap-2">
-                <select
-                  value={pageSize}
-                  onChange={(e) => setPageSize(Number(e.target.value) as 25 | 50 | 100)}
-                  className="h-7 rounded-md border border-border/40 bg-muted/20 px-1.5 text-[11px] text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
-                  title="Items per page"
-                >
-                  <option value={25}>25 / page</option>
-                  <option value={50}>50 / page</option>
-                  <option value={100}>100 / page</option>
-                </select>
                 <Button
                   variant="ghost"
                   size="sm"

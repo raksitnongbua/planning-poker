@@ -14,7 +14,6 @@ import { SECONDS } from '@/utils/time'
 import { Footer } from '../Footer'
 import Loading from '../Loading'
 import Navbar from '../Navbar'
-import ServiceStatus from '../ServiceStatus'
 
 const ReactQueryDevtools =
   process.env.NODE_ENV === 'development'
@@ -56,10 +55,9 @@ const AppShell = ({ children }: { children: ReactNode }) => {
       <div className="flex min-h-dvh flex-col">
         <Navbar />
         <main className={isRoom ? 'flex flex-1 flex-col overflow-hidden' : 'container mx-auto flex-1 px-4 sm:px-6 md:px-8'}>{children}</main>
-        {!isRoom && <Footer />}
+        {!isRoom && <Footer status={status} />}
       </div>
       <Loading open={isLoadingOpen} />
-      <ServiceStatus status={status} />
       <ReactQueryDevtools initialIsOpen={false} />
     </>
   )

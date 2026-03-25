@@ -28,7 +28,7 @@ const ChatWidget = ({
   onToggle,
 }: ChatWidgetProps) => {
   return (
-    <div className="fixed bottom-20 right-4 z-30 flex flex-col items-end gap-2">
+    <div className="fixed bottom-4 right-4 z-30 flex flex-col items-end gap-2">
       {isOpen && (
         <div className="flex flex-col w-64 h-80 rounded-2xl border border-border/50 bg-background/95 backdrop-blur-md shadow-2xl shadow-black/40 overflow-hidden animate-in slide-in-from-bottom-2 duration-200">
           {/* Chat header */}

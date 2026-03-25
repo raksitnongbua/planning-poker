@@ -61,6 +61,8 @@ interface SortableItemProps {
   isSpectator: boolean
   isOverlay?: boolean
   canMoveUp: boolean
+  canMoveDown: boolean
+  canMoveToTop: boolean
   jiraCurrentPoint?: number | null
   isSaving?: boolean
   onSelect: () => void
@@ -81,6 +83,8 @@ function SortableTicketItem({
   isSpectator,
   isOverlay = false,
   canMoveUp,
+  canMoveDown,
+  canMoveToTop,
   jiraCurrentPoint,
   isSaving,
   onSelect,
@@ -92,6 +96,11 @@ function SortableTicketItem({
   onSaveToJira,
   onOpenInfo,
 }: SortableItemProps) {
+  const [syncState, setSyncState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [confirmAction, setConfirmAction] = useState<'remove' | 'reestimate' | null>(null)
+  const prevIsSavingRef = useRef(false)
+  const showSaveToJiraRef = useRef(false)
+
   const showSaveToJira =
     !isSpectator &&
     !isOverlay &&
@@ -99,17 +108,52 @@ function SortableTicketItem({
     !!ticket.jiraKey &&
     jiraCurrentPoint !== undefined &&
     Number(ticket.finalScore) !== (jiraCurrentPoint ?? 0)
+
+  // Keep ref in sync so the effect can read the latest value without it being a dependency
+  showSaveToJiraRef.current = showSaveToJira
+
   const isVoted = !!ticket.avgScore || !!ticket.finalScore
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
     disabled: isVoted || isSpectator,
   })
 
+  // Track isSaving transitions to drive syncState
+  useEffect(() => {
+    const wasSaving = prevIsSavingRef.current
+    prevIsSavingRef.current = isSaving
+
+    if (!wasSaving && isSaving) {
+      setSyncState('saving')
+      return
+    }
+
+    if (wasSaving && !isSaving) {
+      if (showSaveToJiraRef.current) {
+        // Still out of sync after save attempt = error
+        setSyncState('error')
+        const t = setTimeout(() => setSyncState('idle'), 4000)
+        return () => clearTimeout(t)
+      } else {
+        // Now in sync = success
+        setSyncState('saved')
+        const t = setTimeout(() => setSyncState('idle'), 1500)
+        return () => clearTimeout(t)
+      }
+    }
+  }, [isSaving])
+
+  const showSyncPill = showSaveToJira || syncState === 'saved'
+
+  // Shared class for action buttons: hidden at rest, visible on group-hover or keyboard focus
+  const actionButtonClass = 'flex size-5 items-center justify-center rounded opacity-0 transition-[opacity,color,background-color] duration-200 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto'
+
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, height: '100px' }}
       data-active={isActive && !isOverlay ? 'true' : undefined}
+      onMouseLeave={() => setConfirmAction(null)}
       className={cn(
         'group relative flex shrink-0 items-stretch gap-1.5 overflow-hidden px-2.5 select-none',
         isDragging
@@ -119,19 +163,22 @@ function SortableTicketItem({
       )}
       {...(!isSpectator ? { ...attributes, ...listeners } : {})}
     >
-      {/* Left accent bar */}
+      {/* Left accent bar — amber when voted+out-of-sync, green when voted+synced */}
       {isActive && !isOverlay && (
         <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r bg-primary" />
       )}
       {!isActive && isVoted && !isOverlay && (
-        <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r bg-green-500/50" />
+        <span className={cn(
+          'absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r',
+          showSaveToJira || syncState === 'error' ? 'bg-amber-500/60' : 'bg-green-500/50',
+        )} />
       )}
 
       {/* Drag handle */}
       <span className={cn(
         'flex shrink-0 items-center justify-center',
         !isSpectator && !isVoted
-          ? 'text-muted-foreground/20 transition-colors group-hover:text-muted-foreground/45'
+          ? 'text-muted-foreground/30 transition-colors group-hover:text-muted-foreground/45'
           : 'invisible w-4',
       )}>
         {!isSpectator && !isVoted && (
@@ -144,138 +191,167 @@ function SortableTicketItem({
 
       {/* Main content */}
       <div className="flex min-w-0 flex-1 flex-col justify-between gap-0.5 overflow-hidden py-2">
-        {/* Row 1: key + Jira badge + top-right controls */}
+        {/* Row 1: key + top-right controls */}
         <div className="flex items-center justify-between gap-1">
-          {/* Left: type icon + key + inline Jira badge */}
+          {/* Left: type icon + key */}
           <div className="flex min-w-0 shrink items-center gap-1 overflow-hidden">
-          {ticket.jiraKey && <span className="[&>svg]:size-3 shrink-0">{getIssueTypeIcon(ticket.jiraType)}</span>}
-          {onOpenInfo ? (
-            <button
-              onClick={(e) => { e.stopPropagation(); onOpenInfo() }}
-              className={cn(
-                'font-mono text-[10px] font-bold leading-none shrink-0 transition-colors hover:text-primary/80',
-                isActive ? 'text-primary' : isVoted ? 'text-green-400/60' : 'text-muted-foreground/50',
-              )}
-            >
-              {ticket.jiraKey}
-            </button>
-          ) : (
-            <span className={cn('font-mono text-[10px] font-bold leading-none shrink-0', isActive ? 'text-primary' : isVoted ? 'text-green-400/60' : 'text-muted-foreground/50')}>
-              {ticket.jiraKey ?? `#${displayIdx + 1}`}
-            </span>
-          )}
-
-          {/* Jira point badge — inline after key; null = Jira has no value (out of sync if voted) */}
-          {jiraCurrentPoint !== undefined && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); if (showSaveToJira) onSaveToJira?.() }}
-                    disabled={!showSaveToJira || isSaving}
-                    className={cn(
-                      'flex shrink-0 items-center gap-0.5 rounded px-1 py-0.5 text-[8px] font-semibold tabular-nums transition-colors',
-                      showSaveToJira
-                        ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25 cursor-pointer'
-                        : 'bg-muted/20 text-muted-foreground/35 border border-transparent cursor-default',
-                    )}
-                  >
-                    <JiraIcon className={cn('size-2 shrink-0', showSaveToJira ? 'text-amber-400/80' : 'text-muted-foreground/30')} />
-                    {isSaving ? '…' : (jiraCurrentPoint ?? '—')}
-                    {showSaveToJira && (
-                      <svg className="size-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                      </svg>
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {showSaveToJira
-                    ? `Out of sync — Jira: ${jiraCurrentPoint} · Final: ${ticket.finalScore} · Click to save`
-                    : `Jira: ${jiraCurrentPoint} sp`}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-          </div>{/* end left group */}
-
-          {/* Top-right: action buttons (non-voted) or remove (voted) */}
-          <div className="flex shrink-0 items-center gap-1">
-
-            {/* Non-voted action buttons: move up / move down / remove — inline in top-right */}
-            {!isSpectator && !isOverlay && !isVoted && (
-              <>
-                {canMoveUp && (
-                  <>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onMoveToTop() }}
-                      className="flex size-5 items-center justify-center rounded text-muted-foreground/40 opacity-0 transition-all hover:bg-muted/40 hover:text-foreground group-hover:opacity-100"
-                      aria-label="Move to top"
-                      title="Move to top"
-                    >
-                      <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 11l7-7 7 7M5 19l7-7 7 7" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onMoveUp() }}
-                      className="flex size-5 items-center justify-center rounded text-muted-foreground/40 opacity-0 transition-all hover:bg-muted/40 hover:text-foreground group-hover:opacity-100"
-                      aria-label="Move up"
-                      title="Move up"
-                    >
-                      <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-                      </svg>
-                    </button>
-                  </>
+            {ticket.jiraKey && <span className="[&>svg]:size-3 shrink-0">{getIssueTypeIcon(ticket.jiraType)}</span>}
+            {onOpenInfo ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); onOpenInfo() }}
+                className={cn(
+                  'font-mono text-[10px] font-bold leading-none shrink-0 transition-colors hover:text-primary/80',
+                  isActive ? 'text-primary' : isVoted ? 'text-green-400/60' : 'text-muted-foreground/50',
                 )}
-                <button
-                  onClick={(e) => { e.stopPropagation(); onMoveDown() }}
-                  className="flex size-5 items-center justify-center rounded text-muted-foreground/40 opacity-0 transition-all hover:bg-muted/40 hover:text-foreground group-hover:opacity-100"
-                  aria-label="Move down"
-                  title="Move down"
-                >
-                  <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onRemove() }}
-                  className="flex size-5 items-center justify-center rounded text-muted-foreground/30 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100"
-                  aria-label="Remove ticket"
-                  title="Remove"
-                >
-                  <svg className="size-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </>
+              >
+                {ticket.jiraKey}
+              </button>
+            ) : (
+              <span className={cn('font-mono text-[10px] font-bold leading-none shrink-0', isActive ? 'text-primary' : isVoted ? 'text-green-400/60' : 'text-muted-foreground/50')}>
+                {ticket.jiraKey ?? `#${displayIdx + 1}`}
+              </span>
             )}
+          </div>
 
-            {/* Voted ticket: re-vote + remove buttons */}
-            {!isSpectator && !isOverlay && isVoted && (
-              <>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onRevote?.() }}
-                  className="flex size-5 items-center justify-center rounded text-muted-foreground/30 opacity-0 transition-all hover:bg-muted/40 hover:text-foreground group-hover:opacity-100"
-                  aria-label="Re-vote"
-                  title="Re-vote"
-                >
-                  <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onRemove() }}
-                  className="flex size-5 items-center justify-center rounded text-muted-foreground/30 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100"
-                  aria-label="Remove ticket"
-                  title="Remove"
-                >
-                  <svg className="size-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </>
+          {/* Top-right: action buttons */}
+          <div className="flex shrink-0 items-center gap-1">
+            {!isSpectator && !isOverlay && (
+              confirmAction ? (
+                // Inline confirm — always visible, auto-cancels on mouse leave card
+                <div className="flex items-center gap-1">
+                  <span className={cn(
+                    'text-[9px] font-medium',
+                    confirmAction === 'reestimate' ? 'text-amber-400/80' : 'text-red-400/80',
+                  )}>
+                    {confirmAction === 'reestimate' ? 'Re-estimate?' : 'Remove?'}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (confirmAction === 'reestimate') onRevote?.()
+                      else onRemove()
+                      setConfirmAction(null)
+                    }}
+                    className="flex size-5 items-center justify-center rounded text-green-400/80 transition-colors hover:bg-green-500/10 hover:text-green-400"
+                    aria-label="Confirm"
+                  >
+                    <svg className="size-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setConfirmAction(null) }}
+                    className="flex size-5 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-muted/40 hover:text-foreground"
+                    aria-label="Cancel"
+                  >
+                    <svg className="size-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <TooltipProvider>
+                  {!isVoted ? (
+                    // Non-voted: move-to-top, move-up, move-down, remove
+                    <>
+                      {canMoveToTop && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onMoveToTop() }}
+                              className={cn(actionButtonClass, 'text-muted-foreground/40 hover:bg-muted/40 hover:text-foreground')}
+                              aria-label="Move to top"
+                            >
+                              <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 11l7-7 7 7M5 19l7-7 7 7" />
+                              </svg>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>Move to top</TooltipContent>
+                        </Tooltip>
+                      )}
+                      {canMoveUp && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onMoveUp() }}
+                              className={cn(actionButtonClass, 'text-muted-foreground/40 hover:bg-muted/40 hover:text-foreground')}
+                              aria-label="Move up"
+                            >
+                              <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                              </svg>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>Move up</TooltipContent>
+                        </Tooltip>
+                      )}
+                      {canMoveDown && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onMoveDown() }}
+                              className={cn(actionButtonClass, 'text-muted-foreground/40 hover:bg-muted/40 hover:text-foreground')}
+                              aria-label="Move down"
+                            >
+                              <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>Move down</TooltipContent>
+                        </Tooltip>
+                      )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setConfirmAction('remove') }}
+                            className={cn(actionButtonClass, 'text-muted-foreground/30 hover:bg-red-500/10 hover:text-red-400')}
+                            aria-label="Remove ticket"
+                          >
+                            <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Remove</TooltipContent>
+                      </Tooltip>
+                    </>
+                  ) : (
+                    // Voted: re-estimate + remove — gap-1.5 to visually separate the two distinct actions
+                    <div className="flex items-center gap-1.5">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setConfirmAction('reestimate') }}
+                            className={cn(actionButtonClass, 'text-primary/40 hover:bg-primary/10 hover:text-primary')}
+                            aria-label="Re-estimate"
+                          >
+                            <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Re-estimate</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setConfirmAction('remove') }}
+                            className={cn(actionButtonClass, 'text-muted-foreground/30 hover:bg-red-500/10 hover:text-red-400')}
+                            aria-label="Remove ticket"
+                          >
+                            <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Remove</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  )}
+                </TooltipProvider>
+              )
             )}
           </div>
         </div>
@@ -296,7 +372,7 @@ function SortableTicketItem({
           )}
         </div>
 
-        {/* Row 3: voted scores or more-detail button */}
+        {/* Row 3: voted scores + Jira sync pill */}
         {isVoted ? (
           <div className="flex items-center gap-1">
             <svg className="size-2 shrink-0 text-green-500/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -314,6 +390,76 @@ function SortableTicketItem({
               <span className="rounded border border-green-500/25 bg-green-500/15 px-1.5 py-0.5 text-[9px] font-bold tabular-nums text-green-400">
                 {ticket.finalScore}
               </span>
+            )}
+
+            {/* Jira sync action — ghost style so it's clearly distinct from the data score chip */}
+            {showSyncPill && (
+              syncState === 'saved' ? (
+                <span className="animate-in fade-in flex items-center gap-0.5 text-[9px] font-medium text-green-400/70 duration-200">
+                  <svg className="size-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  synced
+                </span>
+              ) : (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); if (syncState !== 'saving') onSaveToJira?.() }}
+                        disabled={syncState === 'saving' || isSaving}
+                        aria-label={
+                          syncState === 'error'
+                            ? `Save failed — click to retry: update Jira to ${ticket.finalScore}`
+                            : `Save final score ${ticket.finalScore} to Jira (currently ${jiraCurrentPoint ?? 'unset'})`
+                        }
+                        aria-busy={syncState === 'saving' || isSaving}
+                        className={cn(
+                          'flex items-center gap-0.5 rounded border border-dashed px-1.5 py-0.5 text-[9px] font-medium tabular-nums transition-colors',
+                          syncState === 'error'
+                            ? 'cursor-pointer border-red-500/40 bg-transparent text-red-400/80 hover:border-red-500/60 hover:bg-red-500/10 hover:text-red-400'
+                            : syncState === 'saving' || isSaving
+                            ? 'cursor-default border-amber-500/20 bg-transparent text-amber-400/40'
+                            : 'cursor-pointer border-amber-500/50 bg-transparent text-amber-400/80 hover:border-amber-500/70 hover:bg-amber-500/10 hover:text-amber-400',
+                        )}
+                      >
+                        {syncState === 'saving' || isSaving ? (
+                          <>
+                            <svg className="size-2 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                            <span>saving</span>
+                          </>
+                        ) : syncState === 'error' ? (
+                          <>
+                            <svg className="size-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01" />
+                            </svg>
+                            <span>retry</span>
+                          </>
+                        ) : (
+                          <>
+                            <JiraIcon className="size-2 shrink-0 text-amber-400/80" />
+                            <span>{jiraCurrentPoint ?? '—'}</span>
+                            <svg className="size-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            <span>{ticket.finalScore}</span>
+                          </>
+                        )}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {syncState === 'error'
+                        ? 'Save failed — click to retry'
+                        : syncState === 'saving' || isSaving
+                        ? 'Saving to Jira…'
+                        : `Jira shows ${jiraCurrentPoint ?? 'unset'} — click to update to ${ticket.finalScore}`}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )
             )}
           </div>
         ) : null}
@@ -396,6 +542,7 @@ export function TicketQueuePanel({
 
   const sortableIds = visibleIndices.filter(({ t }) => !isVotedTicket(t)).map(({ idx }) => String(idx))
   const votedCount = queue.filter(isVotedTicket).length
+  const firstUnvotedIdx = queue.findIndex(t => !isVotedTicket(t))
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -413,7 +560,6 @@ export function TicketQueuePanel({
 
   function moveToTop(idx: number) {
     if (idx === 0) return
-    const firstUnvotedIdx = queue.findIndex(t => !isVotedTicket(t))
     if (idx === firstUnvotedIdx) return
     const next = [...queue]
     const [item] = next.splice(idx, 1)
@@ -440,7 +586,6 @@ export function TicketQueuePanel({
     const ticket = queue[idx]
     const cleaned = { ...ticket, avgScore: undefined, finalScore: undefined }
     const withoutTicket = queue.filter((_, i) => i !== idx)
-    const firstUnvotedIdx = withoutTicket.findIndex(t => !isVotedTicket(t))
     const insertAt = firstUnvotedIdx === -1 ? 0 : firstUnvotedIdx
     const next = [...withoutTicket]
     next.splice(insertAt, 0, cleaned)
@@ -710,6 +855,8 @@ export function TicketQueuePanel({
                     {visibleIndices.map(({ t, idx }) => {
                       const isActive = t.jiraKey ? t.jiraKey === activeKey : t.name === activeKey
                       const canMoveUp = idx > 0 && !isVotedTicket(queue[idx - 1])
+                      const canMoveToTop = !isVotedTicket(t) && firstUnvotedIdx !== -1 && idx > firstUnvotedIdx
+                      const canMoveDown = !isVotedTicket(t) && idx < queue.length - 1
                       const jiraCurrentPoint = t.jiraKey ? jiraPoints.get(t.jiraKey) : undefined
                       return (
                         <SortableTicketItem
@@ -720,6 +867,8 @@ export function TicketQueuePanel({
                           isActive={isActive}
                           isSpectator={isSpectator}
                           canMoveUp={canMoveUp}
+                          canMoveDown={canMoveDown}
+                          canMoveToTop={canMoveToTop}
                           jiraCurrentPoint={jiraCurrentPoint}
                           isSaving={savingKey === (t.jiraKey ?? t.name)}
                           onSelect={() => onSelectTicket(t)}

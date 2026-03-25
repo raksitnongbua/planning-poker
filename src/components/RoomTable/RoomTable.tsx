@@ -34,10 +34,9 @@ export interface RoomTableProps {
   onSetTicket?: () => void
   onRemoveTicket?: () => void
   onSaveToJira?: (estimation: TicketEstimation, value: number, fieldId: string) => Promise<void>
-  onJiraConnected?: () => void
-  onJiraDisconnected?: () => void
   onSetFinalStoryPoint?: (value: string) => void
   onTicketSelect?: (estimation: TicketEstimation) => void
+  onOpenTicketInfo?: (ticket: TicketEstimation) => void
 }
 
 const TABLE_W = 600
@@ -65,7 +64,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
   ticketEstimation, isJiraConnected = false, jiraSiteUrl = '', cloudId = '',
   roomId = '', consensusValue, finalStoryPoint, deckOptions,
   ticketQueue = [], onReveal, onReset, onSetTicket, onRemoveTicket, onSaveToJira,
-  onJiraConnected, onJiraDisconnected, onSetFinalStoryPoint, onTicketSelect,
+  onSetFinalStoryPoint, onTicketSelect, onOpenTicketInfo,
 }) => {
   const t = useTranslations('room')
   const [tableScale, setTableScale] = useState(calcTableScale)
@@ -226,16 +225,30 @@ const RoomTable: React.FC<RoomTableProps> = ({
           </div>
         </div>
       )}
-      {!isSpectator && status === Status.RevealedCards && (
-        <Button
-          variant="outline"
-          className="gap-2 border-border text-muted-foreground transition-all duration-200 hover:border-destructive/60 hover:text-destructive"
-          onClick={onReset}
-        >
-          <FontAwesomeIcon icon={faRotateRight} className="size-3.5" />
-          New Round
-        </Button>
-      )}
+      {!isSpectator && status === Status.RevealedCards && (() => {
+        const hasNextTicket = (ticketQueue ?? []).some((t) => !t.avgScore && !t.finalScore)
+        return (
+          <Button
+            variant="outline"
+            className="gap-2 border-border text-muted-foreground transition-all duration-200 hover:border-destructive/60 hover:text-destructive"
+            onClick={onReset}
+          >
+            {hasNextTicket ? (
+              <>
+                <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+                Next
+              </>
+            ) : (
+              <>
+                <FontAwesomeIcon icon={faRotateRight} className="size-3.5" />
+                New Round
+              </>
+            )}
+          </Button>
+        )
+      })()}
     </>
   )
 
@@ -353,7 +366,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
               members={members}
               isRevealed={isRevealed}
               ticketEstimation={ticketEstimation}
-              bottomSlot={onSetTicket && onRemoveTicket && onSaveToJira && onJiraConnected && onJiraDisconnected ? (
+              bottomSlot={onSetTicket && onRemoveTicket && onSaveToJira ? (
                 <TicketBar
                   estimation={ticketEstimation ?? null}
                   isJiraConnected={isJiraConnected}
@@ -367,8 +380,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
                   onSet={onSetTicket}
                   onRemove={onRemoveTicket}
                   onSaveToJira={onSaveToJira}
-                  onJiraConnected={onJiraConnected}
-                  onJiraDisconnected={onJiraDisconnected}
+                  onOpenTicketInfo={onOpenTicketInfo}
                 />
               ) : undefined}
             />

@@ -29,10 +29,14 @@ export default function ThrowPanel({
 
   return (
     <div
-      className="fixed bottom-20 left-3 z-20 hidden flex-col overflow-hidden rounded-2xl border border-border/40 bg-background/95 shadow-xl shadow-black/30 backdrop-blur-md transition-[width] duration-300 md:flex"
+      className="fixed bottom-[88px] right-4 z-20 hidden flex-col overflow-hidden rounded-2xl border border-border/40 bg-background/95 shadow-xl shadow-black/30 backdrop-blur-md transition-[width] duration-300 md:flex"
       style={{ maxHeight: 'calc(100dvh - 120px)', width: isExpanded ? '120px' : '40px' }}
     >
-      <div className="flex w-full items-center justify-between px-2 pt-2 pb-1.5">
+      <button
+        onClick={onToggleExpand}
+        title={!isExpanded ? 'Throw emojis at teammates 🎯' : undefined}
+        className="flex w-full cursor-pointer items-center justify-between px-2 pt-2 pb-1.5 hover:bg-muted/20 transition-colors duration-150"
+      >
         {isExpanded ? (
           <div className="flex items-center gap-1.5 overflow-hidden">
             <span className="text-sm leading-none">🎯</span>
@@ -43,17 +47,13 @@ export default function ThrowPanel({
         ) : (
           <span className="text-base leading-none">🎯</span>
         )}
-        <button
-          onClick={onToggleExpand}
-          title={!isExpanded ? 'Throw emojis at teammates 🎯' : undefined}
-          className="ml-auto flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground/40 transition-colors duration-150 hover:bg-muted/30 hover:text-muted-foreground/70"
-        >
+        <span className="ml-auto flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/40">
           <FontAwesomeIcon
             icon={isExpanded ? faChevronLeft : faChevronRight}
             className="size-2.5"
           />
-        </button>
-      </div>
+        </span>
+      </button>
 
       {isExpanded && (
         <>
