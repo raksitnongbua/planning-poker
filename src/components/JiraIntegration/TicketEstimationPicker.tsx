@@ -296,7 +296,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
     if (selectedProjectKey) clauses.push(`project = "${selectedProjectKey}"`)
     if (selectedSprintJql === UNSET_SPRINT_JQL) clauses.push('sprint is EMPTY')
     else if (selectedSprintJql) clauses.push(`sprint = ${selectedSprintJql}`)
-    if (selectedTypes.size > 0) clauses.push(`issuetype in (${[...selectedTypes].map((t) => `"${t}"`).join(',')})`)
+    if (selectedTypes.size > 0) clauses.push(`issuetype in (${Array.from(selectedTypes).map((t) => `"${t}"`).join(',')})`)
     if (query.trim()) clauses.push(`text ~ "${query.trim()}"`)
     if (clauses.length === 0) return ''
     return clauses.join(' AND ') + ' ORDER BY updated DESC'
@@ -458,7 +458,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
   }
 
   function handleConfirm() {
-    const selectedIssues = [...selectedIssueIds]
+    const selectedIssues = Array.from(selectedIssueIds)
       .map((id) => allSelectedIssues.get(id))
       .filter((i): i is JiraIssue => i !== undefined)
     const storyField = typeof window !== 'undefined'
@@ -578,7 +578,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
     : [
         selectedSprint ? `Sprint: ${selectedSprint.name}` : null,
         selectedProjectKey ? `Project: ${selectedProjectKey}` : null,
-        selectedTypes.size > 0 ? `Type: ${[...selectedTypes].join(', ')}` : null,
+        selectedTypes.size > 0 ? `Type: ${Array.from(selectedTypes).join(', ')}` : null,
       ].filter(Boolean).join(' · ') || 'No filters active'
 
   const wouldExceedLimit = currentQueueSize + selectedIssueIds.size > MAX_QUEUE_SIZE
@@ -971,9 +971,8 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                 role="region"
                 aria-label="Filters"
               >
-                {/* Collapse handle — right edge (hidden in JQL mode since filter is always closed) */}
-                {searchMode !== 'jql' && (
-                  <button
+                {/* Collapse handle — right edge */}
+                <button
                     onClick={() => setIsFilterOpen((v) => !v)}
                     aria-label={isFilterOpen ? 'Collapse filters' : 'Expand filters'}
                     className="absolute right-0 top-1/2 z-10 -translate-y-1/2 hidden h-12 w-6 items-center justify-center rounded-l border border-r-0 border-border/30 bg-[hsl(20,6%,7%)] text-muted-foreground/40 transition-colors hover:bg-muted/40 hover:text-foreground sm:flex"
@@ -985,7 +984,6 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                     </svg>
                   </button>
-                )}
 
                 {/* Panel content — hidden when collapsed */}
                 {isFilterOpen && (
@@ -1298,7 +1296,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                                     {isSelected && (
                                       selectedIssueIds.size > 1 ? (
                                         <span className="flex size-full items-center justify-center text-[9px] font-bold leading-none text-white">
-                                          {[...selectedIssueIds].indexOf(issue.id) + 1}
+                                          {Array.from(selectedIssueIds).indexOf(issue.id) + 1}
                                         </span>
                                       ) : (
                                         <svg viewBox="0 0 10 8" className="size-full p-0.5 text-white" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

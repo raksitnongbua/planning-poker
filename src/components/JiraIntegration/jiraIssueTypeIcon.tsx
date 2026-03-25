@@ -1,3 +1,5 @@
+import React from 'react'
+
 // Shared Jira issue-type icon definitions.
 // Each icon is an SVG with a coloured <rect> background (matches Jira's visual style).
 
@@ -61,7 +63,7 @@ const ISSUE_TYPES = [
   },
 ]
 
-export function getIssueTypeIcon(type: string | undefined): JSX.Element {
+export function getIssueTypeIcon(type: string | undefined): React.ReactElement {
   if (!type) return defaultIcon
   const found = ISSUE_TYPES.find((t) => t.name.toLowerCase() === type.toLowerCase())
   return found ? found.icon : defaultIcon

@@ -136,7 +136,7 @@ function SortableTicketItem({
   // Track isSaving transitions to drive syncState
   useEffect(() => {
     const wasSaving = prevIsSavingRef.current
-    prevIsSavingRef.current = isSaving
+    prevIsSavingRef.current = isSaving ?? false
 
     if (!wasSaving && isSaving) {
       setSyncState('saving')
