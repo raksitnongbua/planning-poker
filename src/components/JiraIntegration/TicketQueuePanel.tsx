@@ -16,8 +16,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
+import { DEFAULT_FIELD_ID, ESTIMATION_MODE_STORAGE_KEY, EstimationMode, MAX_QUEUE_SIZE, ORIGINAL_ESTIMATE_FIELD_ID } from './constants'
 import { JiraConnectButton } from './JiraConnectButton'
-import { MAX_QUEUE_SIZE } from './constants'
 import { getIssueTypeIcon } from './jiraIssueTypeIcon'
 import type { TicketEstimation } from './types'
 
@@ -43,6 +43,12 @@ interface Props {
   onSaveToJira?: (ticket: TicketEstimation, value: number, fieldId: string) => Promise<void>
   jiraPointOverride?: { key: string; value: number } | null
   onOpenTicketInfo?: (ticket: TicketEstimation) => void
+  estimationMode?: EstimationMode
+  storyFieldId?: string
+  timeFieldId?: string
+  onEstimationModeChange?: (mode: EstimationMode) => void
+  onStoryFieldChange?: (fieldId: string) => void
+  onTimeFieldChange?: (fieldId: string) => void
 }
 
 function JiraIcon({ className }: { className?: string }) {
@@ -63,8 +69,10 @@ interface SortableItemProps {
   canMoveUp: boolean
   canMoveDown: boolean
   canMoveToTop: boolean
-  jiraCurrentPoint?: number | null
+  jiraCurrentPoint?: number | string | null
+  isJiraConnected?: boolean
   isSaving?: boolean
+  estimationMode?: EstimationMode
   onSelect: () => void
   onMoveToTop: () => void
   onMoveUp: () => void
@@ -86,7 +94,9 @@ function SortableTicketItem({
   canMoveDown,
   canMoveToTop,
   jiraCurrentPoint,
+  isJiraConnected,
   isSaving,
+  estimationMode = 'story_points',
   onSelect,
   onMoveToTop,
   onMoveUp,
@@ -101,15 +111,20 @@ function SortableTicketItem({
   const prevIsSavingRef = useRef(false)
   const showSaveToJiraRef = useRef(false)
 
-  const showSaveToJira =
-    !isSpectator &&
-    !isOverlay &&
-    !!ticket.finalScore &&
-    !!ticket.jiraKey &&
-    jiraCurrentPoint !== undefined &&
-    Number(ticket.finalScore) !== (jiraCurrentPoint ?? 0)
+  const isNumericFinalScore = !!ticket.finalScore && !isNaN(Number(ticket.finalScore)) && isFinite(Number(ticket.finalScore))
 
-  // Keep ref in sync so the effect can read the latest value without it being a dependency
+  const showSaveToJira = estimationMode === 'time'
+    ? !isSpectator && !isOverlay && isNumericFinalScore && !!ticket.jiraKey &&
+      Number(ticket.finalScore) !== jiraCurrentPoint
+    : !isSpectator &&
+      !isOverlay &&
+      isNumericFinalScore &&
+      !!ticket.jiraKey &&
+      jiraCurrentPoint !== undefined &&
+      Number(ticket.finalScore) !== (jiraCurrentPoint ?? 0)
+
+  // Keep ref in sync so the effect can read the latest value without it being a dependency.
+  // eslint-disable-next-line react-hooks/refs
   showSaveToJiraRef.current = showSaveToJira
 
   const isVoted = !!ticket.avgScore || !!ticket.finalScore
@@ -144,6 +159,14 @@ function SortableTicketItem({
   }, [isSaving])
 
   const showSyncPill = showSaveToJira || syncState === 'saved'
+
+  // Show a passive Jira value badge when the sync action pill is not visible
+  // (pending vote, or voted+already synced). jiraCurrentPoint===undefined means
+  // the fetch hasn't resolved yet — we hide the badge in that case.
+  const showJiraStaticBadge = !!ticket.jiraKey && jiraCurrentPoint !== undefined && !showSaveToJira && syncState === 'idle'
+
+  // Jira is connected and the estimate fetch hasn't resolved yet
+  const isLoadingJiraValue = !!ticket.jiraKey && !!isJiraConnected && jiraCurrentPoint === undefined
 
   // Shared class for action buttons: hidden at rest, visible on group-hover or keyboard focus
   const actionButtonClass = 'flex size-5 items-center justify-center rounded opacity-0 transition-[opacity,color,background-color] duration-200 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto'
@@ -372,7 +395,7 @@ function SortableTicketItem({
           )}
         </div>
 
-        {/* Row 3: voted scores + Jira sync pill */}
+        {/* Row 3: voted scores + Jira sync pill, or passive Jira estimate badge */}
         {isVoted ? (
           <div className="flex items-center gap-1">
             <svg className="size-2 shrink-0 text-green-500/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -392,8 +415,21 @@ function SortableTicketItem({
               </span>
             )}
 
+            {/* Passive Jira current value — shown when already synced or no action needed */}
+            {showJiraStaticBadge && (
+              <span className="flex items-center gap-0.5 text-[9px] tabular-nums text-muted-foreground/30">
+                <JiraIcon className="size-2 shrink-0" />
+                <span>{jiraCurrentPoint ?? '—'}</span>
+              </span>
+            )}
+
+            {/* Skeleton while Jira estimate is loading — takes priority over sync pill */}
+            {isLoadingJiraValue && (
+              <span className="h-2.5 w-7 animate-pulse rounded bg-muted/40" />
+            )}
+
             {/* Jira sync action — ghost style so it's clearly distinct from the data score chip */}
-            {showSyncPill && (
+            {!isLoadingJiraValue && showSyncPill && (
               syncState === 'saved' ? (
                 <span className="animate-in fade-in flex items-center gap-0.5 text-[9px] font-medium text-green-400/70 duration-200">
                   <svg className="size-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -441,11 +477,27 @@ function SortableTicketItem({
                         ) : (
                           <>
                             <JiraIcon className="size-2 shrink-0 text-amber-400/80" />
-                            <span>{jiraCurrentPoint ?? '—'}</span>
-                            <svg className="size-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                            </svg>
-                            <span>{ticket.finalScore}</span>
+                            {estimationMode === 'time' ? (
+                              <>
+                                {jiraCurrentPoint != null && (
+                                  <>
+                                    <span>{String(jiraCurrentPoint)}</span>
+                                    <svg className="size-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                    </svg>
+                                  </>
+                                )}
+                                <span>{ticket.finalScore}d</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>{jiraCurrentPoint ?? '—'}</span>
+                                <svg className="size-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                <span>{ticket.finalScore}</span>
+                              </>
+                            )}
                           </>
                         )}
                       </button>
@@ -455,6 +507,8 @@ function SortableTicketItem({
                         ? 'Save failed — click to retry'
                         : syncState === 'saving' || isSaving
                         ? 'Saving to Jira…'
+                        : estimationMode === 'time'
+                        ? (jiraCurrentPoint != null ? `Jira shows ${String(jiraCurrentPoint)} — click to update to ${ticket.finalScore}d` : `Click to save ${ticket.finalScore}d to Jira time estimate`)
                         : `Jira shows ${jiraCurrentPoint ?? 'unset'} — click to update to ${ticket.finalScore}`}
                     </TooltipContent>
                   </Tooltip>
@@ -462,6 +516,15 @@ function SortableTicketItem({
               )
             )}
           </div>
+        ) : showJiraStaticBadge ? (
+          <div className="flex items-center gap-0.5">
+            <JiraIcon className="size-2 shrink-0 text-muted-foreground/30" />
+            <span className="text-[9px] tabular-nums text-muted-foreground/40">
+              {jiraCurrentPoint ?? '—'}
+            </span>
+          </div>
+        ) : isLoadingJiraValue ? (
+          <span className="h-2.5 w-7 animate-pulse rounded bg-muted/40" />
         ) : null}
       </div>
 
@@ -475,14 +538,50 @@ export function TicketQueuePanel({
   onCollapse, onWidthChange, onDragStart, onDragEnd,
   onSelectTicket, onQueueChange, onRevoteTicket, onAdd, onJiraConnected, onJiraDisconnected,
   onSaveToJira, jiraPointOverride, onOpenTicketInfo,
+  estimationMode = 'story_points', storyFieldId, timeFieldId = ORIGINAL_ESTIMATE_FIELD_ID,
+  onEstimationModeChange, onStoryFieldChange, onTimeFieldChange,
 }: Props) {
   const [hideVoted, setHideVoted] = useState(false)
-  const [jiraPoints, setJiraPoints] = useState<Map<string, number | null>>(new Map())
+  const [jiraPoints, setJiraPoints] = useState<Map<string, number | string | null>>(new Map())
   const [savingKey, setSavingKey] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
+  // Field picker UI state for the Integration section
+  const [showStoryFieldPicker, setShowStoryFieldPicker] = useState(false)
+  const [showTimeFieldPicker, setShowTimeFieldPicker] = useState(false)
+  const [fieldPickerSearch, setFieldPickerSearch] = useState('')
+  const [fields, setFields] = useState<{ id: string; name: string }[]>([])
+  const [fieldsLoading, setFieldsLoading] = useState(false)
+  const [timeFields, setTimeFields] = useState<{ id: string; name: string }[]>([])
+  const [timeFieldsLoading, setTimeFieldsLoading] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  const jiraFetchKey = queue.filter(t => t.jiraKey).map(t => t.jiraKey).join(',')
+  const jiraFetchKey = queue.filter(t => t.jiraKey).map(t => t.jiraKey).sort().join(',')
+
+  // Load SP fields (number type) for the Integration section SP field picker
+  useEffect(() => {
+    if (!isJiraConnected || fields.length > 0 || isCollapsed) return
+    const cloudId = queue.find(t => t.jiraCloudId)?.jiraCloudId
+    if (!cloudId) return
+    setFieldsLoading(true)
+    fetch(`/api/jira/fields?cloudId=${cloudId}&mode=sp`)
+      .then((r) => r.json())
+      .then((data) => setFields(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setFieldsLoading(false))
+  }, [isJiraConnected, isCollapsed, fields.length, queue])
+
+  // Load Time fields (string type — accept duration notation like 1d 2h) for the Time field picker
+  useEffect(() => {
+    if (!isJiraConnected || timeFields.length > 0 || isCollapsed) return
+    const cloudId = queue.find(t => t.jiraCloudId)?.jiraCloudId
+    if (!cloudId) return
+    setTimeFieldsLoading(true)
+    fetch(`/api/jira/fields?cloudId=${cloudId}&mode=time`)
+      .then((r) => r.json())
+      .then((data) => setTimeFields(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setTimeFieldsLoading(false))
+  }, [isJiraConnected, isCollapsed, timeFields.length, queue])
 
   useEffect(() => {
     if (isCollapsed) return
@@ -497,30 +596,39 @@ export function TicketQueuePanel({
 
   useEffect(() => {
     if (!isJiraConnected || !jiraFetchKey) return
-    const fetchable = queue.filter(t => t.jiraKey && t.jiraCloudId && t.storyPointsField)
+    // Determine the field to fetch based on mode: timeFieldId for time mode, storyPointsField per ticket for SP mode
+    const fetchable = estimationMode === 'time'
+      ? queue.filter(t => t.jiraKey && t.jiraCloudId)
+      : queue.filter(t => t.jiraKey && t.jiraCloudId && t.storyPointsField)
     if (fetchable.length === 0) return
+    // Reset so stale SP values don't show while time values are loading (and vice versa)
+    setJiraPoints(new Map())
     Promise.all(
       fetchable.map(async t => {
         try {
-          const res = await fetch(`/api/jira/issues/${t.jiraKey}/estimate?cloudId=${t.jiraCloudId}&fieldId=${t.storyPointsField}`)
+          const fieldId = estimationMode === 'time' ? timeFieldId : t.storyPointsField!
+          const res = await fetch(`/api/jira/issues/${t.jiraKey}/estimate?cloudId=${t.jiraCloudId}&fieldId=${fieldId}`)
           if (!res.ok) return [t.jiraKey!, undefined] as const
           const data = await res.json()
-          return [t.jiraKey!, data.value as number | null] as const
+          return [t.jiraKey!, data.value as number | string | null] as const
         } catch {
           return [t.jiraKey!, undefined] as const
         }
       })
     ).then(results => {
-      setJiraPoints(new Map(results.filter(([, v]) => v !== undefined) as [string, number | null][]))
+      setJiraPoints(new Map(results.filter(([, v]) => v !== undefined) as [string, number | string | null][]))
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isJiraConnected, jiraFetchKey])
+  }, [isJiraConnected, jiraFetchKey, estimationMode, timeFieldId])
 
   async function saveToJira(ticket: TicketEstimation) {
     const key = ticket.jiraKey!
+    const effectiveFieldId = estimationMode === 'time' ? timeFieldId : (storyFieldId ?? ticket.storyPointsField!)
     setSavingKey(key)
     try {
-      await onSaveToJira!(ticket, Number(ticket.finalScore), ticket.storyPointsField!)
+      await onSaveToJira!(ticket, Number(ticket.finalScore), effectiveFieldId)
+      // Mark as synced — for SP mode this matches the actual Jira value; for time mode it's
+      // a sentinel so showSaveToJira becomes false (Jira stores "Xd" but we compare numeric).
       setJiraPoints(prev => new Map(prev).set(key, Number(ticket.finalScore)))
     } catch {
       // leave button visible so user can retry
@@ -643,7 +751,7 @@ export function TicketQueuePanel({
           aria-label="Expand queue"
         >
           {/* Hover preview */}
-          <div className="invisible absolute left-full top-0 ml-1.5 w-52 rounded-xl border border-border/40 bg-background/95 py-2 opacity-0 shadow-xl shadow-black/40 backdrop-blur-md transition-all duration-200 group-hover:visible group-hover:opacity-100 pointer-events-none">
+          <div className="invisible absolute left-full top-1/2 -translate-y-1/2 ml-1.5 w-52 rounded-xl border border-border/40 bg-background/95 py-2 opacity-0 shadow-xl shadow-black/40 backdrop-blur-md transition-all duration-200 group-hover:visible group-hover:opacity-100 pointer-events-none">
             <p className="mb-1.5 px-3 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">
               To Estimate · {queue.length}
             </p>
@@ -809,15 +917,213 @@ export function TicketQueuePanel({
               </div>
             )}
 
-            {/* Jira integration row */}
-            <div className="flex items-center justify-between gap-2 border-t border-border/30 px-3 py-2">
-              <span className="text-[10px] font-semibold tracking-wide text-muted-foreground/40">Integration</span>
-              <JiraConnectButton
-                isConnected={isJiraConnected}
-                roomId={roomId}
-                onConnected={onJiraConnected}
-                onDisconnected={onJiraDisconnected}
-              />
+            {/* Jira integration section */}
+            <div className="border-t border-border/30">
+              {/* Row: Integration label + connect button */}
+              <div className="flex items-center justify-between gap-2 px-3 py-2">
+                <span className="text-[10px] font-semibold tracking-wide text-muted-foreground/40">Integration</span>
+                <JiraConnectButton
+                  isConnected={isJiraConnected}
+                  roomId={roomId}
+                  onConnected={onJiraConnected}
+                  onDisconnected={onJiraDisconnected}
+                />
+              </div>
+
+              {/* Save as card — only when Jira is connected */}
+              {isJiraConnected && (
+                <div className="mx-3 mb-2.5 rounded-lg border border-border/40 bg-muted/[0.07]">
+                  {/* Section label */}
+                  <div className="px-3 pb-1.5 pt-2">
+                    <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/40">
+                      Save as
+                    </span>
+                  </div>
+
+                  {/* Segmented toggle — centered */}
+                  <div className="flex justify-center px-3 pb-2">
+                    <div
+                      role="radiogroup"
+                      aria-label="Estimation mode"
+                      className="flex items-center rounded-md border border-border/50 bg-background/60 p-0.5"
+                    >
+                      <button
+                        role="radio"
+                        aria-checked={estimationMode === 'story_points'}
+                        onClick={() => onEstimationModeChange?.('story_points')}
+                        title="Story Points — saves score as a number"
+                        className={cn(
+                          'rounded px-3 py-1 text-[10px] font-semibold tracking-wide transition-colors duration-150',
+                          estimationMode === 'story_points'
+                            ? 'bg-primary/15 text-primary shadow-sm'
+                            : 'text-muted-foreground/50 hover:text-muted-foreground/80',
+                        )}
+                      >
+                        SP
+                      </button>
+                      <button
+                        role="radio"
+                        aria-checked={estimationMode === 'time'}
+                        onClick={() => onEstimationModeChange?.('time')}
+                        title="Time Estimate — appends 'd' for days (e.g. 1.5d)"
+                        className={cn(
+                          'rounded px-3 py-1 text-[10px] font-semibold tracking-wide transition-colors duration-150',
+                          estimationMode === 'time'
+                            ? 'bg-primary/15 text-primary shadow-sm'
+                            : 'text-muted-foreground/50 hover:text-muted-foreground/80',
+                        )}
+                      >
+                        Time
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Hairline separator */}
+                  <div className="mx-3 border-t border-border/30" />
+
+                  {/* Active mode target field — chip-style picker trigger */}
+                  <div className="relative px-3 py-2">
+                    {estimationMode === 'story_points' ? (
+                      <>
+                        <button
+                          onClick={() => { setShowStoryFieldPicker((v) => !v); setFieldPickerSearch(''); setShowTimeFieldPicker(false) }}
+                          className="group flex w-full items-center gap-1.5 overflow-hidden text-left"
+                        >
+                          <span className="shrink-0 text-[9px] font-medium text-muted-foreground/40">SP field</span>
+                          <svg className="size-2 shrink-0 text-muted-foreground/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                          <span className="min-w-0 flex-1 truncate rounded border border-border/40 bg-background/50 px-1.5 py-0.5 text-[10px] font-medium text-foreground/70 transition-colors group-hover:border-primary/40 group-hover:text-primary/80">
+                            {fields.find(f => f.id === (storyFieldId ?? DEFAULT_FIELD_ID))?.name ?? (storyFieldId ?? DEFAULT_FIELD_ID)}
+                          </span>
+                          <svg className="size-2.5 shrink-0 text-muted-foreground/30 transition-colors group-hover:text-primary/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                        {showStoryFieldPicker && (
+                          <>
+                            <div className="fixed inset-0 z-[39]" aria-hidden="true" onClick={() => setShowStoryFieldPicker(false)} />
+                            <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-lg border border-border/60 bg-[hsl(20,8%,9%)] shadow-xl shadow-black/50">
+                              <div className="border-b border-border/40 p-1.5">
+                                <input
+                                  autoFocus
+                                  placeholder="Search field..."
+                                  value={fieldPickerSearch}
+                                  onChange={(e) => setFieldPickerSearch(e.target.value)}
+                                  className="w-full rounded border border-border/40 bg-muted/20 px-2 py-1 text-[10px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                                />
+                              </div>
+                              <div className="max-h-40 overflow-y-auto py-1">
+                                {fieldsLoading && <p className="px-3 py-2 text-[10px] text-muted-foreground/50">Loading…</p>}
+                                {!fieldsLoading && fields
+                                  .filter(f => !fieldPickerSearch.trim() || f.name.toLowerCase().includes(fieldPickerSearch.toLowerCase()))
+                                  .map(f => (
+                                    <button
+                                      key={f.id}
+                                      onClick={() => { onStoryFieldChange?.(f.id); setShowStoryFieldPicker(false) }}
+                                      className={cn('flex w-full items-center justify-between px-3 py-1.5 text-left text-[10px] transition-colors hover:bg-muted/40', f.id === (storyFieldId ?? DEFAULT_FIELD_ID) ? 'text-primary' : 'text-foreground/80')}
+                                    >
+                                      <span className="truncate">{f.name}</span>
+                                      {f.id === (storyFieldId ?? DEFAULT_FIELD_ID) && (
+                                        <svg className="ml-1 size-2.5 shrink-0 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      )}
+                                    </button>
+                                  ))
+                                }
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => { setShowTimeFieldPicker((v) => !v); setFieldPickerSearch(''); setShowStoryFieldPicker(false) }}
+                          className="group flex w-full items-center gap-1.5 overflow-hidden text-left"
+                        >
+                          <span className="shrink-0 text-[9px] font-medium text-muted-foreground/40">Time field</span>
+                          <svg className="size-2 shrink-0 text-muted-foreground/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                          <span className="min-w-0 flex-1 truncate rounded border border-border/40 bg-background/50 px-1.5 py-0.5 text-[10px] font-medium text-foreground/70 transition-colors group-hover:border-primary/40 group-hover:text-primary/80">
+                            {timeFieldId === ORIGINAL_ESTIMATE_FIELD_ID
+                              ? 'Original Estimate'
+                              : timeFields.find(f => f.id === timeFieldId)?.name ?? timeFieldId}
+                          </span>
+                          <svg className="size-2.5 shrink-0 text-muted-foreground/30 transition-colors group-hover:text-primary/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                        {showTimeFieldPicker && (
+                          <>
+                            <div className="fixed inset-0 z-[39]" aria-hidden="true" onClick={() => setShowTimeFieldPicker(false)} />
+                            <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-lg border border-border/60 bg-[hsl(20,8%,9%)] shadow-xl shadow-black/50">
+                              <div className="border-b border-border/40 p-1.5">
+                                <input
+                                  autoFocus
+                                  placeholder="Search field..."
+                                  value={fieldPickerSearch}
+                                  onChange={(e) => setFieldPickerSearch(e.target.value)}
+                                  className="w-full rounded border border-border/40 bg-muted/20 px-2 py-1 text-[10px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                                />
+                              </div>
+                              <div className="max-h-44 overflow-y-auto py-1">
+                                {/* Built-in timetracking field — always shown unless filtered by search */}
+                                {(!fieldPickerSearch.trim() || 'original estimate'.includes(fieldPickerSearch.toLowerCase())) && (
+                                  <>
+                                    <p className="px-3 pb-0.5 pt-1.5 text-[8px] font-semibold uppercase tracking-widest text-muted-foreground/30">Built-in</p>
+                                    <button
+                                      onClick={() => { onTimeFieldChange?.(ORIGINAL_ESTIMATE_FIELD_ID); setShowTimeFieldPicker(false) }}
+                                      className={cn('flex w-full items-center justify-between px-3 py-1.5 text-left text-[10px] transition-colors hover:bg-muted/40', timeFieldId === ORIGINAL_ESTIMATE_FIELD_ID ? 'text-primary' : 'text-foreground/80')}
+                                    >
+                                      <span>Original Estimate</span>
+                                      {timeFieldId === ORIGINAL_ESTIMATE_FIELD_ID && (
+                                        <svg className="ml-1 size-2.5 shrink-0 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      )}
+                                    </button>
+                                    <div className="mx-3 my-1 border-t border-border/20" />
+                                  </>
+                                )}
+                                {/* Custom string fields */}
+                                {timeFieldsLoading ? (
+                                  <p className="px-3 py-2 text-[10px] text-muted-foreground/50">Loading…</p>
+                                ) : (() => {
+                                  const filtered = timeFields.filter(f => !fieldPickerSearch.trim() || f.name.toLowerCase().includes(fieldPickerSearch.toLowerCase()))
+                                  return filtered.length > 0 ? (
+                                    <>
+                                      <p className="px-3 pb-0.5 text-[8px] font-semibold uppercase tracking-widest text-muted-foreground/30">Custom fields</p>
+                                      {filtered.map(f => (
+                                        <button
+                                          key={f.id}
+                                          onClick={() => { onTimeFieldChange?.(f.id); setShowTimeFieldPicker(false) }}
+                                          className={cn('flex w-full items-center justify-between px-3 py-1.5 text-left text-[10px] transition-colors hover:bg-muted/40', f.id === timeFieldId ? 'text-primary' : 'text-foreground/80')}
+                                        >
+                                          <span className="truncate">{f.name}</span>
+                                          {f.id === timeFieldId && (
+                                            <svg className="ml-1 size-2.5 shrink-0 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                          )}
+                                        </button>
+                                      ))}
+                                    </>
+                                  ) : !fieldPickerSearch.trim() ? (
+                                    <p className="px-3 py-1.5 text-[10px] text-muted-foreground/30">No custom string fields found</p>
+                                  ) : null
+                                })()}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -870,15 +1176,17 @@ export function TicketQueuePanel({
                           canMoveDown={canMoveDown}
                           canMoveToTop={canMoveToTop}
                           jiraCurrentPoint={jiraCurrentPoint}
+                          isJiraConnected={isJiraConnected}
                           isSaving={savingKey === (t.jiraKey ?? t.name)}
+                          estimationMode={estimationMode}
                           onSelect={() => onSelectTicket(t)}
                           onMoveToTop={() => moveToTop(idx)}
                           onMoveUp={() => moveUp(idx)}
                           onMoveDown={() => moveDown(idx)}
                           onRemove={() => remove(idx)}
                           onRevote={isVotedTicket(t) && !isSpectator ? () => revote(idx) : undefined}
-                          onSaveToJira={onSaveToJira && t.jiraKey && t.storyPointsField ? () => saveToJira(t) : undefined}
-                          onOpenInfo={t.jiraKey ? () => onOpenTicketInfo?.(t) : undefined}
+                          onSaveToJira={onSaveToJira && t.jiraKey && (estimationMode === 'time' || t.storyPointsField) ? () => saveToJira(t) : undefined}
+                          onOpenInfo={t.jiraKey && isJiraConnected ? () => onOpenTicketInfo?.(t) : undefined}
                         />
                       )
                     })}

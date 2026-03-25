@@ -1,7 +1,7 @@
 'use client'
 
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { Bookmark, ChevronDown, Filter, Search } from 'lucide-react'
+import { Bookmark, Filter, Search } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import React, { useEffect, useRef, useState } from 'react'
 
@@ -11,15 +11,10 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
+import { DEFAULT_FIELD_ID, FIELD_STORAGE_KEY, JQL_MODE_STORAGE_KEY, JQL_QUERY_STORAGE_KEY, JQL_SAVED_FILTERS_KEY, MAX_QUEUE_SIZE, MAX_SAVED_JQL_FILTERS, PROJECT_STORAGE_KEY } from './constants'
 import { JiraConnectButton } from './JiraConnectButton'
 import { getIssueTypeIcon } from './jiraIssueTypeIcon'
-import { DEFAULT_FIELD_ID, FIELD_STORAGE_KEY, JQL_MODE_STORAGE_KEY, JQL_QUERY_STORAGE_KEY, JQL_SAVED_FILTERS_KEY, MAX_QUEUE_SIZE, MAX_SAVED_JQL_FILTERS, PROJECT_STORAGE_KEY } from './constants'
 import { JiraIssue, JiraProject, JiraSprint, TicketEstimation } from './types'
-
-interface JiraField {
-  id: string
-  name: string
-}
 
 interface SavedJqlFilter {
   id: string
@@ -200,18 +195,6 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
   // so handleConfirm doesn't silently drop issues that are no longer on the current page.
   const [allSelectedIssues, setAllSelectedIssues] = useState<Map<string, JiraIssue>>(new Map())
 
-  // Field selector state
-  const [fields, setFields] = useState<JiraField[]>([])
-  const [selectedFieldId, setSelectedFieldId] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(FIELD_STORAGE_KEY) ?? DEFAULT_FIELD_ID
-    }
-    return DEFAULT_FIELD_ID
-  })
-  const [showFieldPicker, setShowFieldPicker] = useState(false)
-  const [fieldSearch, setFieldSearch] = useState('')
-  const [fieldsLoading, setFieldsLoading] = useState(false)
-
   // JQL saved filters
   const [savedFilters, setSavedFilters] = useState<SavedJqlFilter[]>(() => {
     if (typeof window === 'undefined') return []
@@ -236,7 +219,6 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
       setCurrentPage(0)
       setPageTokens([null])
       setIsError(false)
-      setShowFieldPicker(false)
       setIsSavingFilter(false)
       setSaveFilterName('')
       setIsFilterDropdownOpen(false)
@@ -268,17 +250,6 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
   useEffect(() => {
     localStorage.setItem(JQL_SAVED_FILTERS_KEY, JSON.stringify(savedFilters))
   }, [savedFilters])
-
-  // Load fields when Jira tab is active
-  useEffect(() => {
-    if (activeTab !== 'jira' || !cloudId || fields.length > 0) return
-    setFieldsLoading(true)
-    fetch(`/api/jira/fields?cloudId=${cloudId}`)
-      .then((r) => r.json())
-      .then((data: JiraField[]) => setFields(Array.isArray(data) ? data : []))
-      .catch(() => {})
-      .finally(() => setFieldsLoading(false))
-  }, [activeTab, cloudId, fields.length])
 
   // Load projects when filter panel is opened
   useEffect(() => {
@@ -380,7 +351,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
           const raw: JiraIssue[] = data.issues ?? (Array.isArray(data) ? data : [])
           const seen = new Set<string>()
           const unique = raw.filter((i) => (seen.has(i.id) ? false : seen.add(i.id)))
-          setIssues(unique.map((i) => ({ ...i, storyPointsField: selectedFieldId })))
+          setIssues(unique.map((i) => ({ ...i, storyPointsField: localStorage.getItem('jira_story_points_field') ?? 'customfield_10016' })))
           setHasMore(data.hasMore ?? false)
           setPageTokens([null, data.nextPageToken ?? null])
         } else {
@@ -399,7 +370,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, activeTab, sprintsLoading, query, jqlQuery, searchMode, selectedProjectKey, selectedSprintJql, selectedTypes, pageSize, cloudId, selectedFieldId])
+  }, [open, activeTab, sprintsLoading, query, jqlQuery, searchMode, selectedProjectKey, selectedSprintJql, selectedTypes, pageSize, cloudId])
 
   async function goToNext() {
     const token = pageTokens[currentPage + 1] ?? null
@@ -411,7 +382,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
         const raw: JiraIssue[] = data.issues ?? []
         const seen = new Set<string>()
         const unique = raw.filter((i) => (seen.has(i.id) ? false : seen.add(i.id)))
-        setIssues(unique.map((i) => ({ ...i, storyPointsField: selectedFieldId })))
+        setIssues(unique.map((i) => ({ ...i, storyPointsField: localStorage.getItem('jira_story_points_field') ?? 'customfield_10016' })))
         setHasMore(data.hasMore ?? false)
         const newPage = currentPage + 1
         setCurrentPage(newPage)
@@ -441,7 +412,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
         const raw: JiraIssue[] = data.issues ?? []
         const seen = new Set<string>()
         const unique = raw.filter((i) => (seen.has(i.id) ? false : seen.add(i.id)))
-        setIssues(unique.map((i) => ({ ...i, storyPointsField: selectedFieldId })))
+        setIssues(unique.map((i) => ({ ...i, storyPointsField: localStorage.getItem('jira_story_points_field') ?? 'customfield_10016' })))
         setHasMore(data.hasMore ?? false)
         setCurrentPage(newPage)
         setStartAt(newPage * pageSize)
@@ -490,6 +461,9 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
     const selectedIssues = [...selectedIssueIds]
       .map((id) => allSelectedIssues.get(id))
       .filter((i): i is JiraIssue => i !== undefined)
+    const storyField = typeof window !== 'undefined'
+      ? localStorage.getItem(FIELD_STORAGE_KEY) ?? DEFAULT_FIELD_ID
+      : DEFAULT_FIELD_ID
     const estimations: TicketEstimation[] = selectedIssues.map((issue) => ({
       name: issue.summary,
       source: 'jira',
@@ -498,7 +472,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
       jiraCloudId: issue.cloudId,
       jiraUrl: issue.url,
       jiraType: issue.type,
-      storyPointsField: selectedFieldId,
+      storyPointsField: storyField,
     }))
     onSelect(estimations)
   }
@@ -514,13 +488,6 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
     } else {
       localStorage.removeItem(PROJECT_STORAGE_KEY)
     }
-  }
-
-  function selectField(field: JiraField) {
-    setSelectedFieldId(field.id)
-    localStorage.setItem(FIELD_STORAGE_KEY, field.id)
-    setShowFieldPicker(false)
-    setFieldSearch('')
   }
 
   function toggleIssue(id: string) {
@@ -572,10 +539,16 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
 
   const allOnPageSelected = toggleableIssues.length > 0 && toggleableIssues.every((i) => selectedIssueIds.has(i.id))
 
-  const selectedField = fields.find((f) => f.id === selectedFieldId)
-  const filteredFields = fieldSearch.trim()
-    ? fields.filter((f) => f.name.toLowerCase().includes(fieldSearch.toLowerCase()))
-    : fields
+  const allPageQueued = toggleableIssues.length === 0 && issues.length > 0
+  const partiallyQueued = toggleableIssues.length > 0 && toggleableIssues.length < issues.length
+  const alreadyQueuedIssues = issues.filter((i) => queuedJiraKeys.has(i.key))
+  // Selectable issues first, already-queued pushed to the bottom with a divider between groups
+  const displayOrder = [...toggleableIssues, ...alreadyQueuedIssues]
+  const selectAllLabel = partiallyQueued
+    ? `Select remaining ${toggleableIssues.length}`
+    : !hasMore
+      ? `Select all ${issues.length} issues`
+      : `Select these ${issues.length} issues`
 
   const filteredProjects = (projectSearch.trim()
     ? projects.filter((p) => p.name.toLowerCase().includes(projectSearch.toLowerCase()) || p.key.toLowerCase().includes(projectSearch.toLowerCase()))
@@ -1236,90 +1209,133 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
                   {/* Results */}
                   {!loading && !isError && issues.length > 0 && (
                     <div className="flex flex-col py-1">
-                      {/* Select all row */}
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={toggleSelectAll}
-                        onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleSelectAll() } }}
-                        className="flex cursor-pointer items-center gap-2.5 border-b border-border/40 bg-muted/20 px-4 py-2 transition-colors hover:bg-muted/30"
-                      >
-                        <div
-                          className={cn(
-                            'size-4 flex-shrink-0 rounded-sm border transition-all duration-100',
-                            allOnPageSelected
-                              ? 'border-primary bg-primary shadow-sm shadow-primary/30'
-                              : 'border-muted-foreground/40 bg-muted/40'
-                          )}
-                        >
-                          {allOnPageSelected && (
-                            <svg viewBox="0 0 10 8" className="size-full p-0.5 text-primary-foreground" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+
+                      {/* Select all row — non-interactive when all issues on page are already queued */}
+                      {allPageQueued ? (
+                        <div className="flex items-center gap-2.5 border-b border-border/40 bg-green-500/[0.04] px-4 py-2">
+                          <div className="flex size-4 shrink-0 items-center justify-center rounded-sm border border-green-500/40 bg-green-500/15">
+                            <svg viewBox="0 0 10 8" className="size-full p-0.5 text-green-400" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
                               <path d="M1 4l2.5 2.5L9 1" />
                             </svg>
-                          )}
+                          </div>
+                          <span className="text-xs font-semibold text-muted-foreground/50">
+                            All on this page are already in your queue
+                          </span>
                         </div>
-                        <span className="text-xs font-semibold text-muted-foreground">
-                          {!hasMore
-                            ? `Select all ${issues.length} issues`
-                            : `Select these ${issues.length} issues`}
-                        </span>
-                      </div>
+                      ) : (
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={toggleSelectAll}
+                          onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleSelectAll() } }}
+                          className="flex cursor-pointer items-center gap-2.5 border-b border-border/40 bg-muted/20 px-4 py-2 transition-colors hover:bg-muted/30"
+                        >
+                          <div
+                            className={cn(
+                              'size-4 flex-shrink-0 rounded-sm border transition-all duration-100',
+                              allOnPageSelected
+                                ? 'border-primary bg-primary shadow-sm shadow-primary/30'
+                                : 'border-muted-foreground/40 bg-muted/40'
+                            )}
+                          >
+                            {allOnPageSelected && (
+                              <svg viewBox="0 0 10 8" className="size-full p-0.5 text-primary-foreground" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M1 4l2.5 2.5L9 1" />
+                              </svg>
+                            )}
+                          </div>
+                          <span className="text-xs font-semibold text-muted-foreground">
+                            {selectAllLabel}
+                          </span>
+                        </div>
+                      )}
 
-                      {/* Issue rows */}
+                      {/* Issue rows — selectable first, already-queued at bottom with a section divider */}
                       <div className="divide-y divide-border/20">
-                        {issues.map((issue) => {
+                        {displayOrder.map((issue, displayIndex) => {
                           const isSelected = selectedIssueIds.has(issue.id)
                           const isAlreadyQueued = queuedJiraKeys.has(issue.key)
+                          const isFirstQueued = isAlreadyQueued && displayIndex === toggleableIssues.length && alreadyQueuedIssues.length > 0 && toggleableIssues.length > 0
                           return (
-                            <label
-                              key={issue.id}
-                              className={cn(
-                                'flex items-center gap-3 border-l-2 px-4 py-2.5 transition-all duration-100',
-                                isAlreadyQueued
-                                  ? 'cursor-default border-l-green-500/40 bg-green-500/5 opacity-60 pointer-events-none'
-                                  : isSelected
-                                    ? 'cursor-pointer border-l-primary/80 bg-primary/10 hover:bg-primary/15'
-                                    : 'cursor-pointer border-l-transparent hover:bg-muted/25'
-                              )}
-                              role="option"
-                              aria-selected={isSelected}
-                              aria-disabled={isAlreadyQueued}
-                              onClick={isAlreadyQueued ? undefined : () => toggleIssue(issue.id)}
-                            >
-                              {isAlreadyQueued ? (
-                                <span className="flex shrink-0 items-center rounded border border-border/40 bg-muted/30 px-1.5 py-0.5 text-[8px] font-semibold text-muted-foreground/60">
-                                  Already added
-                                </span>
-                              ) : (
-                                <div
-                                  className={cn(
-                                    'size-3.5 flex-shrink-0 rounded-sm border transition-all duration-100',
-                                    isSelected
-                                      ? 'border-primary bg-primary shadow-sm shadow-primary/30'
-                                      : 'border-border/50 bg-muted/30 hover:border-muted-foreground/70'
-                                  )}
-                                >
-                                  {isSelected && (
-                                    selectedIssueIds.size > 1 ? (
-                                      <span className="flex size-full items-center justify-center text-[9px] font-bold leading-none text-white">
-                                        {[...selectedIssueIds].indexOf(issue.id) + 1}
-                                      </span>
-                                    ) : (
-                                      <svg viewBox="0 0 10 8" className="size-full p-0.5 text-white" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M1 4l2.5 2.5L9 1" />
-                                      </svg>
-                                    )
-                                  )}
+                            <React.Fragment key={issue.id}>
+                              {isFirstQueued && (
+                                <div className="flex items-center gap-2 bg-muted/10 px-4 py-1.5">
+                                  <div className="h-px flex-1 bg-border/30" />
+                                  <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/40">Already in queue</span>
+                                  <div className="h-px flex-1 bg-border/30" />
                                 </div>
                               )}
-                              <div className="shrink-0">{getIssueTypeIcon(issue.type)}</div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-baseline gap-2">
-                                  <span className="min-w-[68px] shrink-0 font-mono text-[10px] font-bold text-primary">{issue.key}</span>
-                                  <p className="truncate text-xs leading-snug text-foreground/80">{issue.summary}</p>
+                              <label
+                                className={cn(
+                                  'flex items-center gap-3 border-l-2 px-4 py-2.5 transition-all duration-100',
+                                  isAlreadyQueued
+                                    ? 'cursor-default border-l-green-500/50 bg-green-500/[0.04] pointer-events-none'
+                                    : isSelected
+                                      ? 'cursor-pointer border-l-primary/80 bg-primary/10 hover:bg-primary/15'
+                                      : 'cursor-pointer border-l-transparent hover:bg-muted/25'
+                                )}
+                                role="option"
+                                aria-selected={isSelected}
+                                aria-disabled={isAlreadyQueued}
+                                onClick={isAlreadyQueued ? undefined : () => toggleIssue(issue.id)}
+                              >
+                                {/* Checkbox slot — green checkmark for queued, interactive checkbox otherwise */}
+                                {isAlreadyQueued ? (
+                                  <div className="flex size-3.5 shrink-0 items-center justify-center rounded-sm border border-green-500/40 bg-green-500/15">
+                                    <svg viewBox="0 0 10 8" className="size-full p-0.5 text-green-400" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M1 4l2.5 2.5L9 1" />
+                                    </svg>
+                                  </div>
+                                ) : (
+                                  <div
+                                    className={cn(
+                                      'size-3.5 flex-shrink-0 rounded-sm border transition-all duration-100',
+                                      isSelected
+                                        ? 'border-primary bg-primary shadow-sm shadow-primary/30'
+                                        : 'border-border/50 bg-muted/30 hover:border-muted-foreground/70'
+                                    )}
+                                  >
+                                    {isSelected && (
+                                      selectedIssueIds.size > 1 ? (
+                                        <span className="flex size-full items-center justify-center text-[9px] font-bold leading-none text-white">
+                                          {[...selectedIssueIds].indexOf(issue.id) + 1}
+                                        </span>
+                                      ) : (
+                                        <svg viewBox="0 0 10 8" className="size-full p-0.5 text-white" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M1 4l2.5 2.5L9 1" />
+                                        </svg>
+                                      )
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Issue type icon — faded for queued rows */}
+                                <div className={cn('shrink-0', isAlreadyQueued && 'opacity-40')}>
+                                  {getIssueTypeIcon(issue.type)}
                                 </div>
-                              </div>
-                            </label>
+
+                                {/* Issue info */}
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-baseline gap-2">
+                                    <span className={cn(
+                                      'min-w-[68px] shrink-0 font-mono text-[10px] font-bold',
+                                      isAlreadyQueued ? 'text-green-400/60' : 'text-primary'
+                                    )}>
+                                      {issue.key}
+                                    </span>
+                                    <p className={cn(
+                                      'truncate text-xs leading-snug',
+                                      isAlreadyQueued ? 'text-foreground/40' : 'text-foreground/80'
+                                    )}>
+                                      {issue.summary}
+                                    </p>
+                                  </div>
+                                  {isAlreadyQueued && (
+                                    <p className="mt-0.5 text-[10px] font-medium text-green-400/50">In queue</p>
+                                  )}
+                                </div>
+                              </label>
+                            </React.Fragment>
                           )
                         })}
                       </div>
@@ -1407,83 +1423,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
             )}
 
             {/* ── Footer bar ── */}
-            <div className="relative flex items-center justify-between border-t border-border/60 bg-[hsl(20,6%,7%)] px-4 py-3">
-
-              {/* Click-outside overlay for SP field picker */}
-              {showFieldPicker && (
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => { setShowFieldPicker(false); setFieldSearch('') }}
-                />
-              )}
-
-              {/* Story points field picker panel — upward */}
-              {showFieldPicker && (
-                <div
-                  className="absolute bottom-[58px] left-0 right-0 z-50 mx-4 rounded-lg border border-border/60 bg-[hsl(20,8%,9%)] shadow-xl shadow-black/50"
-                  role="dialog"
-                  aria-label="Select story points field"
-                  aria-modal="false"
-                >
-                  <div className="border-b border-border/40 p-2">
-                    <Input
-                      autoFocus
-                      placeholder={t('searchFieldPlaceholder')}
-                      value={fieldSearch}
-                      onChange={(e) => setFieldSearch(e.target.value)}
-                      className="h-7 border-border/40 bg-[hsl(20,6%,12%)] text-xs focus-visible:ring-primary/30"
-                    />
-                  </div>
-                  <div className="max-h-44 overflow-y-auto py-1" role="listbox">
-                    {fieldsLoading ? (
-                      <div className="flex flex-col gap-1.5 p-2">
-                        {[0, 1, 2].map((i) => <Skeleton key={i} className="h-7 w-full rounded" />)}
-                      </div>
-                    ) : (
-                      filteredFields.map((field) => (
-                        <button
-                          key={field.id}
-                          role="option"
-                          aria-selected={field.id === selectedFieldId}
-                          onClick={() => selectField(field)}
-                          className={cn(
-                            'flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors hover:bg-muted/40',
-                            field.id === selectedFieldId ? 'text-primary' : 'text-foreground'
-                          )}
-                        >
-                          <span>{field.name}</span>
-                          <span className="font-mono text-[10px] text-muted-foreground/50">{field.id}</span>
-                          {field.id === selectedFieldId && (
-                            <svg className="ml-2 size-3 shrink-0 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </button>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Left: SP field */}
-              <div className="flex items-center gap-2">
-                <span className="rounded-md border border-border/40 bg-muted/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-                  Story Points
-                </span>
-                {fieldsLoading ? (
-                  <Skeleton className="h-4 w-24" />
-                ) : (
-                  <button
-                    onClick={() => { setShowFieldPicker((v) => !v); setFieldSearch('') }}
-                    className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                    aria-label="Change story points field"
-                    aria-expanded={showFieldPicker}
-                  >
-                    <span className="max-w-[120px] truncate">{selectedField?.name ?? selectedFieldId}</span>
-                    <ChevronDown className={cn('size-3 transition-transform duration-150', showFieldPicker && 'rotate-180')} />
-                  </button>
-                )}
-              </div>
+            <div className="flex items-center justify-between border-t border-border/60 bg-[hsl(20,6%,7%)] px-4 py-3">
 
               {/* Over-limit warning */}
               {wouldExceedLimit && selectedIssueIds.size > 0 && (
@@ -1493,7 +1433,7 @@ export function TicketEstimationPicker({ open, onOpenChange, isJiraConnected, cl
               )}
 
               {/* Right: Cancel + Confirm */}
-              <div className="flex items-center gap-2">
+              <div className="ml-auto flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
