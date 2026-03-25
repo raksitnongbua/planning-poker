@@ -210,7 +210,13 @@
       "noProjectsFound": "No projects found",
       "jqlPlaceholder": "project = PROJ AND sprint in openSprints() ORDER BY updated DESC",
       "addTicket": "Add ticket",
-      "clearFilter": "Clear filter"
+      "clearFilter": "Clear filter",
+      "estimationMode": "Save as",
+      "modeStoryPoints": "Story Points",
+      "modeTime": "Time",
+      "modeStoryPointsTooltip": "Story Points — saves score as a number",
+      "modeTimeTooltip": "Time Estimate — appends 'd' for days (e.g. 1.5d)",
+      "savesAs": "Saves as {value}"
     }
   },
   "activity": {

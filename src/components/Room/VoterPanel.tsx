@@ -120,7 +120,7 @@ const VoterPanel = ({
             className="group relative flex flex-col items-center justify-center gap-3 h-full w-full py-4 hover:bg-muted/10 transition-colors"
             aria-label="Expand panel"
           >
-            <div className="invisible absolute right-full top-0 mr-1.5 w-52 rounded-xl border border-border/40 bg-background/95 py-2 opacity-0 shadow-xl shadow-black/40 backdrop-blur-md transition-all duration-200 group-hover:visible group-hover:opacity-100 pointer-events-none">
+            <div className="invisible absolute right-full top-1/2 -translate-y-1/2 mr-1.5 w-52 rounded-xl border border-border/40 bg-background/95 py-2 opacity-0 shadow-xl shadow-black/40 backdrop-blur-md transition-all duration-200 group-hover:visible group-hover:opacity-100 pointer-events-none">
               <p className="mb-1.5 px-3 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">
                 {t('players')} · {members.length}
               </p>

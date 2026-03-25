@@ -210,7 +210,13 @@
       "noProjectsFound": "ไม่พบ Project",
       "jqlPlaceholder": "project = PROJ AND sprint in openSprints() ORDER BY updated DESC",
       "addTicket": "เพิ่ม Ticket",
-      "clearFilter": "ล้างตัวกรอง"
+      "clearFilter": "ล้างตัวกรอง",
+      "estimationMode": "บันทึกเป็น",
+      "modeStoryPoints": "Story Points",
+      "modeTime": "เวลา",
+      "modeStoryPointsTooltip": "Story Points — บันทึกเป็นตัวเลข",
+      "modeTimeTooltip": "ประมาณเวลา — เพิ่ม 'd' สำหรับวัน (เช่น 1.5d)",
+      "savesAs": "บันทึกเป็น {value}"
     }
   },
   "activity": {

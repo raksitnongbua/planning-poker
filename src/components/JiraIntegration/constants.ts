@@ -7,3 +7,9 @@ export const JQL_QUERY_STORAGE_KEY = 'jira_jql_query'
 export const JQL_MODE_STORAGE_KEY = 'jira_search_mode'
 export const JQL_SAVED_FILTERS_KEY = 'jira_jql_saved_filters'
 export const MAX_SAVED_JQL_FILTERS = 5
+// Sentinel field ID used to signal that the save should target Jira's time tracking
+// originalEstimate field instead of a custom story points field.
+export const ORIGINAL_ESTIMATE_FIELD_ID = 'originalEstimate'
+export const ESTIMATION_MODE_STORAGE_KEY = 'jira_estimation_mode'
+export const TIME_FIELD_STORAGE_KEY = 'jira_time_field'
+export type EstimationMode = 'story_points' | 'time'

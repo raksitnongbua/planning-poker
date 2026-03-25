@@ -8,6 +8,7 @@ import useWebSocket, { ReadyState } from 'react-use-websocket'
 
 import type { TicketEstimation } from '@/components/JiraIntegration'
 import { TicketEstimationPicker, TicketQueuePanel } from '@/components/JiraIntegration'
+import type { EstimationMode } from '@/components/JiraIntegration/constants'
 import { TicketInfoDialog } from '@/components/JiraIntegration/TicketInfoDialog'
 import { useToast } from '@/components/ui/use-toast'
 import { useLoadingStore, useUserInfoStore } from '@/store/zustand'
@@ -117,6 +118,18 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const [jiraSiteUrl, setJiraSiteUrl] = useState('')
   const [isJiraPickerOpen, setIsJiraPickerOpen] = useState(false)
   const [isRemoveTicketConfirmOpen, setIsRemoveTicketConfirmOpen] = useState(false)
+  const [estimationMode, setEstimationMode] = useState<EstimationMode>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('jira_estimation_mode') as EstimationMode) ?? 'story_points'
+    }
+    return 'story_points'
+  })
+  const [storyFieldId, setStoryFieldId] = useState<string>(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('jira_story_points_field') ?? 'customfield_10016' : 'customfield_10016'
+  )
+  const [timeFieldId, setTimeFieldId] = useState<string>(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('jira_time_field') ?? 'originalEstimate' : 'originalEstimate'
+  )
   const [ticketInfoOpen, setTicketInfoOpen] = useState(false)
   const [ticketInfoTarget, setTicketInfoTarget] = useState<TicketEstimation | null>(null)
 
@@ -529,13 +542,19 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   }
 
   async function handleSaveToJira(estimation: TicketEstimation, value: number, fieldId: string) {
+    const isTimeModeField = fieldId === 'originalEstimate' || estimationMode === 'time'
     const res = await fetch(`/api/jira/issues/${estimation.jiraKey}/estimate`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cloudId: estimation.jiraCloudId, value, storyPointsField: fieldId }),
+      body: JSON.stringify({
+        cloudId: estimation.jiraCloudId,
+        value,
+        storyPointsField: fieldId,
+        isTimeMode: isTimeModeField,
+      }),
     })
     if (!res.ok) throw new Error('save failed')
-    if (estimation.jiraKey) setJiraPointOverride({ key: estimation.jiraKey, value })
+    if (estimation.jiraKey && !isTimeModeField) setJiraPointOverride({ key: estimation.jiraKey, value })
   }
 
   function openTicketInfo(ticket: TicketEstimation) {
@@ -641,6 +660,9 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                 finalStoryPoint={finalStoryPoint}
                 deckOptions={cardOptions}
                 ticketQueue={ticketQueue}
+                estimationMode={estimationMode}
+                storyFieldId={storyFieldId}
+                timeFieldId={timeFieldId}
                 onSetFinalStoryPoint={handleSetFinalStoryPoint}
                 onReveal={() => {
                   pendingActionActorRef.current = members.find((m) => m.id === id)?.name ?? null
@@ -861,6 +883,21 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         onSaveToJira={handleSaveToJira}
         jiraPointOverride={jiraPointOverride}
         onOpenTicketInfo={openTicketInfo}
+        estimationMode={estimationMode}
+        storyFieldId={storyFieldId}
+        timeFieldId={timeFieldId}
+        onEstimationModeChange={(mode) => {
+          setEstimationMode(mode)
+          localStorage.setItem('jira_estimation_mode', mode)
+        }}
+        onStoryFieldChange={(fieldId) => {
+          setStoryFieldId(fieldId)
+          localStorage.setItem('jira_story_points_field', fieldId)
+        }}
+        onTimeFieldChange={(fieldId) => {
+          setTimeFieldId(fieldId)
+          localStorage.setItem('jira_time_field', fieldId)
+        }}
       />
 
       {!isSpectator && (
@@ -898,6 +935,9 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         open={ticketInfoOpen}
         onOpenChange={setTicketInfoOpen}
         cloudId={cloudId}
+        estimationMode={estimationMode}
+        storyFieldId={storyFieldId}
+        timeFieldId={timeFieldId}
       />
 
       <Dialog

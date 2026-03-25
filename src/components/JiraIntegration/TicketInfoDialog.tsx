@@ -6,6 +6,8 @@ import ReactMarkdown from 'react-markdown'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 
+import type { EstimationMode } from './constants'
+import { DEFAULT_FIELD_ID, ORIGINAL_ESTIMATE_FIELD_ID } from './constants'
 import { getIssueTypeIcon } from './jiraIssueTypeIcon'
 import type { TicketEstimation } from './types'
 
@@ -14,14 +16,22 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   cloudId?: string
+  estimationMode?: EstimationMode
+  storyFieldId?: string
+  timeFieldId?: string
 }
 
-export function TicketInfoDialog({ ticket, open, onOpenChange, cloudId }: Props) {
+export function TicketInfoDialog({ ticket, open, onOpenChange, cloudId, estimationMode, storyFieldId, timeFieldId }: Props) {
   const [descState, setDescState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
   const [fullDescription, setFullDescription] = useState<string | null>(null)
+  const [currentFieldValue, setCurrentFieldValue] = useState<number | string | null | undefined>(undefined)
   // Track which key was last fetched so re-opening the same ticket is instant,
   // and switching tickets never hits the stale-closure guard bug.
   const fetchedKeyRef = useRef<string | null>(null)
+
+  const effectiveFieldId = estimationMode === 'time'
+    ? (timeFieldId ?? ORIGINAL_ESTIMATE_FIELD_ID)
+    : (storyFieldId ?? DEFAULT_FIELD_ID)
 
   useEffect(() => {
     if (!open || !ticket?.jiraKey) return
@@ -49,6 +59,18 @@ export function TicketInfoDialog({ ticket, open, onOpenChange, cloudId }: Props)
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, ticket?.jiraKey])
+
+  // Fetch current field value whenever the dialog opens or the field target changes
+  useEffect(() => {
+    if (!open || !ticket?.jiraKey || !cloudId) return
+    const jiraCloudId = ticket.jiraCloudId ?? cloudId
+    setCurrentFieldValue(undefined)
+    fetch(`/api/jira/issues/${ticket.jiraKey}/estimate?cloudId=${jiraCloudId}&fieldId=${effectiveFieldId}`)
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((data) => setCurrentFieldValue(data.value ?? null))
+      .catch(() => setCurrentFieldValue(null))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, ticket?.jiraKey, effectiveFieldId])
 
   if (!ticket) return null
 
@@ -80,14 +102,31 @@ export function TicketInfoDialog({ ticket, open, onOpenChange, cloudId }: Props)
             )}
           </div>
 
-          {/* Issue type pill */}
-          {ticket.jiraType && (
-            <div className="mt-1.5">
+          {/* Issue type pill + current field value */}
+          <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+            {ticket.jiraType && (
               <span className="rounded-sm bg-blue-500/20 px-1.5 py-0.5 text-[10px] font-medium text-blue-300">
                 {ticket.jiraType}
               </span>
-            </div>
-          )}
+            )}
+            {/* Current estimate value from Jira */}
+            {estimationMode !== undefined && (
+              <span className="flex items-center gap-1 rounded-sm border border-border/30 bg-muted/20 px-1.5 py-0.5 text-[10px]">
+                <span className="text-muted-foreground/40">
+                  {estimationMode === 'time' ? 'Time Est.' : 'Story Pts'}:
+                </span>
+                {currentFieldValue === undefined ? (
+                  <Skeleton className="h-3 w-8 rounded" />
+                ) : currentFieldValue != null ? (
+                  <span className="font-semibold tabular-nums text-foreground/70">
+                    {String(currentFieldValue)}
+                  </span>
+                ) : (
+                  <span className="tabular-nums text-muted-foreground/30">—</span>
+                )}
+              </span>
+            )}
+          </div>
 
           {/* Title */}
           <DialogTitle className="mt-2 text-sm font-semibold leading-snug text-foreground">

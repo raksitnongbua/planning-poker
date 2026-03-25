@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import ReactCardFlip from 'react-card-flip'
 
 import type { TicketEstimation } from '@/components/JiraIntegration'
+import type { EstimationMode } from '@/components/JiraIntegration/constants'
 
 import CorgiFeeling from '../CorgiFeeling'
 import { Member, Status } from '../Room/types'
@@ -37,6 +38,9 @@ export interface RoomTableProps {
   onSetFinalStoryPoint?: (value: string) => void
   onTicketSelect?: (estimation: TicketEstimation) => void
   onOpenTicketInfo?: (ticket: TicketEstimation) => void
+  estimationMode?: EstimationMode
+  storyFieldId?: string
+  timeFieldId?: string
 }
 
 const TABLE_W = 600
@@ -65,6 +69,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
   roomId = '', consensusValue, finalStoryPoint, deckOptions,
   ticketQueue = [], onReveal, onReset, onSetTicket, onRemoveTicket, onSaveToJira,
   onSetFinalStoryPoint, onTicketSelect, onOpenTicketInfo,
+  estimationMode, storyFieldId, timeFieldId,
 }) => {
   const t = useTranslations('room')
   const [tableScale, setTableScale] = useState(calcTableScale)
@@ -377,6 +382,9 @@ const RoomTable: React.FC<RoomTableProps> = ({
                   consensusValue={consensusValue}
                   finalStoryPoint={finalStoryPoint}
                   isSpectator={isSpectator}
+                  estimationMode={estimationMode}
+                  storyFieldId={storyFieldId}
+                  timeFieldId={timeFieldId}
                   onSet={onSetTicket}
                   onRemove={onRemoveTicket}
                   onSaveToJira={onSaveToJira}

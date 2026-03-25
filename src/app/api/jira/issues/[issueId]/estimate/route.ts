@@ -23,8 +23,11 @@ export async function GET(
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
+  // originalEstimate is a sentinel for Jira's timetracking — request the timetracking field instead
+  const resolvedField = fieldId === 'originalEstimate' ? 'timetracking' : fieldId
+
   const res = await fetch(
-    `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/issue/${issueId}?fields=${fieldId}`,
+    `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/issue/${issueId}?fields=${resolvedField}`,
     { headers: { Authorization: `Bearer ${entry.accessToken}`, Accept: 'application/json' } }
   )
 
@@ -33,7 +36,9 @@ export async function GET(
   }
 
   const data = await res.json()
-  const value: number | null = data.fields?.[fieldId] ?? null
+  const value: number | string | null = fieldId === 'originalEstimate'
+    ? (data.fields?.timetracking?.originalEstimate ?? null)
+    : (data.fields?.[fieldId] ?? null)
   const response = NextResponse.json({ value })
   if (refreshed) applyRefreshedCookies(response, refreshed)
   return response
@@ -53,11 +58,17 @@ export async function PATCH(
   }
 
   const body = await request.json()
-  const { cloudId, value, storyPointsField = 'customfield_10016' } = body
+  const { cloudId, value, storyPointsField = 'customfield_10016', isTimeMode = false } = body
 
   if (!cloudId || value === undefined) {
     return NextResponse.json({ error: 'Missing cloudId or value' }, { status: 400 })
   }
+
+  const fields = storyPointsField === 'originalEstimate'
+    ? { timetracking: { originalEstimate: `${value}d` } }
+    : isTimeMode
+      ? { [storyPointsField]: `${value}d` }
+      : { [storyPointsField]: Number(value) }
 
   const res = await fetch(
     `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/issue/${issueId}`,
@@ -68,7 +79,7 @@ export async function PATCH(
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify({ fields: { [storyPointsField]: Number(value) } }),
+      body: JSON.stringify({ fields }),
     }
   )
 
