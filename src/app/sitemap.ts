@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://www.corgiplanningpoker.com'
-  const today = '2026-03-23'
+  const today = '2026-03-30'
 
   const routes = [
     { url: '', priority: 1, changeFrequency: 'weekly' as const },

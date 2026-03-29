@@ -16,9 +16,9 @@ const appSchema = {
     availability: 'https://schema.org/OnlineOnly',
   },
   description:
-    'Free online planning poker tool for agile teams to estimate story points collaboratively in real-time. No registration required.',
+    'Free online planning poker tool for agile teams to estimate story points collaboratively in real-time. Includes Jira integration with ticket queue and story point sync. No registration required.',
   datePublished: '2024-01-01',
-  softwareVersion: '2.6.1',
+  softwareVersion: '2.8.1',
   screenshot: [
     {
       '@type': 'ImageObject',
@@ -39,7 +39,9 @@ const appSchema = {
     'Invite via room link',
     'Spectator mode',
     'Google Sign-In for cross-device sync',
-    'Jira integration — link issues and sync story point estimates',
+    'Jira integration — queue multiple Jira tickets for sequential estimation',
+    'Sync final story points back to Jira in one click',
+    'Estimate Jira issues as story points or time (days)',
     'Free forever',
   ],
   inLanguage: 'en-US',
@@ -114,6 +116,30 @@ const faqSchema = {
       acceptedAnswer: {
         '@type': 'Answer',
         text: 'Story points measure relative effort and complexity rather than clock time. A 5-point story is roughly twice as complex as a 2-point story for your team, but the actual hours vary by person. Using story points removes pressure to commit to specific durations and focuses the conversation on scope and risk instead.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Does Corgi Planning Poker integrate with Jira?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes. Connect your Jira account with one click and you can search for issues directly inside the planning poker room. Add multiple Jira tickets to a queue, estimate them one by one with your team, and save the final story point (or time estimate) back to Jira without leaving the room.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How does the Jira ticket queue work?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'After connecting Jira, open the backlog panel and search for issues from your Jira project. Add up to 200 tickets to the queue. The room automatically moves to the next unestimated ticket after each round, so your team can work through a whole sprint backlog in one session without any manual switching.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Can I save story points back to Jira automatically?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes. After the team agrees on a final score, a "Save to Jira" button appears inline. One click updates the story point field (or time estimate field) on the Jira issue. You can also choose which Jira field to write to — any number field for story points, or the built-in Original Estimate field for time.',
       },
     },
   ],

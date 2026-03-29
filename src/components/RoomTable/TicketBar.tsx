@@ -68,6 +68,7 @@ export function TicketBar({
   onSaveToJira,
   onOpenTicketInfo,
 }: Props) {
+  const [confirmRemove, setConfirmRemove] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState(false)
@@ -224,22 +225,46 @@ export function TicketBar({
           )}
 
           {/* Action icons */}
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1" onMouseLeave={() => setConfirmRemove(false)}>
             {/* Remove — hidden for spectators */}
             {estimation && !isSpectator && (
-              <Tooltip>
-                <TooltipTrigger asChild>
+              confirmRemove ? (
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] font-medium text-red-400/80">Remove?</span>
                   <button
-                    className="flex size-5 items-center justify-center rounded text-muted-foreground/30 transition-colors hover:bg-red-500/10 hover:text-red-400"
-                    onClick={onRemove}
+                    onClick={() => { onRemove(); setConfirmRemove(false) }}
+                    className="flex size-5 items-center justify-center rounded text-green-400/80 transition-colors hover:bg-green-500/10 hover:text-green-400"
+                    aria-label="Confirm remove"
                   >
-                    <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="size-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setConfirmRemove(false)}
+                    className="flex size-5 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-muted/40 hover:text-foreground"
+                    aria-label="Cancel remove"
+                  >
+                    <svg className="size-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
-                </TooltipTrigger>
-                <TooltipContent side="top">Remove ticket</TooltipContent>
-              </Tooltip>
+                </div>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="flex size-5 items-center justify-center rounded text-muted-foreground/30 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                      onClick={() => setConfirmRemove(true)}
+                    >
+                      <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Remove ticket</TooltipContent>
+                </Tooltip>
+              )
             )}
           </div>
         </div>

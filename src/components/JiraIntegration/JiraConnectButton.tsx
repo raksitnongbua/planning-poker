@@ -56,12 +56,11 @@ export function JiraConnectButton({ isConnected, roomId, onConnected, onDisconne
 
   if (isConnected) {
     return (
-      <div className="flex items-center gap-1.5 rounded-lg border border-green-500/20 bg-green-500/8 px-2 py-1">
+      <div className="flex items-center gap-1 rounded-lg border border-green-500/20 bg-green-500/8 px-1.5 py-1" title={t('connected')}>
         <svg className="size-3 shrink-0 text-blue-400/70" fill="currentColor" viewBox="0 0 24 24">
           <path d="M11.53 2c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.95 4.34 4.34 4.35V2.84a.84.84 0 0 0-.84-.84zM6.77 6.8c0 2.4 1.96 4.34 4.35 4.34h1.78v1.71c0 2.4 1.95 4.34 4.35 4.35V7.63a.84.84 0 0 0-.84-.83zM2 11.6c0 2.4 1.95 4.34 4.35 4.34h1.78v1.71A4.35 4.35 0 0 0 12.48 22v-9.57a.84.84 0 0 0-.84-.83z" />
         </svg>
         <span className="size-1.5 animate-heartbeat rounded-full bg-green-400" />
-        <span className="text-[10px] font-medium text-green-400">{t('connected')}</span>
         <button
           className="flex size-4 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40"
           onClick={handleDisconnect}
