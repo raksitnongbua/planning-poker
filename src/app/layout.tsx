@@ -87,10 +87,10 @@ export const metadata: Metadata = {
     default: 'Free Online Planning Poker | Corgi Planning Poker',
     template: '%s | Corgi Planning Poker',
   },
-  description: 'Free online planning poker for agile teams. Estimate story points collaboratively in real-time with your scrum team — no account, no install, ready in seconds.',
+  description: 'Free online planning poker for agile teams. Estimate story points collaboratively in real-time with your scrum team — Jira integration, ticket queue, and story point sync included. No account, no install, ready in seconds.',
   openGraph: {
     title: 'Free Online Planning Poker | Corgi Planning Poker',
-    description: 'Free online planning poker for agile teams. Estimate story points collaboratively in real-time — no registration required.',
+    description: 'Free online planning poker with Jira integration. Queue Jira tickets, vote as a team, and sync story points back to Jira — no registration required.',
     locale: 'en_US',
     siteName: 'Corgi Planning Poker',
     type: 'website',
@@ -106,10 +106,10 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Free Online Planning Poker | Corgi Planning Poker',
-    description: 'Free online planning poker for agile teams. Estimate story points collaboratively in real-time — no registration required.',
+    description: 'Free online planning poker with Jira integration. Queue Jira tickets, vote as a team, and sync story points back to Jira — no registration required.',
     images: ['/images/corgi-planning-poker-preview.png'],
   },
-  keywords: 'planning poker, online planning poker, free planning poker, scrum poker, agile estimation, story points, sprint planning, planning poker online, scrum estimation',
+  keywords: 'planning poker, online planning poker, free planning poker, scrum poker, agile estimation, story points, sprint planning, planning poker online, scrum estimation, jira planning poker, jira story points, jira agile estimation, planning poker jira integration, jira scrum poker, estimate jira tickets, jira story point sync, ticket queue estimation, bulk agile estimation',
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
