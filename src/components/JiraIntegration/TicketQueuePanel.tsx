@@ -24,6 +24,7 @@ import type { TicketEstimation } from './types'
 interface Props {
   queue: TicketEstimation[]
   activeKey?: string | null
+  isRevealed?: boolean
   panelWidth: number
   isCollapsed: boolean
   isDragging: boolean
@@ -36,7 +37,7 @@ interface Props {
   onDragEnd: () => void
   onSelectTicket: (t: TicketEstimation) => void
   onQueueChange: (queue: TicketEstimation[]) => void
-  onRevoteTicket?: (cleaned: TicketEstimation, cleanedQueue: TicketEstimation[]) => void
+  onRevoteTicket?: (cleaned: TicketEstimation) => void
   onAdd?: () => void
   onJiraConnected: () => void
   onJiraDisconnected: () => void
@@ -341,8 +342,9 @@ function SortableTicketItem({
                       </Tooltip>
                     </>
                   ) : (
-                    // Voted: re-estimate + remove — gap-1.5 to visually separate the two distinct actions
+                    // Voted: re-estimate (only when allowed) + remove — gap-1.5 to visually separate the two distinct actions
                     <div className="flex items-center gap-1.5">
+                      {onRevote && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button
@@ -357,6 +359,7 @@ function SortableTicketItem({
                         </TooltipTrigger>
                         <TooltipContent>Re-estimate</TooltipContent>
                       </Tooltip>
+                      )}
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button
@@ -533,7 +536,7 @@ function SortableTicketItem({
 }
 
 export function TicketQueuePanel({
-  queue, activeKey, panelWidth, isCollapsed, isDragging,
+  queue, activeKey, isRevealed = false, panelWidth, isCollapsed, isDragging,
   isJiraConnected = false, isSpectator = false, roomId,
   onCollapse, onWidthChange, onDragStart, onDragEnd,
   onSelectTicket, onQueueChange, onRevoteTicket, onAdd, onJiraConnected, onJiraDisconnected,
@@ -692,14 +695,14 @@ export function TicketQueuePanel({
 
   function revote(idx: number) {
     const ticket = queue[idx]
-    const cleaned = { ...ticket, avgScore: undefined, finalScore: undefined }
-    const withoutTicket = queue.filter((_, i) => i !== idx)
-    const insertAt = firstUnvotedIdx === -1 ? 0 : firstUnvotedIdx
-    const next = [...withoutTicket]
-    next.splice(insertAt, 0, cleaned)
+    const cleaned = { ...ticket, avgScore: 0, finalScore: '' }
     if (onRevoteTicket) {
-      onRevoteTicket(cleaned, next)
+      onRevoteTicket(cleaned)
     } else {
+      const withoutTicket = queue.filter((_, i) => i !== idx)
+      const insertAt = firstUnvotedIdx === -1 ? 0 : firstUnvotedIdx
+      const next = [...withoutTicket]
+      next.splice(insertAt, 0, cleaned)
       onQueueChange(next)
       onSelectTicket(cleaned)
     }
@@ -760,7 +763,7 @@ export function TicketQueuePanel({
                 <p className="px-2 py-1 text-[10px] text-muted-foreground/40">No tickets in queue</p>
               )}
               {queue.map((t, i) => {
-                const isActive = t.jiraKey ? t.jiraKey === activeKey : t.name === activeKey
+                const isActive = (t.jiraKey ?? t.name) === activeKey
                 return (
                   <div key={i} className="flex items-center gap-2 rounded-lg px-2 py-1.5">
                     {(!!t.avgScore || !!t.finalScore) ? (
@@ -1159,7 +1162,7 @@ export function TicketQueuePanel({
                 >
                   <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
                     {visibleIndices.map(({ t, idx }) => {
-                      const isActive = t.jiraKey ? t.jiraKey === activeKey : t.name === activeKey
+                      const isActive = (t.jiraKey ?? t.name) === activeKey
                       const canMoveUp = idx > 0 && !isVotedTicket(queue[idx - 1])
                       const canMoveToTop = !isVotedTicket(t) && firstUnvotedIdx !== -1 && idx > firstUnvotedIdx
                       const canMoveDown = !isVotedTicket(t) && idx < queue.length - 1
@@ -1184,7 +1187,7 @@ export function TicketQueuePanel({
                           onMoveUp={() => moveUp(idx)}
                           onMoveDown={() => moveDown(idx)}
                           onRemove={() => remove(idx)}
-                          onRevote={isVotedTicket(t) && !isSpectator ? () => revote(idx) : undefined}
+                          onRevote={isVotedTicket(t) && !isSpectator && !(isRevealed && isActive) ? () => revote(idx) : undefined}
                           onSaveToJira={onSaveToJira && t.jiraKey && (estimationMode === 'time' || t.storyPointsField) ? () => saveToJira(t) : undefined}
                           onOpenInfo={t.jiraKey && isJiraConnected ? () => onOpenTicketInfo?.(t) : undefined}
                         />

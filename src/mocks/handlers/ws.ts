@@ -121,7 +121,7 @@ const roomHandler = roomLink.addEventListener('connection', ({ client, params })
         break
       }
 
-      case 'RESET_ROOM': {
+      case 'NEXT_ROUND': {
         state.status = 'VOTING'
         state.members = state.members.map((m) => ({
           ...m,

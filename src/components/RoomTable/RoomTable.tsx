@@ -124,20 +124,9 @@ const RoomTable: React.FC<RoomTableProps> = ({
   const prevIsRevealedRef = useRef(false)
 
   useEffect(() => {
-    const justRevealed = isRevealed && !prevIsRevealedRef.current
+    if (!isRevealed) { setPickerOpen(false) }
     prevIsRevealedRef.current = isRevealed
-
-    if (!isRevealed) { setPickerOpen(false); return }
-    if (!justRevealed) return
-    if (!deckOptions || deckOptions.length === 0) return
-    const numericOpts = deckOptions.map(Number).filter((v) => !isNaN(v) && isFinite(v)).sort((a, b) => a - b)
-    if (numericOpts.length === 0) return
-    const nearest = numericOpts.reduce((prev, cur) =>
-      Math.abs(cur - averagePoint) < Math.abs(prev - averagePoint) ? cur : prev
-    )
-    const matched = deckOptions.find((opt) => Number(opt) === nearest)
-    if (matched) onSetFinalStoryPoint?.(matched)
-  }, [isRevealed, averagePoint, deckOptions, onSetFinalStoryPoint])
+  }, [isRevealed])
 
   function handlePickFinalPoint(value: string) {
     onSetFinalStoryPoint?.(value)

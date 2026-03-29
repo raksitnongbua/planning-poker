@@ -94,6 +94,8 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const [roomName, setRoomName] = useState<string>('')
   const [openRefreshDialog, setOpenRefreshDialog] = useState(false)
   const [isEditPointMode, setIsEditEstimateValue] = useState<boolean>(false)
+  const isEditPointModeRef = useRef(false)
+  useLayoutEffect(() => { isEditPointModeRef.current = isEditPointMode }, [isEditPointMode])
   const [cardOptions, setCardOptions] = useState<string[]>([])
   const [result, setResult] = useState<Map<string, number>>(new Map<string, number>())
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
@@ -293,6 +295,10 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
           const newRoomState = payload.status
           const isNewRound = prevRoomStatusRef.current === Status.RevealedCards && newRoomState === Status.Voting
           setCardChoosing(prev => {
+            // In edit-point mode the user picks a final score, not a new vote.
+            // Preserve cardChoosing so the selected card stays highlighted until
+            // edit mode closes — don't let the server's unchanged estimatedValue revert it.
+            if (isEditPointModeRef.current) return prev
             if (serverChoosing !== '' && serverChoosing !== 'null') return serverChoosing
             if (isNewRound) return serverChoosing
             return prev
@@ -315,36 +321,10 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
           }
           setFinalStoryPoint(payload.final_story_point ?? '')
           if (payload.ticket_queue !== undefined) {
-            const serverQueue: TicketEstimation[] = payload.ticket_queue ?? []
-            setTicketQueue((prev) =>
-              serverQueue.map((serverTicket: TicketEstimation) => {
-                const key = serverTicket.jiraKey ?? serverTicket.name
-                const local = prev.find((t) => (t.jiraKey ?? t.name) === key)
-                // Don't overwrite local optimistic finalScore/avgScore if the server
-                // broadcast hasn't caught up yet (race between SET_FINAL_STORY_POINT
-                // and SET_TICKET_QUEUE causing a visible blink).
-                if (local?.finalScore && !serverTicket.finalScore) {
-                  return { ...serverTicket, finalScore: local.finalScore, avgScore: local.avgScore ?? serverTicket.avgScore }
-                }
-                if (local?.avgScore && !serverTicket.avgScore) {
-                  return { ...serverTicket, avgScore: local.avgScore }
-                }
-                return serverTicket
-              }),
-            )
+            setTicketQueue(payload.ticket_queue ?? [])
           }
 
-          if (isNewRound && Array.isArray(payload.ticket_queue)) {
-            // On new round: always pick the first pending (not-yet-voted) ticket from the queue.
-            // This is the source of truth — ignore backend's ticket_estimation to avoid race conditions.
-            const firstPending = payload.ticket_queue.find((t: any) => !t.avgScore && !t.finalScore)
-            setTicketEstimation(firstPending ?? null)
-            if (firstPending) {
-              sendJsonMessage({ action: 'SET_TICKET_ESTIMATION', payload: { ticketEstimation: firstPending } })
-            }
-          } else {
-            setTicketEstimation(payload.ticket_estimation ?? null)
-          }
+          setTicketEstimation(payload.ticket_estimation ?? null)
 
           {
             const prevMembers = prevMembersRef.current
@@ -377,18 +357,8 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
               addEvent({ type: 'reveal', actor: pendingActionActorRef.current ?? undefined, at: ts, roundResult: { votes, avg } })
               pendingActionActorRef.current = null
 
-              // Stamp avgScore on the active ticket in the queue.
-              const currentQueue: TicketEstimation[] = payload.ticket_queue ?? []
-              const currentEstimation: TicketEstimation | null = payload.ticket_estimation ?? null
-              if (currentEstimation && currentQueue.length > 0) {
-                const estKey = currentEstimation.jiraKey ?? currentEstimation.name
-                const roundedAvg = Math.round(avg * 10) / 10
-                const stamped = currentQueue.map((t: TicketEstimation) =>
-                  (t.jiraKey ?? t.name) === estKey ? { ...t, avgScore: roundedAvg } : t,
-                )
-                setTicketQueue(stamped)
-                sendJsonMessage({ action: 'SET_TICKET_QUEUE', payload: { ticketQueue: stamped } })
-              }
+              // avgScore, finalScore, and FinalStoryPoint are now stamped by the backend
+              // atomically on REVEAL_CARDS — no extra WS send needed here.
             }
 
             if (prevStatus === Status.RevealedCards && newRoomState === Status.Voting) {
@@ -439,8 +409,8 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
 
   const handleSetFinalStoryPoint = (value: string) => {
     sendJsonMessage({ action: 'SET_FINAL_STORY_POINT', payload: { value } })
-    // Stamp finalScore + avgScore on the active ticket in the queue immediately
-    // (event-handler update — avoids a derived-state useEffect).
+    // Optimistic local update — server will confirm atomically via UPDATE_ROOM.
+    setFinalStoryPoint(value)
     if (ticketEstimation && ticketQueue.length > 0) {
       const estKey = ticketEstimation.jiraKey ?? ticketEstimation.name
       const numericVotes = members
@@ -451,11 +421,9 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         numericVotes.length > 0
           ? Math.round((numericVotes.reduce((a, v) => a + v, 0) / numericVotes.length) * 10) / 10
           : 0
-      const updated = ticketQueue.map((t) =>
+      setTicketQueue(ticketQueue.map((t) =>
         (t.jiraKey ?? t.name) === estKey ? { ...t, avgScore: avg, finalScore: value } : t,
-      )
-      setTicketQueue(updated)
-      sendJsonMessage({ action: 'SET_TICKET_QUEUE', payload: { ticketQueue: updated } })
+      ))
     }
   }
 
@@ -472,7 +440,6 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
     setTicketQueue(updated)
     setTicketEstimation(next)
     sendJsonMessage({ action: 'SET_TICKET_QUEUE', payload: { ticketQueue: updated } })
-    sendJsonMessage({ action: 'SET_TICKET_ESTIMATION', payload: { ticketEstimation: next } })
   }
 
   const handleTicketSelect = (estimation: TicketEstimation) => {
@@ -487,15 +454,16 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
       )
       setTicketEstimation(cleared)
       setTicketQueue(updated)
-      sendJsonMessage({ action: 'SET_TICKET_QUEUE', payload: { ticketQueue: updated } })
 
       if (roomStatus === Status.RevealedCards) {
-        // In revealed state, clicking a voted ticket must start a new round first,
-        // then explicitly set this ticket (overrides backend's auto-select from Restart())
+        // Start a new round with this specific ticket as the active one.
+        // Single NEXT_ROUND message carries both the queue update (cleared scores)
+        // and the explicit ticket selection — no follow-up SET_TICKET_ESTIMATION needed.
         pendingActionActorRef.current = members.find((m) => m.id === id)?.name ?? null
-        sendJsonMessage({ action: 'RESET_ROOM' })
+        sendJsonMessage({ action: 'NEXT_ROUND', payload: { ticketEstimation: cleared, ticketQueue: updated } })
+      } else {
+        sendJsonMessage({ action: 'SET_TICKET_ESTIMATION', payload: { ticketEstimation: cleared } })
       }
-      sendJsonMessage({ action: 'SET_TICKET_ESTIMATION', payload: { ticketEstimation: cleared } })
     } else {
       setTicketEstimation(estimation)
       sendJsonMessage({ action: 'SET_TICKET_ESTIMATION', payload: { ticketEstimation: estimation } })
@@ -531,14 +499,39 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
     sendJsonMessage({ action: 'SET_TICKET_QUEUE', payload: { ticketQueue: newQueue } })
   }
 
-  const handleRevote = (cleaned: TicketEstimation, cleanedQueue: TicketEstimation[]) => {
-    setTicketQueue(cleanedQueue)
-    setTicketEstimation(cleaned)
-    if (roomStatus === Status.RevealedCards) {
+  const handleRevote = (cleaned: TicketEstimation) => {
+    const cleanedKey = cleaned.jiraKey ?? cleaned.name
+    const clearedTicket = { ...cleaned, avgScore: 0, finalScore: '' }
+    // Remove the revoted ticket first to get accurate indices after removal.
+    const without = ticketQueue.filter((t) => (t.jiraKey ?? t.name) !== cleanedKey)
+
+    let insertAt: number
+    if (roomStatus === Status.Voting) {
+      // Voting in progress: place revoted ticket right after the last voted ticket,
+      // then immediately switch to it (NEXT_ROUND resets votes + sets it as active).
+      const lastVotedIdx = without.reduce(
+        (last, t, i) => (t.avgScore || t.finalScore ? i : last),
+        -1,
+      )
+      insertAt = lastVotedIdx === -1 ? 0 : lastVotedIdx + 1
+      const reordered = [...without.slice(0, insertAt), clearedTicket, ...without.slice(insertAt)]
+      setTicketEstimation(clearedTicket)
+      setTicketQueue(reordered)
       pendingActionActorRef.current = members.find((m) => m.id === id)?.name ?? null
-      sendJsonMessage({ action: 'RESET_ROOM' })
+      sendJsonMessage({ action: 'NEXT_ROUND', payload: { ticketEstimation: clearedTicket, ticketQueue: reordered } })
+      return
     }
-    sendJsonMessage({ action: 'SET_TICKET_QUEUE_WITH_ESTIMATION', payload: { ticketQueue: cleanedQueue, ticketEstimation: cleaned } })
+
+    // REVEALED_CARDS: place right after the current (just-revealed) ticket.
+    // Restart() will auto-pick it as the first unvoted on "Next Round".
+    const currentKey = ticketEstimation?.jiraKey ?? ticketEstimation?.name
+    const currentIdxInWithout = currentKey
+      ? without.findIndex((t) => (t.jiraKey ?? t.name) === currentKey)
+      : -1
+    insertAt = currentIdxInWithout === -1 ? without.length : currentIdxInWithout + 1
+    const reordered = [...without.slice(0, insertAt), clearedTicket, ...without.slice(insertAt)]
+    setTicketQueue(reordered)
+    sendJsonMessage({ action: 'SET_TICKET_QUEUE', payload: { ticketQueue: reordered } })
   }
 
   async function handleSaveToJira(estimation: TicketEstimation, value: number, fieldId: string) {
@@ -554,7 +547,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
       }),
     })
     if (!res.ok) throw new Error('save failed')
-    if (estimation.jiraKey && !isTimeModeField) setJiraPointOverride({ key: estimation.jiraKey, value })
+    if (estimation.jiraKey) setJiraPointOverride({ key: estimation.jiraKey, value })
   }
 
   function openTicketInfo(ticket: TicketEstimation) {
@@ -670,7 +663,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                 }}
                 onReset={() => {
                   pendingActionActorRef.current = members.find((m) => m.id === id)?.name ?? null
-                  sendJsonMessage({ action: 'RESET_ROOM' })
+                  sendJsonMessage({ action: 'NEXT_ROUND' })
                 }}
                 onSetTicket={() => setIsJiraPickerOpen(true)}
                 onRemoveTicket={handleRemoveTicket}
@@ -721,16 +714,18 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                   isEditPointMode={isEditPointMode}
                   onClickFlipCards={() => setIsEditEstimateValue((preVal) => !preVal)}
                   onClickVote={(value) => {
-                    if (roomStatus === Status.RevealedCards && !isEditPointMode) {
-                      pendingActionActorRef.current = members.find((m) => m.id === id)?.name ?? null
-                      sendJsonMessage({ action: 'RESET_ROOM' })
-                      sendJsonMessage({ action: 'UPDATE_ESTIMATED_VALUE', payload: { value } })
+                    if (isEditPointMode) {
+                      handleSetFinalStoryPoint(value)
                       setCardChoosing(value)
                       setIsEditEstimateValue(false)
+                    } else if (roomStatus === Status.RevealedCards) {
+                      pendingActionActorRef.current = members.find((m) => m.id === id)?.name ?? null
+                      sendJsonMessage({ action: 'NEXT_ROUND' })
+                      sendJsonMessage({ action: 'UPDATE_ESTIMATED_VALUE', payload: { value } })
+                      setCardChoosing(value)
                     } else {
                       setCardChoosing(value)
                       sendJsonMessage({ action: 'UPDATE_ESTIMATED_VALUE', payload: { value } })
-                      setIsEditEstimateValue(false)
                     }
                   }}
                   status={roomStatus}
@@ -864,6 +859,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
       <TicketQueuePanel
         queue={ticketQueue}
         activeKey={ticketEstimation?.jiraKey ?? ticketEstimation?.name ?? null}
+        isRevealed={roomStatus === Status.RevealedCards}
         panelWidth={queuePanelExpandedWidth}
         isCollapsed={isQueueCollapsed}
         isDragging={isDraggingQueuePanel}
