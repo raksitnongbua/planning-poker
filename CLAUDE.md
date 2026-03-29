@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code when working in this repository.
 
 ## Commands
 
@@ -14,11 +14,11 @@ bun start           # Start production server
 bun run lint        # ESLint check
 ```
 
-No test suite is configured in this project.
+No test suite is configured.
 
 ## Environment Variables
 
-Copy `.env.example` to `.env.local` and fill in:
+Copy `.env.example` to `.env.local`:
 
 | Variable | Purpose |
 |---|---|
@@ -32,23 +32,19 @@ Copy `.env.example` to `.env.local` and fill in:
 
 ## Architecture Overview
 
-**Corgi Planning Poker** is a Next.js 16 (App Router) + React 19 frontend that connects to a separate Go WebSocket backend.
+Next.js 16 (App Router) + React 19 frontend connecting to a Go WebSocket backend.
 
-### Key architectural patterns
+**Guest identity & SEO** (`src/proxy.ts`): On every request — generates guest UUID via `/api/v1/guest/sign-in` if no UID cookie; detects `?hl=` for locale cookie + `x-locale` header injection.
 
-**Guest identity & SEO via proxy** (`src/proxy.ts`): On every request, the `proxy` interceptor handles:
-1. **Guest UID:** If no UID cookie, calls `/api/v1/guest/sign-in` to generate a guest UUID and sets it as a cookie.
-2. **SEO Locale Detection:** Detects `?hl=` query param to set the `locale` cookie and inject `x-locale` header for multi-language indexing.
+**Auth** (`src/app/api/auth/[...nextauth]/option.ts`): NextAuth with Google provider overlays the guest system. Guests can use all features.
 
-**Optional Google auth** (`src/app/api/auth/[...nextauth]/option.ts`): NextAuth with Google provider overlays the guest system. Signed-in users get avatar/name persistence; guests can still use all features.
+**WebSocket room state** (`src/components/Room/Room.tsx`): Single WebSocket via `react-use-websocket`. Incoming: `NEED_TO_JOIN`, `UPDATE_ROOM`. Outgoing: `JOIN_ROOM`, `REVEAL_CARDS`, `RESET_ROOM`, `UPDATE_ESTIMATED_VALUE`.
 
-**WebSocket room state** (`src/components/Room/Room.tsx`): All state managed via a single WebSocket (`react-use-websocket`). Incoming: `action`-typed JSON (`NEED_TO_JOIN`, `UPDATE_ROOM`). Outgoing: `JOIN_ROOM`, `REVEAL_CARDS`, `RESET_ROOM`, `UPDATE_ESTIMATED_VALUE`.
+**State management:** Zustand (`useLoadingStore`, `useUserInfoStore`) + TanStack Query for REST mutations + local `useState` for ephemeral room state.
 
-**State management:** Zustand for global UI state (`useLoadingStore`, `useUserInfoStore`). TanStack Query for REST mutations. Local `useState` for ephemeral room state.
+**Custom deck configs** (`DESK_CONFIG_KEY`): `&`-delimited JSON strings in cookies. Favorites in `localStorage`.
 
-**Custom deck configs** (`DESK_CONFIG_KEY`): Stored as `&`-delimited JSON strings in cookies. Favorites in `localStorage`.
-
-### Component structure
+### Component Structure
 
 - `src/components/ui/` — shadcn/ui primitives (do not modify directly)
 - `src/components/common/` — shared wrappers (e.g., `Dialog`)
@@ -58,21 +54,17 @@ Copy `.env.example` to `.env.local` and fill in:
 
 ### Conventions
 
-- Path alias `@/` → `src/`
+- Path alias `@/` -> `src/`
 - ESLint: sorted imports via `eslint-plugin-simple-import-sort`
 - Prettier: `prettier-plugin-tailwindcss` (Tailwind class sorting)
 - Dark mode only (`className="dark"` fixed on `<html>`)
+- React 19 rules: see `.claude/rules/react-guidelines.md`
 
 ---
 
 ## Design System
 
-### Core Philosophy
-
-- **Dark-native**: Never use `bg-white`/`text-black`. Always use CSS variables or Tailwind tokens.
-- **Transparent layers**: Page elements inherit `bg-background` (`hsl(20, 14.3%, 4.1%)`). Avoid opaque containers that create grey rectangles.
-- **Depth via elevation**: `bg-secondary` for cards/panels, `bg-muted/20` for list items, `bg-background/95 backdrop-blur-md` for fixed overlays.
-- **Subtle, not loud**: `border-border/40`, opacity-based fills (`bg-primary/10`), soft glows.
+**Core philosophy:** Dark-native, transparent layers, depth via elevation, subtle not loud.
 
 ### Color Tokens
 
@@ -86,7 +78,7 @@ Copy `.env.example` to `.env.local` and fill in:
 | `--muted-foreground` | `24 5.4% 63.9%` | Labels, placeholders |
 | `--border` | same as secondary | `border-border/40` subtle, `/60` visible |
 
-**Common patterns:** overlay → `bg-background/95 backdrop-blur-md` · hover → `hover:bg-muted/40` · glow → `bg-primary/10 border-primary/30` · success → `text-green-400 bg-green-500/10` · warning → `text-orange-400 bg-orange-500/15`
+**Common patterns:** overlay -> `bg-background/95 backdrop-blur-md` · hover -> `hover:bg-muted/40` · glow -> `bg-primary/10 border-primary/30` · success -> `text-green-400 bg-green-500/10` · warning -> `text-orange-400 bg-orange-500/15`
 
 ### Typography
 
@@ -104,10 +96,10 @@ Font: **Coda** (Google Fonts weight 400) via `next/font/google` in `layout.tsx`.
 
 **Room page** (`src/components/Room/Room.tsx`):
 - Container: transparent, `md:pl-14` + dynamic right padding for voter panel
-- Voter panel: `200px` default, `40px` collapsed, `160–320px` draggable, compact at `< 210px`
+- Voter panel: `200px` default, `40px` collapsed, `160-320px` draggable, compact at `< 210px`
 - ThrowPanel: `fixed left-3 top-[72px]`, `hidden md:flex`
 - Cards bar: `sticky bottom-0 bg-background/95 backdrop-blur-md border-t border-border/30`
-- Breakpoint `md` (768px): below → mobile sheet, hidden panels; above → full layout
+- Breakpoint `md` (768px): below -> mobile sheet, hidden panels; above -> full layout
 
 ### Component Patterns
 
@@ -129,9 +121,9 @@ Defined in `tailwind.config.ts`: `animate-shine` (CTA sweep) · `animate-aura` (
 
 ### Anti-patterns
 
-- ❌ `bg-muted/10` on non-full-viewport containers — visible grey rectangle on dark background
-- ❌ Dynamic Tailwind classes from runtime values (`` `md:pr-[${n}px]` ``) — use inline styles + static fallback class
-- ❌ `window.innerWidth` in JSX render — hydration mismatch; use `md:` breakpoints or `useEffect`
-- ❌ `overflow-x-auto` + `overflow-y-visible` on same element — use `md:overflow-visible` to reset
-- ❌ Card images without `overflow-hidden` on the button container — visual overlap between cards
-- ❌ Multiple large glow orbs — one centered glow at `bg-primary/8` max
+- `bg-muted/10` on non-full-viewport containers — visible grey rectangle on dark background
+- Dynamic Tailwind classes from runtime values (`` `md:pr-[${n}px]` ``) — use inline styles + static fallback class
+- `window.innerWidth` in JSX render — hydration mismatch; use `md:` breakpoints or `useEffect`
+- `overflow-x-auto` + `overflow-y-visible` on same element — use `md:overflow-visible` to reset
+- Card images without `overflow-hidden` on the button container — visual overlap between cards
+- Multiple large glow orbs — one centered glow at `bg-primary/8` max

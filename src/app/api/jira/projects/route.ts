@@ -3,16 +3,16 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { applyRefreshedCookies, getValidJiraSession } from '@/lib/jiraAuth'
 
-export interface JiraField {
+export interface JiraProject {
   id: string
+  key: string
   name: string
+  avatarUrl?: string
 }
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const cloudId = searchParams.get('cloudId')
-  // mode=sp → number fields (story points); mode=time → string fields (duration notation like 1d 2h)
-  const mode = searchParams.get('mode') ?? 'sp'
 
   if (!cloudId) {
     return NextResponse.json({ error: 'Missing cloudId' }, { status: 400 })
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   }
 
   const res = await fetch(
-    `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/field`,
+    `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/project/search?maxResults=50&orderBy=name`,
     { headers: { Authorization: `Bearer ${entry.accessToken}`, Accept: 'application/json' } }
   )
 
@@ -34,14 +34,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Jira API error' }, { status: res.status })
   }
 
-  const fields: { id: string; name: string; schema?: { type: string } }[] = await res.json()
+  const data = await res.json()
 
-  const filteredFields = mode === 'time'
-    // time mode: include string (text fields accepting "1d 2h"), number (teams storing days as a number), and duration types
-    ? fields.filter((f) => f.schema != null && (f.schema.type === 'string' || f.schema.type === 'number' || f.schema.type === 'duration') && f.id.startsWith('customfield_'))
-    : fields.filter((f) => f.schema != null && f.schema.type === 'number' && f.id.startsWith('customfield_'))
+  const projects: JiraProject[] = (data.values ?? []).map(
+    (v: { id: string; key: string; name: string; avatarUrls?: Record<string, string> }) => ({
+      id: v.id,
+      key: v.key,
+      name: v.name,
+      avatarUrl: v.avatarUrls?.['16x16']
+        ? `/api/jira/avatar?url=${encodeURIComponent(v.avatarUrls['16x16'])}`
+        : undefined,
+    })
+  )
 
-  const response = NextResponse.json(filteredFields.map((f) => ({ id: f.id, name: f.name })))
+  const response = NextResponse.json(projects)
   if (refreshed) applyRefreshedCookies(response, refreshed)
   return response
 }

@@ -1,8 +1,7 @@
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
-import { JIRA_SESSION_COOKIE } from '@/constant/jira'
-import { decodeJiraSession } from '@/lib/jiraTokenStore'
+import { applyRefreshedCookies, getValidJiraSession } from '@/lib/jiraAuth'
 
 export async function GET(
   request: NextRequest,
@@ -18,15 +17,17 @@ export async function GET(
   }
 
   const cookieStore = await cookies()
-  const token = cookieStore.get(JIRA_SESSION_COOKIE)?.value
-  const entry = token ? decodeJiraSession(token) : null
+  const { entry, refreshed } = await getValidJiraSession(cookieStore)
 
   if (!entry) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
+  // originalEstimate is a sentinel for Jira's timetracking — request the timetracking field instead
+  const resolvedField = fieldId === 'originalEstimate' ? 'timetracking' : fieldId
+
   const res = await fetch(
-    `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/issue/${issueId}?fields=${fieldId}`,
+    `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/issue/${issueId}?fields=${resolvedField}`,
     { headers: { Authorization: `Bearer ${entry.accessToken}`, Accept: 'application/json' } }
   )
 
@@ -35,8 +36,12 @@ export async function GET(
   }
 
   const data = await res.json()
-  const value: number | null = data.fields?.[fieldId] ?? null
-  return NextResponse.json({ value })
+  const value: number | string | null = fieldId === 'originalEstimate'
+    ? (data.fields?.timetracking?.originalEstimate ?? null)
+    : (data.fields?.[fieldId] ?? null)
+  const response = NextResponse.json({ value })
+  if (refreshed) applyRefreshedCookies(response, refreshed)
+  return response
 }
 
 export async function PATCH(
@@ -46,19 +51,24 @@ export async function PATCH(
   const { issueId } = await params
 
   const cookieStore = await cookies()
-  const token = cookieStore.get(JIRA_SESSION_COOKIE)?.value
-  const entry = token ? decodeJiraSession(token) : null
+  const { entry, refreshed: refreshedPatch } = await getValidJiraSession(cookieStore)
 
   if (!entry) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
   const body = await request.json()
-  const { cloudId, value, storyPointsField = 'customfield_10016' } = body
+  const { cloudId, value, storyPointsField = 'customfield_10016', isTimeMode = false } = body
 
   if (!cloudId || value === undefined) {
     return NextResponse.json({ error: 'Missing cloudId or value' }, { status: 400 })
   }
+
+  const fields = storyPointsField === 'originalEstimate'
+    ? { timetracking: { originalEstimate: `${value}d` } }
+    : isTimeMode
+      ? { [storyPointsField]: `${value}d` }
+      : { [storyPointsField]: Number(value) }
 
   const res = await fetch(
     `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/issue/${issueId}`,
@@ -69,7 +79,7 @@ export async function PATCH(
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify({ fields: { [storyPointsField]: Number(value) } }),
+      body: JSON.stringify({ fields }),
     }
   )
 
@@ -78,5 +88,7 @@ export async function PATCH(
     return NextResponse.json({ ok: false, error }, { status: res.status })
   }
 
-  return NextResponse.json({ ok: true })
+  const response = NextResponse.json({ ok: true })
+  if (refreshedPatch) applyRefreshedCookies(response, refreshedPatch)
+  return response
 }

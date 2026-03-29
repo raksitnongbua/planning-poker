@@ -18,7 +18,7 @@ const Navbar = () => {
   const { signInWithPopup } = useSignInPopup()
 
   return (
-    <header>
+    <header className="sticky top-0 z-40 border-b border-border/40 bg-background/95 backdrop-blur-md">
       <nav className="w-full flex items-center justify-between px-3 py-2 sm:px-5">
         <Link href="/" className="transition-transform duration-200 hover:scale-110 inline-block">
           <Image

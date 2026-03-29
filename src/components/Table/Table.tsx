@@ -126,7 +126,7 @@ const Table = ({ members, isRevealed, bottomSlot }: TableProps) => {
 
       {/* Center — ticket controls or empty */}
       {bottomSlot && (
-        <div className="relative z-10 flex max-w-[340px] flex-col items-center gap-2 px-6 text-center">
+        <div className="relative z-10 flex max-w-[400px] flex-col items-center gap-2 px-6 text-center">
           {bottomSlot}
         </div>
       )}

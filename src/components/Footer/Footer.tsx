@@ -3,21 +3,28 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import React from 'react'
 
-import { DonateButton } from '../DonateButton'
+const CURRENT_YEAR = new Date().getFullYear()
 
-export interface FooterProps {
-  // types...
+type StatusDot = 'available' | 'connecting' | 'unavailable'
+
+const STATUS_DOT_CLASS: Record<StatusDot, string> = {
+  available: 'bg-green-500 animate-heartbeat',
+  connecting: 'bg-yellow-400 animate-ping',
+  unavailable: 'bg-red-500',
 }
 
-const Footer: React.FC<FooterProps> = ({}) => {
+const Footer: React.FC<{ status?: StatusDot }> = ({ status }) => {
   const t = useTranslations('footer')
   return (
-    <footer className="mt-auto border-t border-border/40 px-4 py-5">
-      <div className="container mx-auto flex flex-col-reverse items-center gap-4 sm:flex-row sm:justify-between">
-        <span className="text-xs text-muted-foreground/50">
-          © {new Date().getFullYear()} Corgi Planning Poker
+    <footer className="sticky bottom-0 z-40 border-t border-border/40 bg-background/95 backdrop-blur-md px-4 py-2">
+      <div className="container mx-auto flex flex-col-reverse items-center gap-2 sm:flex-row sm:justify-between">
+        <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground/40">
+          {status && (
+            <span className={`size-1.5 rounded-full shrink-0 ${STATUS_DOT_CLASS[status]}`} />
+          )}
+          © {CURRENT_YEAR} Corgi Planning Poker
         </span>
-        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground/70">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground/60">
           <Link href="/privacy-policy" className="transition-colors duration-150 hover:text-foreground">
             {t('privacyPolicy')}
           </Link>
@@ -48,8 +55,6 @@ const Footer: React.FC<FooterProps> = ({}) => {
           >
             {t('contribute')}
           </a>
-          <span className="text-border/60">·</span>
-          <DonateButton />
         </div>
       </div>
     </footer>

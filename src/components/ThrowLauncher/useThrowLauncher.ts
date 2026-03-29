@@ -39,7 +39,7 @@ export function useThrowLauncher(
   const [thrown, setThrown] = useState<ThrownItem[]>([])
   const [impacts, setImpacts] = useState<ThrownItem[]>([])
   const [armedEmoji, setArmedEmoji] = useState<string | null>(null)
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false)
   const [hoveredMemberId, setHoveredMemberId] = useState<string | null>(null)
   const [hoveredCardCenter, setHoveredCardCenter] = useState<{ x: number; y: number } | null>(null)
 
@@ -51,21 +51,21 @@ export function useThrowLauncher(
 
   useEffect(() => {
     if (!armedEmoji) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setArmedEmoji(null)
-        setHoveredMemberId(null)
-        setHoveredCardCenter(null)
-      }
-    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') disarm() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [armedEmoji])
 
   useEffect(() => {
     document.body.style.userSelect = armedEmoji ? 'none' : ''
-    return () => { document.body.style.userSelect = '' }
+    // Cleanup is handled by the unmount effect below to avoid a 1-frame
+    // flicker where swapping one armed emoji for another would briefly
+    // re-enable text selection between cleanup and the next effect run.
   }, [armedEmoji])
+
+  useEffect(() => {
+    return () => { document.body.style.userSelect = '' }
+  }, [])
 
   const animate = (emoji: string, startX: number, startY: number, targetX: number, targetY: number) => {
     if (!Number.isFinite(startX) || !Number.isFinite(startY) || !Number.isFinite(targetX) || !Number.isFinite(targetY)) return

@@ -18,7 +18,7 @@ const PokerCard = (props: PokerCardProps) => {
   }
 
   return (
-    <button className={buttonClass} onClick={handleClick} disabled={!isRevealed}>
+    <button className={buttonClass} onClick={handleClick}>
       <ReactCardFlip isFlipped={isRevealed}>
         <BackCard />
         <FrontCard label={label} />

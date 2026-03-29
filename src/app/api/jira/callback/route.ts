@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { JIRA_RT_COOKIE, JIRA_SESSION_COOKIE } from '@/constant/jira'
+import { JIRA_COOKIE_BASE } from '@/lib/jiraAuth'
 import { encodeJiraRefresh, encodeJiraSession } from '@/lib/jiraTokenStore'
 
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
-  maxAge: 60 * 60 * 24 * 7, // 7 days
-  path: '/api/jira', // only sent for /api/jira/* requests — prevents 431 from large JWT in cookie header
-}
+// only sent for /api/jira/* requests — prevents 431 from large JWT in cookie header
+const COOKIE_OPTIONS = { ...JIRA_COOKIE_BASE, maxAge: 60 * 60 * 24 * 7 }
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)

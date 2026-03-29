@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>planning-poker — Architecture Graph</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0f1117;
+    color: #e2e8f0;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 12px;
+    overflow: hidden;
+    user-select: none;
+  }
+  #header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: linear-gradient(180deg, rgba(15,17,23,0.98) 0%, rgba(15,17,23,0.85) 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    backdrop-filter: blur(8px);
+  }
+  #header h1 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #f8fafc;
+    letter-spacing: 0.02em;
+  }
+  #header .subtitle {
+    font-size: 11px;
+    color: #64748b;
+    letter-spacing: 0.02em;
+  }
+  #controls {
+    position: fixed;
+    top: 44px; left: 0; right: 0;
+    z-index: 99;
+    background: rgba(15,17,23,0.92);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    padding: 7px 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    backdrop-filter: blur(8px);
+  }
+  #search {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    color: #e2e8f0;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 4px 10px;
+    width: 160px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #search:focus { border-color: rgba(255,255,255,0.25); }
+  #search::placeholder { color: #475569; }
+  .filter-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 5px;
+    color: #94a3b8;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 3px 10px;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { background: rgba(255,255,255,0.08); color: #e2e8f0; }
+  .filter-btn.active { color: #f8fafc; }
+  #stats {
+    position: fixed;
+    bottom: 16px; left: 16px;
+    z-index: 100;
+    background: rgba(15,17,23,0.85);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 10px;
+    color: #64748b;
+    line-height: 1.7;
+    backdrop-filter: blur(8px);
+  }
+  #stats span { color: #94a3b8; }
+  #legend {
+    position: fixed;
+    bottom: 16px; right: 16px;
+    z-index: 100;
+    background: rgba(15,17,23,0.85);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 10px;
+    line-height: 1.9;
+    backdrop-filter: blur(8px);
+  }
+  .legend-row { display: flex; align-items: center; gap: 7px; }
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-label { color: #94a3b8; }
+  #tooltip {
+    position: fixed;
+    z-index: 200;
+    background: rgba(15,17,23,0.95);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 11px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s;
+    max-width: 260px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+  #tooltip .tt-label { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+  #tooltip .tt-layer { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.6; margin-bottom: 4px; }
+  #tooltip .tt-path { font-size: 10px; color: #64748b; word-break: break-all; }
+  #graph { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; }
+  .band-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    fill-opacity: 0.25;
+  }
+  .node circle {
+    cursor: pointer;
+    stroke-width: 1.5;
+    transition: filter 0.15s;
+  }
+  .node text {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 9.5px;
+    pointer-events: none;
+    fill-opacity: 0.85;
+  }
+  .node.dimmed circle { opacity: 0.08; }
+  .node.dimmed text { opacity: 0.06; }
+  .node.highlighted circle {
+    filter: drop-shadow(0 0 6px currentColor);
+    stroke-width: 2.5;
+  }
+  .link { fill: none; stroke-opacity: 0.22; }
+  .link.dimmed { stroke-opacity: 0.03; }
+  .link.highlighted { stroke-opacity: 0.75; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>planning-poker</h1>
+  <div class="subtitle">Architecture Graph &nbsp;·&nbsp; <span id="node-count">48</span> nodes &nbsp;·&nbsp; <span id="edge-count">60</span> edges</div>
+</div>
+
+<div id="controls">
+  <input id="search" type="text" placeholder="Search nodes..." />
+  <button class="filter-btn active" data-layer="all" style="border-color:rgba(255,255,255,0.15)">All</button>
+  <button class="filter-btn" data-layer="app">App</button>
+  <button class="filter-btn" data-layer="components">Components</button>
+  <button class="filter-btn" data-layer="store">Store</button>
+  <button class="filter-btn" data-layer="hooks">Hooks</button>
+  <button class="filter-btn" data-layer="utils">Utils</button>
+  <button class="filter-btn" data-layer="lib">Lib</button>
+</div>
+
+<div id="stats">
+  Visible: <span id="vis-nodes">48</span> nodes, <span id="vis-edges">60</span> edges<br>
+  Click node to highlight connections<br>
+  Drag to reposition
+</div>
+
+<div id="legend">
+  <div class="legend-row"><div class="legend-dot" style="background:#60a5fa"></div><span class="legend-label">app (pages/routes)</span></div>
+  <div class="legend-row"><div class="legend-dot" style="background:#fb923c"></div><span class="legend-label">components</span></div>
+  <div class="legend-row"><div class="legend-dot" style="background:#c084fc"></div><span class="legend-label">store (zustand)</span></div>
+  <div class="legend-row"><div class="legend-dot" style="background:#34d399"></div><span class="legend-label">hooks</span></div>
+  <div class="legend-row"><div class="legend-dot" style="background:#facc15"></div><span class="legend-label">utils</span></div>
+  <div class="legend-row"><div class="legend-dot" style="background:#f472b6"></div><span class="legend-label">lib</span></div>
+</div>
+
+<div id="tooltip">
+  <div class="tt-label" id="tt-label"></div>
+  <div class="tt-layer" id="tt-layer"></div>
+  <div class="tt-path" id="tt-path"></div>
+</div>
+
+<svg id="graph"></svg>
+
+<script>
+const LAYERS = {
+  app:        { color: '#60a5fa', y: 0.11, label: 'App (pages)' },
+  components: { color: '#fb923c', y: 0.44, label: 'Components' },
+  store:      { color: '#c084fc', y: 0.73, label: 'Store' },
+  hooks:      { color: '#34d399', y: 0.81, label: 'Hooks' },
+  utils:      { color: '#facc15', y: 0.88, label: 'Utils' },
+  lib:        { color: '#f472b6', y: 0.94, label: 'Lib' },
+};
+
+const nodes = [
+  // app layer
+  { id: 'app_home',         label: 'home page',       layer: 'app',        path: 'src/app/page.tsx' },
+  { id: 'app_layout',       label: 'layout',          layer: 'app',        path: 'src/app/layout.tsx' },
+  { id: 'app_room',         label: 'room/[id]',       layer: 'app',        path: 'src/app/room/[id]/page.tsx' },
+  { id: 'app_new-room',     label: 'new-room',        layer: 'app',        path: 'src/app/new-room/page.tsx' },
+  { id: 'app_recent-rooms', label: 'recent-rooms',    layer: 'app',        path: 'src/app/recent-rooms/page.tsx' },
+  { id: 'app_blog',         label: 'blog',            layer: 'app',        path: 'src/app/blog/page.tsx' },
+  { id: 'app_scrum-poker',  label: 'scrum-poker',     layer: 'app',        path: 'src/app/scrum-poker/page.tsx' },
+  { id: 'app_auth',         label: 'auth/option',     layer: 'app',        path: 'src/app/api/auth/[...nextauth]/option.ts' },
+
+  // components layer
+  { id: 'comp_Home',              label: 'Home',              layer: 'components', path: 'src/components/Home/' },
+  { id: 'comp_Layout',            label: 'Layout',            layer: 'components', path: 'src/components/Layout/' },
+  { id: 'comp_Room',              label: 'Room',              layer: 'components', path: 'src/components/Room/Room.tsx' },
+  { id: 'comp_ActivityFeed',      label: 'ActivityFeed',      layer: 'components', path: 'src/components/Room/ActivityFeed.tsx' },
+  { id: 'comp_ChatWidget',        label: 'ChatWidget',        layer: 'components', path: 'src/components/Room/ChatWidget.tsx' },
+  { id: 'comp_MobilePlayersSheet',label: 'MobilePlayersSheet',layer: 'components', path: 'src/components/Room/MobilePlayersSheet.tsx' },
+  { id: 'comp_VoterPanel',        label: 'VoterPanel',        layer: 'components', path: 'src/components/Room/VoterPanel.tsx' },
+  { id: 'comp_NewRoom',           label: 'NewRoom',           layer: 'components', path: 'src/components/NewRoom/' },
+  { id: 'comp_Navbar',            label: 'Navbar',            layer: 'components', path: 'src/components/Navbar/' },
+  { id: 'comp_CardConfigSelect',  label: 'CardConfigSelect',  layer: 'components', path: 'src/components/CardConfigSelect/' },
+  { id: 'comp_JoinRoomDialog',    label: 'JoinRoomDialog',    layer: 'components', path: 'src/components/JoinRoomDialog/' },
+  { id: 'comp_MemberAvatar',      label: 'MemberAvatar',      layer: 'components', path: 'src/components/MemberAvatar/' },
+  { id: 'comp_RoomTable',         label: 'RoomTable',         layer: 'components', path: 'src/components/RoomTable/' },
+  { id: 'comp_RoomCards',         label: 'RoomCards',         layer: 'components', path: 'src/components/RoomCards/' },
+  { id: 'comp_RoomHistory',       label: 'RoomHistory',       layer: 'components', path: 'src/components/RoomHistory/' },
+  { id: 'comp_RoomMembers',       label: 'RoomMembers',       layer: 'components', path: 'src/components/RoomMembers/' },
+  { id: 'comp_RecentRooms',       label: 'RecentRooms',       layer: 'components', path: 'src/components/RecentRooms/' },
+  { id: 'comp_PokerCard',         label: 'PokerCard',         layer: 'components', path: 'src/components/PokerCard/' },
+  { id: 'comp_CustomDeskDialog',  label: 'CustomDeskDialog',  layer: 'components', path: 'src/components/CustomDeskDialog/' },
+  { id: 'comp_CorgiFeeling',      label: 'CorgiFeeling',      layer: 'components', path: 'src/components/CorgiFeeling/' },
+  { id: 'comp_DonateButton',      label: 'DonateButton',      layer: 'components', path: 'src/components/DonateButton/' },
+  { id: 'comp_BackCard',          label: 'BackCard',          layer: 'components', path: 'src/components/BackCard/' },
+  { id: 'comp_FrontCard',         label: 'FrontCard',         layer: 'components', path: 'src/components/FrontCard/' },
+  { id: 'comp_InviteButton',      label: 'InviteButton',      layer: 'components', path: 'src/components/InviteButton/' },
+  { id: 'comp_LanguageSwitcher',  label: 'LanguageSwitcher',  layer: 'components', path: 'src/components/LanguageSwitcher/' },
+  { id: 'comp_Profile',           label: 'Profile',           layer: 'components', path: 'src/components/Profile/' },
+  { id: 'comp_Footer',            label: 'Footer',            layer: 'components', path: 'src/components/Footer/' },
+  { id: 'comp_Loading',           label: 'Loading',           layer: 'components', path: 'src/components/Loading/' },
+  { id: 'comp_MSWProvider',       label: 'MSWProvider',       layer: 'components', path: 'src/components/MSWProvider/' },
+  { id: 'comp_ServiceStatus',     label: 'ServiceStatus',     layer: 'components', path: 'src/components/ServiceStatus/' },
+  { id: 'comp_ThrowLauncher',     label: 'ThrowLauncher',     layer: 'components', path: 'src/components/ThrowLauncher/' },
+  { id: 'comp_Table',             label: 'Table',             layer: 'components', path: 'src/components/Table/' },
+  { id: 'comp_Dialog',            label: 'common/Dialog',     layer: 'components', path: 'src/components/common/Dialog' },
+  { id: 'comp_ui',                label: 'ui (shadcn)',       layer: 'components', path: 'src/components/ui/' },
+
+  // store layer
+  { id: 'store_zustand', label: 'zustand', layer: 'store', path: 'src/store/zustand.ts' },
+
+  // hooks layer
+  { id: 'hooks_useSignInPopup', label: 'useSignInPopup', layer: 'hooks', path: 'src/hooks/useSignInPopup.ts' },
+
+  // utils layer
+  { id: 'utils_httpClient', label: 'httpClient', layer: 'utils', path: 'src/utils/httpClient.ts' },
+  { id: 'utils_time',       label: 'time',        layer: 'utils', path: 'src/utils/time.ts' },
+
+  // lib layer
+  { id: 'lib_utils', label: 'utils', layer: 'lib', path: 'src/lib/utils.ts' },
+];
+
+const rawEdges = [
+  // app → components
+  ['app_home',         'comp_Home'],
+  ['app_layout',       'comp_Layout'],
+  ['app_layout',       'comp_MSWProvider'],
+  ['app_layout',       'comp_ui'],
+  ['app_room',         'app_auth'],
+  ['app_room',         'comp_Room'],
+  ['app_new-room',     'comp_NewRoom'],
+  ['app_recent-rooms', 'comp_RecentRooms'],
+
+  // Layout subtree
+  ['comp_Layout', 'comp_Footer'],
+  ['comp_Layout', 'comp_Loading'],
+  ['comp_Layout', 'comp_Navbar'],
+  ['comp_Layout', 'comp_ServiceStatus'],
+  ['comp_Layout', 'store_zustand'],
+  ['comp_Layout', 'utils_httpClient'],
+  ['comp_Layout', 'utils_time'],
+
+  // Navbar subtree
+  ['comp_Navbar', 'comp_DonateButton'],
+  ['comp_Navbar', 'comp_LanguageSwitcher'],
+  ['comp_Navbar', 'comp_Profile'],
+  ['comp_Navbar', 'hooks_useSignInPopup'],
+  ['comp_Navbar', 'comp_ui'],
+
+  // Home
+  ['comp_Home', 'comp_DonateButton'],
+  ['comp_Home', 'comp_ui'],
+
+  // Room core
+  ['comp_Room', 'store_zustand'],
+  ['comp_Room', 'comp_JoinRoomDialog'],
+  ['comp_Room', 'comp_RoomCards'],
+  ['comp_Room', 'comp_RoomTable'],
+  ['comp_Room', 'comp_ThrowLauncher'],
+  ['comp_Room', 'comp_Dialog'],
+  ['comp_Room', 'comp_ActivityFeed'],
+  ['comp_Room', 'comp_ChatWidget'],
+  ['comp_Room', 'comp_MobilePlayersSheet'],
+  ['comp_Room', 'comp_VoterPanel'],
+  ['comp_Room', 'comp_ui'],
+
+  // NewRoom
+  ['comp_NewRoom', 'comp_CardConfigSelect'],
+  ['comp_NewRoom', 'store_zustand'],
+  ['comp_NewRoom', 'utils_httpClient'],
+  ['comp_NewRoom', 'comp_ui'],
+
+  // CardConfigSelect
+  ['comp_CardConfigSelect', 'comp_CustomDeskDialog'],
+  ['comp_CardConfigSelect', 'lib_utils'],
+  ['comp_CardConfigSelect', 'comp_ui'],
+
+  // JoinRoomDialog
+  ['comp_JoinRoomDialog', 'hooks_useSignInPopup'],
+  ['comp_JoinRoomDialog', 'comp_ui'],
+
+  // RoomTable
+  ['comp_RoomTable', 'comp_CorgiFeeling'],
+  ['comp_RoomTable', 'comp_Table'],
+  ['comp_RoomTable', 'comp_ui'],
+
+  // RoomCards
+  ['comp_RoomCards', 'comp_PokerCard'],
+  ['comp_RoomCards', 'comp_ui'],
+
+  // RoomHistory
+  ['comp_RoomHistory', 'comp_ui'],
+
+  // RoomMembers
+  ['comp_RoomMembers', 'comp_InviteButton'],
+  ['comp_RoomMembers', 'comp_MemberAvatar'],
+  ['comp_RoomMembers', 'utils_time'],
+  ['comp_RoomMembers', 'comp_ui'],
+
+  // RecentRooms
+  ['comp_RecentRooms', 'comp_RoomHistory'],
+  ['comp_RecentRooms', 'store_zustand'],
+  ['comp_RecentRooms', 'utils_time'],
+  ['comp_RecentRooms', 'comp_ui'],
+
+  // PokerCard
+  ['comp_PokerCard', 'comp_BackCard'],
+  ['comp_PokerCard', 'comp_FrontCard'],
+
+  // MemberAvatar
+  ['comp_MemberAvatar', 'comp_BackCard'],
+  ['comp_MemberAvatar', 'comp_FrontCard'],
+  ['comp_MemberAvatar', 'comp_ui'],
+
+  // CustomDeskDialog
+  ['comp_CustomDeskDialog', 'comp_FrontCard'],
+  ['comp_CustomDeskDialog', 'comp_ui'],
+
+  // DonateButton
+  ['comp_DonateButton', 'comp_ui'],
+];
+
+// Build edge objects, deduplicated
+const edgeSet = new Set();
+const edges = [];
+rawEdges.forEach(([s, t]) => {
+  const key = s + '>' + t;
+  if (!edgeSet.has(key)) {
+    edgeSet.add(key);
+    edges.push({ source: s, target: t });
+  }
+});
+
+document.getElementById('node-count').textContent = nodes.length;
+document.getElementById('edge-count').textContent = edges.length;
+
+// ─────────────────────────────────────────────
+// Initial positions
+// ─────────────────────────────────────────────
+function initPositions(W, H) {
+  const byLayer = {};
+  nodes.forEach(n => {
+    if (!byLayer[n.layer]) byLayer[n.layer] = [];
+    byLayer[n.layer].push(n);
+  });
+  Object.entries(byLayer).forEach(([layer, layerNodes]) => {
+    const cfg = LAYERS[layer];
+    const count = layerNodes.length;
+    layerNodes.forEach((n, i) => {
+      n.x = W * 0.05 + (W * 0.90) * ((i + 0.5) / count);
+      n.y = H * cfg.y;
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+// D3 setup
+// ─────────────────────────────────────────────
+const W = window.innerWidth;
+const H = window.innerHeight;
+initPositions(W, H);
+
+const svg = d3.select('#graph')
+  .attr('width', W).attr('height', H);
+
+const defs = svg.append('defs');
+
+// Arrow markers per layer color
+Object.entries(LAYERS).forEach(([layer, cfg]) => {
+  defs.append('marker')
+    .attr('id', 'arrow-' + layer)
+    .attr('viewBox', '0 -4 8 8')
+    .attr('refX', 16)
+    .attr('refY', 0)
+    .attr('markerWidth', 5)
+    .attr('markerHeight', 5)
+    .attr('orient', 'auto')
+    .append('path')
+    .attr('d', 'M0,-4L8,0L0,4')
+    .attr('fill', cfg.color)
+    .attr('fill-opacity', 0.6);
+});
+
+// Layer bands
+const bandG = svg.append('g').attr('class', 'bands').attr('transform', `translate(0,${H * 0.065})`);
+Object.entries(LAYERS).forEach(([layer, cfg]) => {
+  const bandH = layer === 'components' ? H * 0.32 : H * 0.07;
+  const bandY = H * cfg.y - H * 0.065 - bandH / 2;
+  bandG.append('rect')
+    .attr('x', 0).attr('y', bandY)
+    .attr('width', W).attr('height', bandH)
+    .attr('fill', cfg.color)
+    .attr('fill-opacity', 0.028)
+    .attr('rx', 4);
+  bandG.append('text')
+    .attr('class', 'band-label')
+    .attr('x', 10)
+    .attr('y', bandY + bandH / 2 + 3)
+    .attr('fill', cfg.color)
+    .text(cfg.label.toUpperCase());
+});
+
+// Main g with pan/zoom
+const g = svg.append('g');
+svg.call(d3.zoom()
+  .scaleExtent([0.25, 3])
+  .on('zoom', e => { g.attr('transform', e.transform); })
+);
+
+// ─────────────────────────────────────────────
+// Force simulation
+// ─────────────────────────────────────────────
+const simulation = d3.forceSimulation(nodes)
+  .force('link', d3.forceLink(edges).id(d => d.id).distance(85).strength(0.28))
+  .force('charge', d3.forceManyBody().strength(-160).distanceMax(350))
+  .force('x', d3.forceX(d => {
+    const byLayer = nodes.filter(n => n.layer === d.layer);
+    const idx = byLayer.indexOf(d);
+    return W * 0.05 + (W * 0.90) * ((idx + 0.5) / byLayer.length);
+  }).strength(0.45))
+  .force('y', d3.forceY(d => H * LAYERS[d.layer].y).strength(1.1))
+  .force('collide', d3.forceCollide(26))
+  .alpha(0.85)
+  .alphaDecay(0.025);
+
+// ─────────────────────────────────────────────
+// Render edges
+// ─────────────────────────────────────────────
+const linkG = g.append('g').attr('class', 'links');
+const linkSel = linkG.selectAll('path')
+  .data(edges)
+  .join('path')
+  .attr('class', 'link')
+  .attr('stroke', d => {
+    const src = nodes.find(n => n.id === d.source.id || n.id === d.source);
+    return src ? LAYERS[src.layer].color : '#888';
+  })
+  .attr('stroke-width', 1.3)
+  .attr('marker-end', d => {
+    const src = nodes.find(n => n.id === d.source.id || n.id === d.source);
+    return src ? `url(#arrow-${src.layer})` : 'none';
+  });
+
+// ─────────────────────────────────────────────
+// Render nodes
+// ─────────────────────────────────────────────
+const nodeG = g.append('g').attr('class', 'nodes');
+const nodeSel = nodeG.selectAll('g')
+  .data(nodes)
+  .join('g')
+  .attr('class', 'node')
+  .call(d3.drag()
+    .on('start', (e, d) => {
+      if (!e.active) simulation.alphaTarget(0.15).restart();
+      d.fx = d.x; d.fy = d.y;
+    })
+    .on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; })
+    .on('end', (e, d) => {
+      if (!e.active) simulation.alphaTarget(0);
+      d.fx = null; d.fy = null;
+    })
+  );
+
+nodeSel.append('circle')
+  .attr('r', d => d.id === 'comp_ui' ? 11 : d.layer === 'app' ? 9 : 7)
+  .attr('fill', d => LAYERS[d.layer].color + '22')
+  .attr('stroke', d => LAYERS[d.layer].color)
+  .attr('stroke-width', 1.5);
+
+nodeSel.append('text')
+  .attr('dy', -13)
+  .attr('text-anchor', 'middle')
+  .attr('fill', d => LAYERS[d.layer].color)
+  .text(d => d.label);
+
+// ─────────────────────────────────────────────
+// Tick
+// ─────────────────────────────────────────────
+simulation.on('tick', () => {
+  linkSel.attr('d', d => {
+    const sx = d.source.x, sy = d.source.y;
+    const tx = d.target.x, ty = d.target.y;
+    const mx = (sx + tx) / 2;
+    return `M${sx},${sy}C${sx},${mx} ${tx},${mx} ${tx},${ty}`;
+  });
+  nodeSel.attr('transform', d => `translate(${d.x},${d.y})`);
+});
+
+// ─────────────────────────────────────────────
+// Tooltip
+// ─────────────────────────────────────────────
+const tooltip = document.getElementById('tooltip');
+nodeSel
+  .on('mouseover', (e, d) => {
+    document.getElementById('tt-label').textContent = d.label;
+    document.getElementById('tt-label').style.color = LAYERS[d.layer].color;
+    document.getElementById('tt-layer').textContent = d.layer;
+    document.getElementById('tt-path').textContent = d.path;
+    tooltip.style.opacity = '1';
+  })
+  .on('mousemove', e => {
+    tooltip.style.left = (e.clientX + 14) + 'px';
+    tooltip.style.top = (e.clientY - 10) + 'px';
+  })
+  .on('mouseleave', () => { tooltip.style.opacity = '0'; });
+
+// ─────────────────────────────────────────────
+// Click to highlight connections
+// ─────────────────────────────────────────────
+let selectedId = null;
+
+function clearHighlight() {
+  selectedId = null;
+  nodeSel.classed('dimmed', false).classed('highlighted', false);
+  linkSel.classed('dimmed', false).classed('highlighted', false);
+  updateStats(nodes.length, edges.length);
+}
+
+nodeSel.on('click', (e, d) => {
+  e.stopPropagation();
+  if (selectedId === d.id) { clearHighlight(); return; }
+  selectedId = d.id;
+
+  const connectedIds = new Set([d.id]);
+  const connectedLinks = new Set();
+  edges.forEach((link, i) => {
+    const src = link.source.id || link.source;
+    const tgt = link.target.id || link.target;
+    if (src === d.id || tgt === d.id) {
+      connectedIds.add(src);
+      connectedIds.add(tgt);
+      connectedLinks.add(i);
+    }
+  });
+
+  nodeSel
+    .classed('dimmed', n => !connectedIds.has(n.id))
+    .classed('highlighted', n => n.id === d.id);
+  linkSel
+    .classed('dimmed', (_, i) => !connectedLinks.has(i))
+    .classed('highlighted', (_, i) => connectedLinks.has(i));
+
+  updateStats(connectedIds.size, connectedLinks.size);
+});
+
+svg.on('click', clearHighlight);
+
+// ─────────────────────────────────────────────
+// Search
+// ─────────────────────────────────────────────
+document.getElementById('search').addEventListener('input', function () {
+  const q = this.value.trim().toLowerCase();
+  if (!q) { clearHighlight(); return; }
+
+  const matched = new Set();
+  const matchedLinks = new Set();
+  nodes.forEach(n => {
+    if (n.label.toLowerCase().includes(q) || n.id.toLowerCase().includes(q)) {
+      matched.add(n.id);
+    }
+  });
+  edges.forEach((link, i) => {
+    const src = link.source.id || link.source;
+    const tgt = link.target.id || link.target;
+    if (matched.has(src) || matched.has(tgt)) matchedLinks.add(i);
+  });
+
+  nodeSel.classed('dimmed', n => !matched.has(n.id)).classed('highlighted', false);
+  linkSel.classed('dimmed', (_, i) => !matchedLinks.has(i)).classed('highlighted', false);
+  updateStats(matched.size, matchedLinks.size);
+});
+
+// ─────────────────────────────────────────────
+// Layer filter buttons
+// ─────────────────────────────────────────────
+const layerColors = Object.fromEntries(Object.entries(LAYERS).map(([k,v]) => [k, v.color]));
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  const layer = btn.dataset.layer;
+  if (layer !== 'all') {
+    btn.style.setProperty('--layer-color', layerColors[layer] || '#888');
+  }
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.remove('active');
+      b.style.borderColor = '';
+      b.style.color = '';
+    });
+    btn.classList.add('active');
+    if (layer !== 'all') {
+      btn.style.borderColor = layerColors[layer];
+      btn.style.color = layerColors[layer];
+    } else {
+      btn.style.borderColor = 'rgba(255,255,255,0.15)';
+    }
+    document.getElementById('search').value = '';
+
+    if (layer === 'all') {
+      clearHighlight();
+    } else {
+      const matched = new Set(nodes.filter(n => n.layer === layer).map(n => n.id));
+      const matchedLinks = new Set();
+      edges.forEach((link, i) => {
+        const src = link.source.id || link.source;
+        const tgt = link.target.id || link.target;
+        if (matched.has(src) && matched.has(tgt)) matchedLinks.add(i);
+      });
+      nodeSel.classed('dimmed', n => !matched.has(n.id)).classed('highlighted', false);
+      linkSel.classed('dimmed', (_, i) => !matchedLinks.has(i)).classed('highlighted', false);
+      updateStats(matched.size, matchedLinks.size);
+    }
+  });
+});
+
+function updateStats(nv, ev) {
+  document.getElementById('vis-nodes').textContent = nv;
+  document.getElementById('vis-edges').textContent = ev;
+}
+</script>
+</body>
+</html>

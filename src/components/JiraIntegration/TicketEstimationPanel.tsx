@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 
 import { Button } from '@/components/ui/button'
@@ -13,15 +13,13 @@ import {
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 
+import { DEFAULT_FIELD_ID, ESTIMATION_MODE_STORAGE_KEY, EstimationMode, FIELD_STORAGE_KEY, ORIGINAL_ESTIMATE_FIELD_ID } from './constants'
 import { TicketEstimation } from './types'
 
 interface JiraField {
   id: string
   name: string
 }
-
-const FIELD_STORAGE_KEY = 'jira_story_points_field'
-const DEFAULT_FIELD_ID = 'customfield_10016'
 
 interface Props {
   estimation: TicketEstimation | null
@@ -76,6 +74,12 @@ export function TicketEstimationPanel({
   const [descriptionState, setDescriptionState] = useState<DescriptionState>('idle')
   const [fullDescription, setFullDescription] = useState<string | null>(null)
   const [descDialogOpen, setDescDialogOpen] = useState(false)
+  const [estimationMode] = useState<EstimationMode>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem(ESTIMATION_MODE_STORAGE_KEY) as EstimationMode) ?? 'story_points'
+    }
+    return 'story_points'
+  })
 
   const prevKey = useRef<string>('')
 
@@ -135,10 +139,11 @@ export function TicketEstimationPanel({
 
   async function handleSave() {
     if (!estimation || !consensusValue) return
+    const effectiveFieldId = estimationMode === 'time' ? ORIGINAL_ESTIMATE_FIELD_ID : selectedFieldId
     setSaving(true)
     setSaveError(false)
     try {
-      await onSaveToJira(estimation, Number(consensusValue), selectedFieldId)
+      await onSaveToJira(estimation, Number(consensusValue), effectiveFieldId)
       setSaved(true)
     } catch {
       setSaveError(true)
@@ -239,51 +244,65 @@ export function TicketEstimationPanel({
       {isJira && canEdit && roomStatus === 'REVEALED_CARDS' && isNumericConsensus && (
         <div className="mt-4 space-y-3 border-t border-border/40 pt-4">
 
-          {/* Field selector */}
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-                {t('updatingField')}
-              </span>
-              <span className="text-xs text-foreground">
-                {selectedField?.name ?? selectedFieldId}
-                {selectedField && (
-                  <span className="ml-1 font-mono text-[10px] text-muted-foreground/50">({selectedField.id})</span>
-                )}
-              </span>
-            </div>
-            <button
-              className="text-xs text-primary hover:underline"
-              onClick={() => setShowFieldPicker((v) => !v)}
-            >
-              {showFieldPicker ? t('cancel') : t('changeField')}
-            </button>
-          </div>
+          {/* Field selector — story points mode only */}
+          {estimationMode === 'story_points' && (
+            <>
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                    {t('updatingField')}
+                  </span>
+                  <span className="text-xs text-foreground">
+                    {selectedField?.name ?? selectedFieldId}
+                    {selectedField && (
+                      <span className="ml-1 font-mono text-[10px] text-muted-foreground/50">({selectedField.id})</span>
+                    )}
+                  </span>
+                </div>
+                <button
+                  className="text-xs text-primary hover:underline"
+                  onClick={() => setShowFieldPicker((v) => !v)}
+                >
+                  {showFieldPicker ? t('cancel') : t('changeField')}
+                </button>
+              </div>
 
-          {/* Field dropdown */}
-          {showFieldPicker && (
-            <div className="rounded-lg border border-border/60 bg-background">
-              {fieldsLoading && (
-                <div className="flex flex-col gap-1.5 p-2">
-                  {[0, 1, 2].map((i) => (
-                    <Skeleton key={i} className="h-8 w-full rounded" />
+              {showFieldPicker && (
+                <div className="rounded-lg border border-border/60 bg-background">
+                  {fieldsLoading && (
+                    <div className="flex flex-col gap-1.5 p-2">
+                      {[0, 1, 2].map((i) => (
+                        <Skeleton key={i} className="h-8 w-full rounded" />
+                      ))}
+                    </div>
+                  )}
+                  {!fieldsLoading && fields.length === 0 && (
+                    <p className="py-3 text-center text-xs text-muted-foreground">{t('noNumericFieldsShort')}</p>
+                  )}
+                  {!fieldsLoading && fields.map((field) => (
+                    <button
+                      key={field.id}
+                      className={`flex w-full items-center justify-between px-3 py-2 text-left transition-colors hover:bg-muted/40 ${
+                        field.id === selectedFieldId ? 'text-primary' : 'text-foreground'
+                      }`}
+                      onClick={() => selectField(field)}
+                    >
+                      <span className="text-sm">{field.name} <span className="font-mono text-[10px] text-muted-foreground/50">({field.id})</span></span>
+                    </button>
                   ))}
                 </div>
               )}
-              {!fieldsLoading && fields.length === 0 && (
-                <p className="py-3 text-center text-xs text-muted-foreground">{t('noNumericFieldsShort')}</p>
-              )}
-              {!fieldsLoading && fields.map((field) => (
-                <button
-                  key={field.id}
-                  className={`flex w-full items-center justify-between px-3 py-2 text-left transition-colors hover:bg-muted/40 ${
-                    field.id === selectedFieldId ? 'text-primary' : 'text-foreground'
-                  }`}
-                  onClick={() => selectField(field)}
-                >
-                  <span className="text-sm">{field.name} <span className="font-mono text-[10px] text-muted-foreground/50">({field.id})</span></span>
-                </button>
-              ))}
+            </>
+          )}
+
+          {/* Time mode label */}
+          {estimationMode === 'time' && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                {t('updatingField')}
+              </span>
+              <span className="text-xs text-foreground">Original Estimate</span>
+              <span className="font-mono text-[10px] text-muted-foreground/50">(timetracking)</span>
             </div>
           )}
 
@@ -292,7 +311,7 @@ export function TicketEstimationPanel({
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">{t('estimate')}</span>
               <span className="rounded-md bg-primary/10 px-2 py-0.5 font-mono text-sm font-bold text-primary ring-1 ring-inset ring-primary/30">
-                {consensusValue}
+                {estimationMode === 'time' ? `${consensusValue}d` : consensusValue}
               </span>
             </div>
 
