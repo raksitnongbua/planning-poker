@@ -120,7 +120,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
   const [pickerOpen, setPickerOpen] = useState(false)
   const customInputRef = useRef<HTMLInputElement>(null)
 
-  const showFinalPicker = isRevealed && deckOptions && deckOptions.length > 0
+  const showFinalPicker = isRevealed
   const prevIsRevealedRef = useRef(false)
 
   useEffect(() => {

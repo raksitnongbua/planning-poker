@@ -4,4 +4,5 @@ export interface PokerCardProps {
   onClick?: (value: string) => void
   isRevealed: boolean
   isChosen: boolean
+  disabled?: boolean
 }

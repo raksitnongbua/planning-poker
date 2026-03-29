@@ -37,6 +37,7 @@ interface Props {
   onDragEnd: () => void
   onSelectTicket: (t: TicketEstimation) => void
   onQueueChange: (queue: TicketEstimation[]) => void
+  onRemoveTicket: (ticket: TicketEstimation) => void
   onRevoteTicket?: (cleaned: TicketEstimation) => void
   onAdd?: () => void
   onJiraConnected: () => void
@@ -539,7 +540,7 @@ export function TicketQueuePanel({
   queue, activeKey, isRevealed = false, panelWidth, isCollapsed, isDragging,
   isJiraConnected = false, isSpectator = false, roomId,
   onCollapse, onWidthChange, onDragStart, onDragEnd,
-  onSelectTicket, onQueueChange, onRevoteTicket, onAdd, onJiraConnected, onJiraDisconnected,
+  onSelectTicket, onQueueChange, onRemoveTicket, onRevoteTicket, onAdd, onJiraConnected, onJiraDisconnected,
   onSaveToJira, jiraPointOverride, onOpenTicketInfo,
   estimationMode = 'story_points', storyFieldId, timeFieldId = ORIGINAL_ESTIMATE_FIELD_ID,
   onEstimationModeChange, onStoryFieldChange, onTimeFieldChange,
@@ -547,6 +548,8 @@ export function TicketQueuePanel({
   const [hideVoted, setHideVoted] = useState(false)
   const [jiraPoints, setJiraPoints] = useState<Map<string, number | string | null>>(new Map())
   const [savingKey, setSavingKey] = useState<string | null>(null)
+  const [refreshCounter, setRefreshCounter] = useState(0)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
   // Field picker UI state for the Integration section
   const [showStoryFieldPicker, setShowStoryFieldPicker] = useState(false)
@@ -606,6 +609,7 @@ export function TicketQueuePanel({
     if (fetchable.length === 0) return
     // Reset so stale SP values don't show while time values are loading (and vice versa)
     setJiraPoints(new Map())
+    setIsRefreshing(true)
     Promise.all(
       fetchable.map(async t => {
         try {
@@ -620,9 +624,9 @@ export function TicketQueuePanel({
       })
     ).then(results => {
       setJiraPoints(new Map(results.filter(([, v]) => v !== undefined) as [string, number | string | null][]))
-    })
+    }).finally(() => setIsRefreshing(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isJiraConnected, jiraFetchKey, estimationMode, timeFieldId])
+  }, [isJiraConnected, jiraFetchKey, estimationMode, timeFieldId, refreshCounter])
 
   async function saveToJira(ticket: TicketEstimation) {
     const key = ticket.jiraKey!
@@ -666,7 +670,7 @@ export function TicketQueuePanel({
   }
 
   function remove(idx: number) {
-    onQueueChange(queue.filter((_, i) => i !== idx))
+    onRemoveTicket(queue[idx])
   }
 
   function moveToTop(idx: number) {
@@ -813,7 +817,7 @@ export function TicketQueuePanel({
                   </svg>
                 </div>
                 <div className="flex min-w-0 items-baseline gap-1.5">
-                  <span className="text-[11px] font-semibold tracking-wide text-foreground/80">To Estimate</span>
+                  <span className="text-[11px] font-semibold tracking-wide text-foreground/80">Queue</span>
                   <span className={cn(
                     'tabular-nums text-[10px] font-bold',
                     queue.length >= MAX_QUEUE_SIZE ? 'text-red-400' : queue.length >= 180 ? 'text-amber-400' : 'text-primary/70',
@@ -922,15 +926,39 @@ export function TicketQueuePanel({
 
             {/* Jira integration section */}
             <div className="border-t border-border/30">
-              {/* Row: Integration label + connect button */}
+              {/* Row: Integration label + refresh + connect button */}
               <div className="flex items-center justify-between gap-2 px-3 py-2">
                 <span className="text-[10px] font-semibold tracking-wide text-muted-foreground/40">Integration</span>
-                <JiraConnectButton
-                  isConnected={isJiraConnected}
-                  roomId={roomId}
-                  onConnected={onJiraConnected}
-                  onDisconnected={onJiraDisconnected}
-                />
+                <div className="flex items-center gap-1">
+                  {isJiraConnected && queue.some(t => t.jiraKey) && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => setRefreshCounter((n) => n + 1)}
+                            disabled={isRefreshing}
+                            className="flex size-5 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-muted/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                            aria-label="Refresh Jira points"
+                          >
+                            <svg
+                              className={cn('size-3', isRefreshing && 'animate-spin')}
+                              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Refresh Jira points</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                  <JiraConnectButton
+                    isConnected={isJiraConnected}
+                    roomId={roomId}
+                    onConnected={onJiraConnected}
+                    onDisconnected={onJiraDisconnected}
+                  />
+                </div>
               </div>
 
               {/* Save as card — only when Jira is connected */}

@@ -119,7 +119,6 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
   const [cloudId, setCloudId] = useState('')
   const [jiraSiteUrl, setJiraSiteUrl] = useState('')
   const [isJiraPickerOpen, setIsJiraPickerOpen] = useState(false)
-  const [isRemoveTicketConfirmOpen, setIsRemoveTicketConfirmOpen] = useState(false)
   const [estimationMode, setEstimationMode] = useState<EstimationMode>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('jira_estimation_mode') as EstimationMode) ?? 'story_points'
@@ -427,21 +426,6 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
     }
   }
 
-  const handleRemoveTicket = () => {
-    setIsRemoveTicketConfirmOpen(true)
-  }
-
-  const handleConfirmRemoveTicket = () => {
-    setIsRemoveTicketConfirmOpen(false)
-    if (!ticketEstimation) return
-    const key = ticketEstimation.jiraKey ?? ticketEstimation.name
-    const updated = ticketQueue.filter((t) => (t.jiraKey ?? t.name) !== key)
-    const next = updated.find((t) => !t.avgScore && !t.finalScore) ?? null
-    setTicketQueue(updated)
-    setTicketEstimation(next)
-    sendJsonMessage({ action: 'SET_TICKET_QUEUE', payload: { ticketQueue: updated } })
-  }
-
   const handleTicketSelect = (estimation: TicketEstimation) => {
     const isVoted = !!estimation.avgScore || !!estimation.finalScore
 
@@ -483,21 +467,42 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
     setIsJiraPickerOpen(false)
   }
 
+  const removeTicketFromQueue = (ticket: TicketEstimation) => {
+    const key = ticket.jiraKey ?? ticket.name
+    handleQueueUpdate(ticketQueue.filter((t) => (t.jiraKey ?? t.name) !== key))
+  }
+
   const handleQueueUpdate = (newQueue: TicketEstimation[]) => {
-    if (roomStatus !== Status.RevealedCards) {
-      const firstUnvoted = newQueue.find((t) => !t.avgScore && !t.finalScore)
-      const newKey = firstUnvoted?.jiraKey ?? firstUnvoted?.name
-      const currentKey = ticketEstimation?.jiraKey ?? ticketEstimation?.name
-      if (firstUnvoted && newKey !== currentKey) {
+    const currentKey = ticketEstimation?.jiraKey ?? ticketEstimation?.name
+    const isCurrentStillInQueue = currentKey
+      ? newQueue.some((t) => (t.jiraKey ?? t.name) === currentKey)
+      : false
+
+    if (!isCurrentStillInQueue) {
+      if (roomStatus === Status.RevealedCards) {
+        // Revealed state — don't auto-advance. Clear the active ticket and let the user
+        // click Next Round themselves. Send null estimation explicitly so the server
+        // doesn't fall back to queue[0].
+        setTicketQueue(newQueue)
+        setTicketEstimation(null)
+        sendJsonMessage({ action: 'SET_TICKET_QUEUE_WITH_ESTIMATION', payload: { ticketQueue: newQueue, ticketEstimation: null } })
+      } else {
+        // Voting state — auto-switch to the first unvoted ticket.
+        const firstUnvoted = newQueue.find((t) => !t.avgScore && !t.finalScore) ?? null
         setTicketQueue(newQueue)
         setTicketEstimation(firstUnvoted)
-        sendJsonMessage({ action: 'SET_TICKET_QUEUE_WITH_ESTIMATION', payload: { ticketQueue: newQueue, ticketEstimation: firstUnvoted } })
-        return
+        if (firstUnvoted) {
+          sendJsonMessage({ action: 'SET_TICKET_QUEUE_WITH_ESTIMATION', payload: { ticketQueue: newQueue, ticketEstimation: firstUnvoted } })
+        } else {
+          sendJsonMessage({ action: 'SET_TICKET_QUEUE', payload: { ticketQueue: newQueue } })
+        }
       }
+      return
     }
     setTicketQueue(newQueue)
     sendJsonMessage({ action: 'SET_TICKET_QUEUE', payload: { ticketQueue: newQueue } })
   }
+
 
   const handleRevote = (cleaned: TicketEstimation) => {
     const cleanedKey = cleaned.jiraKey ?? cleaned.name
@@ -666,7 +671,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                   sendJsonMessage({ action: 'NEXT_ROUND' })
                 }}
                 onSetTicket={() => setIsJiraPickerOpen(true)}
-                onRemoveTicket={handleRemoveTicket}
+                onRemoveTicket={() => ticketEstimation && removeTicketFromQueue(ticketEstimation)}
                 onSaveToJira={handleSaveToJira}
                 onOpenTicketInfo={openTicketInfo}
               />
@@ -718,15 +723,14 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
                       handleSetFinalStoryPoint(value)
                       setCardChoosing(value)
                       setIsEditEstimateValue(false)
-                    } else if (roomStatus === Status.RevealedCards) {
-                      pendingActionActorRef.current = members.find((m) => m.id === id)?.name ?? null
-                      sendJsonMessage({ action: 'NEXT_ROUND' })
-                      sendJsonMessage({ action: 'UPDATE_ESTIMATED_VALUE', payload: { value } })
-                      setCardChoosing(value)
-                    } else {
+                    } else if (roomStatus !== Status.RevealedCards) {
                       setCardChoosing(value)
                       sendJsonMessage({ action: 'UPDATE_ESTIMATED_VALUE', payload: { value } })
                     }
+                  }}
+                  onNextRound={() => {
+                    pendingActionActorRef.current = members.find((m) => m.id === id)?.name ?? null
+                    sendJsonMessage({ action: 'NEXT_ROUND' })
                   }}
                   status={roomStatus}
                 />
@@ -872,6 +876,7 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
         onDragEnd={() => setIsDraggingQueuePanel(false)}
         onSelectTicket={handleTicketSelect}
         onQueueChange={handleQueueUpdate}
+        onRemoveTicket={removeTicketFromQueue}
         onRevoteTicket={handleRevote}
         onAdd={() => setIsJiraPickerOpen(true)}
         onJiraConnected={handleJiraConnected}
@@ -913,18 +918,6 @@ const Room = ({ roomId, sessionId, avatar, userName }: Props) => {
           />
         </>
       )}
-
-      <Dialog
-        open={isRemoveTicketConfirmOpen}
-        title="Remove ticket"
-        content="Remove this ticket from the queue?"
-        action={
-          <>
-            <Button variant="outline" onClick={() => setIsRemoveTicketConfirmOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleConfirmRemoveTicket}>Remove</Button>
-          </>
-        }
-      />
 
       <TicketInfoDialog
         ticket={ticketInfoTarget}
