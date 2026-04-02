@@ -1,7 +1,6 @@
 'use client'
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { getCookie } from 'cookies-next'
-import dynamic from 'next/dynamic'
 import { usePathname } from 'next/navigation'
 import { SessionProvider } from 'next-auth/react'
 import React, { ReactNode, useEffect, useState } from 'react'
@@ -14,11 +13,6 @@ import { SECONDS } from '@/utils/time'
 import { Footer } from '../Footer'
 import Loading from '../Loading'
 import Navbar from '../Navbar'
-
-const ReactQueryDevtools =
-  process.env.NODE_ENV === 'development'
-    ? dynamic(() => import('@tanstack/react-query-devtools').then((m) => ({ default: m.ReactQueryDevtools })), { ssr: false })
-    : () => null
 
 // Routes that render bare — no navbar, footer, or status overlay
 const BARE_ROUTES = ['/jira/callback', '/auth/callback']
@@ -58,7 +52,6 @@ const AppShell = ({ children }: { children: ReactNode }) => {
         {!isRoom && <Footer status={status} />}
       </div>
       <Loading open={isLoadingOpen} />
-      <ReactQueryDevtools initialIsOpen={false} />
     </>
   )
 }
