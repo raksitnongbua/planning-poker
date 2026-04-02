@@ -41,7 +41,7 @@ module.exports = withSentryConfig(
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
                 "font-src 'self' https://fonts.gstatic.com data:",
                 "img-src 'self' data: https: blob:",
-                `connect-src 'self' https://vercel.live wss: https:${process.env.NODE_ENV === 'development' ? ' http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*' : ''}`,
+                `connect-src 'self' https://vercel.live wss: https:${process.env.NODE_ENV === 'development' ? ' http://localhost:* ws://localhost:*' : ''}`,
                 "frame-ancestors 'self'",
                 "base-uri 'self'",
                 "form-action 'self'",
